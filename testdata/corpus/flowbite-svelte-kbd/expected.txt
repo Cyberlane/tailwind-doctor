@@ -1,7 +1,8 @@
 # themesberg/flowbite-svelte — Kbd.svelte
 # Every class value here is a variable. Nothing is extractable, and a tool that
 # invents classes for this file has failed the conservative-over-complete rule.
-11:40 unresolved clsx "clsx(theme, className)"
+11:45 unresolved clsx "theme"
+11:52 unresolved clsx "className"
 14:28 unresolved attr-interpolated "kbdCls"
 # Prose inside an HTML comment that names the class prop.
 25:7 ignore decoy "class: className"

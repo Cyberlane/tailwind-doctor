@@ -10,4 +10,5 @@
 20:16 extract cva-leaf "text-primary underline-offset-4 [a&]:hover:underline"
 24:17 ignore cva-default-variant "default"
 40:18 ignore decoy "badge"
-42:18 unresolved cn "cn(badgeVariants({ variant }), className)"
+42:21 unresolved cn "badgeVariants({ variant })"
+42:49 unresolved cn "className"

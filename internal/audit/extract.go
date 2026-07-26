@@ -19,6 +19,13 @@ const (
 	shapeAttributeInterpolated = "attr-interpolated"
 	shapeSvelteClassDirective  = "svelte-class-directive"
 	shapeSvelteClassShorthand  = "svelte-class-shorthand"
+	shapeVueBindClass          = "vue-bind-class"
+	shapeAstroClassList        = "astro-class-list"
+	shapeJSXTemplate           = "jsx-template"
+	shapeClsx                  = "clsx"
+	shapeCn                    = "cn"
+	shapeCvaLeaf               = "cva-leaf"
+	shapeCSSApply              = "css-apply"
 )
 
 // ClassList is one class list attributed to one source position. Resolved is
@@ -101,10 +108,18 @@ func (s *scanner) usesJavaScriptSyntax() bool {
 }
 
 func (s *scanner) run() {
-	s.skipAstroFrontmatter()
+	if s.extension == ".css" {
+		s.scanStyleSheet(len(s.source))
+		return
+	}
+	s.scanAstroFrontmatter()
 	for !s.done() {
 		if s.usesJavaScriptSyntax() {
 			if s.skipJavaScriptNoise() {
+				continue
+			}
+			if isNameStart(s.peek(0)) {
+				s.scanPossibleHelperCall(len(s.source))
 				continue
 			}
 		} else {
@@ -112,7 +127,7 @@ func (s *scanner) run() {
 				s.advanceThrough("-->")
 				continue
 			}
-			if s.skipRawTextElement() {
+			if s.scanRawTextElement() {
 				continue
 			}
 		}
@@ -125,26 +140,41 @@ func (s *scanner) run() {
 }
 
 // Astro frontmatter is JavaScript fenced by --- at the top of the file. It holds
-// no markup, so the cheapest correct thing is to step over it whole.
-func (s *scanner) skipAstroFrontmatter() {
+// no markup but may define class lists through a helper, so it is read rather
+// than skipped.
+func (s *scanner) scanAstroFrontmatter() {
 	if s.extension != ".astro" || !s.at("---") {
 		return
 	}
 	s.advance(3)
+	closing := strings.Index(s.source[s.offset:], "\n---")
+	if closing < 0 {
+		return
+	}
+	s.scanJavaScriptRegion(s.offset + closing)
 	s.advanceThrough("\n---")
 }
 
-// A <script> or <style> body is not markup, and in a template-holding script it
-// is not live markup either. Either way its contents are not class attributes on
-// this document's elements. Helper calls inside a component's script block are a
-// separate extraction shape and are not handled here.
-func (s *scanner) skipRawTextElement() bool {
+// A <script> body is JavaScript and may build class lists with a helper, so it
+// is scanned as an expression region. A <style> body is CSS: in a component file
+// it can hold @apply, so it is scanned as a style sheet. Neither is markup, so
+// neither is searched for tags — a template held in a script is inert.
+func (s *scanner) scanRawTextElement() bool {
 	for _, name := range []string{"script", "style"} {
 		if !s.atTagNamed(name) {
 			continue
 		}
 		s.advance(1 + len(name))
 		s.advanceThrough(">")
+		end := strings.Index(s.source[s.offset:], "</"+name)
+		if end < 0 {
+			end = len(s.source) - s.offset
+		}
+		if name == "script" {
+			s.scanJavaScriptRegion(s.offset + end)
+		} else {
+			s.scanStyleSheet(s.offset + end)
+		}
 		s.advanceThrough("</" + name)
 		s.advanceThrough(">")
 		return true
@@ -172,54 +202,11 @@ func (s *scanner) skipJavaScriptNoise() bool {
 		s.advance(2)
 		s.advanceThrough("*/")
 		return true
-	case s.peek(0) == '"' || s.peek(0) == '\'' || s.peek(0) == '`':
-		s.skipStringLiteral()
+	case isStringQuote(s.peek(0)):
+		s.advanceTo(skipLiteral(s.source, s.offset))
 		return true
 	}
 	return false
-}
-
-func (s *scanner) skipStringLiteral() {
-	quote := s.peek(0)
-	s.advance(1)
-	for !s.done() {
-		switch {
-		case s.peek(0) == '\\':
-			s.advance(2)
-		case quote == '`' && s.at("${"):
-			s.advance(2)
-			s.skipBalancedBraces()
-		case s.peek(0) == quote:
-			s.advance(1)
-			return
-		default:
-			s.advance(1)
-		}
-	}
-}
-
-// skipBalancedBraces consumes up to and including the brace that closes the one
-// already consumed, stepping over strings so that a brace inside a string does
-// not unbalance the count.
-func (s *scanner) skipBalancedBraces() {
-	depth := 1
-	for !s.done() {
-		switch {
-		case s.peek(0) == '"' || s.peek(0) == '\'' || s.peek(0) == '`':
-			s.skipStringLiteral()
-		case s.peek(0) == '{':
-			depth++
-			s.advance(1)
-		case s.peek(0) == '}':
-			depth--
-			s.advance(1)
-			if depth == 0 {
-				return
-			}
-		default:
-			s.advance(1)
-		}
-	}
 }
 
 func isNameStart(character byte) bool {
@@ -275,8 +262,12 @@ func (s *scanner) scanTag() {
 			return
 		case s.peek(0) == '{':
 			// A spread such as {...props}, which names no attribute.
-			s.advance(1)
-			s.skipBalancedBraces()
+			closing := matchingDelimiter(s.source, s.offset, '{', '}')
+			if closing < 0 {
+				s.advance(1)
+				continue
+			}
+			s.advanceTo(closing + 1)
 			continue
 		case !isAttributeNameStart(s.peek(0)):
 			s.advance(1)
@@ -297,6 +288,34 @@ func (s *scanner) skipAttributeWhitespace() {
 	}
 }
 
+// attributeRole says how an attribute's value should be read.
+type attributeRole int
+
+const (
+	roleIgnored attributeRole = iota
+	roleLiteralClasses
+	roleExpression
+	roleSvelteDirective
+)
+
+// classifyAttribute decides what an attribute name means. The shape it returns
+// names the binding syntax where one applies, so that classes found inside a
+// :class or a class:list are credited to that binding rather than to whatever
+// helper happens to be nested in it.
+func (s *scanner) classifyAttribute(name string) (attributeRole, string) {
+	switch {
+	case name == "class" || name == "className":
+		return roleLiteralClasses, ""
+	case name == ":class" || name == "v-bind:class":
+		return roleExpression, shapeVueBindClass
+	case name == "class:list" && s.extension == ".astro":
+		return roleExpression, shapeAstroClassList
+	case s.extension == ".svelte" && strings.HasPrefix(name, "class:") && name != "class:":
+		return roleSvelteDirective, shapeSvelteClassDirective
+	}
+	return roleIgnored, ""
+}
+
 func (s *scanner) scanAttribute() {
 	nameLine, nameColumn := s.line, s.column
 	start := s.offset
@@ -305,47 +324,85 @@ func (s *scanner) scanAttribute() {
 		s.advance(1)
 	}
 	name := s.source[start:s.offset]
+	role, shape := s.classifyAttribute(name)
 
 	s.skipAttributeWhitespace()
 	if s.peek(0) != '=' {
-		s.recordValuelessAttribute(name, nameLine, nameColumn)
+		if role == roleSvelteDirective {
+			s.recordDirective(name, nameLine, nameColumn, shapeSvelteClassShorthand)
+		}
 		return
 	}
 	s.advance(1)
 	s.skipAttributeWhitespace()
 
+	// A directive names its class in the attribute itself, so it is recorded at
+	// the name's position; the value only decides whether the class applies,
+	// which is a runtime question this tool does not answer.
+	if role == roleSvelteDirective {
+		s.recordDirective(name, nameLine, nameColumn, shapeSvelteClassDirective)
+		s.skipAttributeValue()
+		return
+	}
+
 	switch {
-	case s.peek(0) == '"' || s.peek(0) == '\'':
+	case isStringQuote(s.peek(0)) && s.peek(0) != '`':
 		quote := s.peek(0)
 		s.advance(1)
 		valueLine, valueColumn := s.line, s.column
-		start := s.offset
-		for !s.done() && s.peek(0) != quote {
-			s.advance(1)
-		}
-		value := s.source[start:s.offset]
-		s.advance(1)
-		if s.recordDirective(name, nameLine, nameColumn, shapeSvelteClassDirective) {
+		contentStart := s.offset
+		end := strings.IndexByte(s.source[contentStart:], quote)
+		if end < 0 {
+			s.advanceTo(len(s.source))
 			return
 		}
-		s.recordQuotedAttribute(name, value, valueLine, valueColumn)
+		end += contentStart
+		switch role {
+		case roleLiteralClasses:
+			s.recordQuotedClassValue(s.source[contentStart:end], valueLine, valueColumn)
+		case roleExpression:
+			s.scanClassExpression(end, shape)
+		}
+		s.advanceTo(end)
+		s.advance(1)
 	case s.peek(0) == '{':
-		s.advance(1)
-		valueLine, valueColumn := s.line, s.column
-		start := s.offset
-		s.skipBalancedBraces()
-		expression := strings.TrimSpace(s.source[start:max(s.offset-1, start)])
-		if s.recordDirective(name, nameLine, nameColumn, shapeSvelteClassDirective) {
+		closing := matchingDelimiter(s.source, s.offset, '{', '}')
+		if closing < 0 {
+			s.advance(1)
 			return
 		}
-		s.recordExpressionAttribute(name, expression, valueLine, valueColumn)
+		if role != roleIgnored {
+			s.advance(1)
+			s.scanClassExpression(closing, shape)
+		}
+		s.advanceTo(closing + 1)
 	default:
 		start := s.offset
 		valueLine, valueColumn := s.line, s.column
 		for !s.done() && !isAttributeTerminator(s.peek(0)) {
 			s.advance(1)
 		}
-		s.recordQuotedAttribute(name, s.source[start:s.offset], valueLine, valueColumn)
+		if role == roleLiteralClasses {
+			s.recordQuotedClassValue(s.source[start:s.offset], valueLine, valueColumn)
+		}
+	}
+}
+
+func (s *scanner) skipAttributeValue() {
+	switch {
+	case isStringQuote(s.peek(0)):
+		s.advanceTo(skipLiteral(s.source, s.offset))
+	case s.peek(0) == '{':
+		closing := matchingDelimiter(s.source, s.offset, '{', '}')
+		if closing < 0 {
+			s.advance(1)
+			return
+		}
+		s.advanceTo(closing + 1)
+	default:
+		for !s.done() && !isAttributeTerminator(s.peek(0)) {
+			s.advance(1)
+		}
 	}
 }
 
@@ -357,48 +414,18 @@ func isAttributeTerminator(character byte) bool {
 	return false
 }
 
-func isClassAttribute(name string) bool {
-	return name == "class" || name == "className"
-}
-
-// A Svelte class: directive names the class in the attribute itself, so the
-// class is knowable even when the condition controlling it is not. Astro's
-// class:list shares the prefix but is an expression, and is not this shape.
-func (s *scanner) svelteDirectiveClass(name string) (string, bool) {
-	if s.extension != ".svelte" || !strings.HasPrefix(name, "class:") {
-		return "", false
-	}
+func (s *scanner) recordDirective(name string, line, column int, shape string) {
 	class := strings.TrimPrefix(name, "class:")
 	if class == "" {
-		return "", false
-	}
-	return class, true
-}
-
-// recordDirective reports a Svelte class: directive. The class is named in the
-// attribute itself, so it is recorded at the name's position rather than the
-// value's; the value only decides whether the class is applied, which is a
-// runtime question this tool does not answer.
-func (s *scanner) recordDirective(name string, line, column int, shape string) bool {
-	class, ok := s.svelteDirectiveClass(name)
-	if !ok {
-		return false
+		return
 	}
 	s.record(ClassList{
 		Value: class, Line: line, Column: column + len("class:"),
 		Shape: shape, Resolved: true,
 	})
-	return true
 }
 
-func (s *scanner) recordValuelessAttribute(name string, line, column int) {
-	s.recordDirective(name, line, column, shapeSvelteClassShorthand)
-}
-
-func (s *scanner) recordQuotedAttribute(name, value string, line, column int) {
-	if !isClassAttribute(name) {
-		return
-	}
+func (s *scanner) recordQuotedClassValue(value string, line, column int) {
 	if !strings.Contains(value, "{") {
 		if strings.TrimSpace(value) == "" {
 			return
@@ -408,32 +435,22 @@ func (s *scanner) recordQuotedAttribute(name, value string, line, column int) {
 		})
 		return
 	}
-	s.recordInterpolatedValue(value, line, column)
+	s.recordInterpolated(value, line, column, shapeAttributeInterpolated, "{")
 }
 
-func (s *scanner) recordExpressionAttribute(name, expression string, line, column int) {
-	if !isClassAttribute(name) || expression == "" {
-		return
-	}
-	// Helper calls and template literals are read by a later pass; until then the
-	// honest answer for any expression is that its value is not known here.
-	s.record(ClassList{
-		Value: expression, Line: line, Column: column, Shape: shapeAttributeInterpolated, Resolved: false,
-	})
-}
-
-// recordInterpolatedValue splits a quoted attribute that mixes literal classes
-// with interpolations. The literal part is real Tailwind and must be linted; each
-// interpolation is recorded as its own unresolved site rather than being folded
+// recordInterpolated splits a value that mixes literal classes with
+// substitutions. The literal part is real Tailwind and must be linted; each
+// substitution is recorded as its own unresolved site rather than being folded
 // into the class list, which is how a substitution ends up reported as a utility.
-func (s *scanner) recordInterpolatedValue(value string, line, column int) {
-	position := newPositionTracker(line, column)
+// opening is "{" for a markup attribute and "${" for a template literal.
+func (s *scanner) recordInterpolated(value string, line, column int, shape, opening string) {
+	position := &positionTracker{line: line, column: column}
 	literal := strings.Builder{}
 	literalLine, literalColumn, haveLiteral := 0, 0, false
 
 	for index := 0; index < len(value); {
-		if value[index] != '{' {
-			if !haveLiteral && value[index] != ' ' && value[index] != '\t' && value[index] != '\n' {
+		if !strings.HasPrefix(value[index:], opening) {
+			if !haveLiteral && !isSpace(value[index]) {
 				literalLine, literalColumn = position.line, position.column
 				haveLiteral = true
 			}
@@ -444,23 +461,15 @@ func (s *scanner) recordInterpolatedValue(value string, line, column int) {
 		}
 
 		segmentLine, segmentColumn := position.line, position.column
-		depth, end := 0, index
-		for end < len(value) {
-			if value[end] == '{' {
-				depth++
-			}
-			if value[end] == '}' {
-				depth--
-				if depth == 0 {
-					end++
-					break
-				}
-			}
-			end++
+		braceStart := index + len(opening) - 1
+		end := matchingDelimiter(value, braceStart, '{', '}')
+		if end < 0 {
+			end = len(value) - 1
 		}
+		end++
 		s.record(ClassList{
 			Value: value[index:end], Line: segmentLine, Column: segmentColumn,
-			Shape: shapeAttributeInterpolated, Resolved: false,
+			Shape: shape, Resolved: false,
 		})
 		for ; index < end; index++ {
 			position.advance(value[index])
@@ -473,18 +482,17 @@ func (s *scanner) recordInterpolatedValue(value string, line, column int) {
 		return
 	}
 	s.record(ClassList{
-		Value: classes, Line: literalLine, Column: literalColumn,
-		Shape: shapeAttributeInterpolated, Resolved: true,
+		Value: classes, Line: literalLine, Column: literalColumn, Shape: shape, Resolved: true,
 	})
+}
+
+func isSpace(character byte) bool {
+	return character == ' ' || character == '\t' || character == '\n' || character == '\r'
 }
 
 type positionTracker struct {
 	line   int
 	column int
-}
-
-func newPositionTracker(line, column int) *positionTracker {
-	return &positionTracker{line: line, column: column}
 }
 
 func (p *positionTracker) advance(character byte) {

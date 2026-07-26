@@ -12,7 +12,7 @@ import (
 
 var sourceExtensions = map[string]bool{
 	".astro": true, ".html": true, ".jsx": true, ".tsx": true,
-	".vue": true, ".svelte": true,
+	".vue": true, ".svelte": true, ".css": true,
 }
 
 type Finding struct {

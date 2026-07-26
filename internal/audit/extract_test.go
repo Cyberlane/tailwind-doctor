@@ -108,9 +108,14 @@ func TestExtractSplitsInterpolatedAttributes(t *testing.T) {
 	}
 }
 
+// A helper call is read argument by argument, so what is knowable is kept and
+// only the specific values that are not are reported as unknown.
 func TestExtractReportsExpressionValuesAsUnresolved(t *testing.T) {
 	got := summarise(Extract("card.tsx", `<div className={cn(base, className)} />`))
-	want := []string{`1:17 unresolved attr-interpolated "cn(base, className)"`}
+	want := []string{
+		`1:20 unresolved cn "base"`,
+		`1:26 unresolved cn "className"`,
+	}
 	if strings.Join(got, "|") != strings.Join(want, "|") {
 		t.Fatalf("got %v, want %v", got, want)
 	}
@@ -129,11 +134,181 @@ func TestExtractReadsSvelteClassDirectives(t *testing.T) {
 	}
 }
 
-// A binding prefix makes the value an expression. Reading :class as class would
-// report the expression's source text as a list of utilities.
-func TestExtractDoesNotTreatBoundAttributesAsPlainClass(t *testing.T) {
-	got := Extract("nav.vue", `<div :class="cn('flex', props.class)"></div>`)
-	if len(got) != 0 {
-		t.Fatalf("expected nothing extracted from a bound attribute, got %v", summarise(got))
+// A binding prefix makes the value an expression, so it is read as one. Treating
+// :class as the plain class attribute would report the expression's source text
+// as a list of utilities.
+func TestExtractReadsBoundAttributesAsExpressions(t *testing.T) {
+	got := summarise(Extract("nav.vue", `<div :class="cn('flex', props.class)"></div>`))
+	want := []string{
+		`1:18 resolved vue-bind-class "flex"`,
+		`1:25 unresolved vue-bind-class "props.class"`,
+	}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+}
+
+func TestExtractReadsClassHelpers(t *testing.T) {
+	cases := []struct {
+		name   string
+		path   string
+		source string
+		want   []string
+	}{
+		{
+			name:   "clsx string arguments",
+			path:   "app.tsx",
+			source: `const a = clsx('p-4', 'm-2')`,
+			want: []string{
+				`1:17 resolved clsx "p-4"`,
+				`1:24 resolved clsx "m-2"`,
+			},
+		},
+		{
+			name:   "object keys are classes and values are conditions",
+			path:   "app.tsx",
+			source: `const a = clsx({ 'p-4': isWide, 'm-2': isTall })`,
+			want: []string{
+				`1:19 resolved clsx "p-4"`,
+				`1:34 resolved clsx "m-2"`,
+			},
+		},
+		{
+			name:   "arguments that are not literals are unresolved",
+			path:   "app.tsx",
+			source: `const a = cn('p-4', props.class)`,
+			want: []string{
+				`1:15 resolved cn "p-4"`,
+				`1:21 unresolved cn "props.class"`,
+			},
+		},
+		{
+			name:   "a nested call is reported whole rather than guessed at",
+			path:   "app.tsx",
+			source: `const a = cn(buttonVariants({ size }))`,
+			want:   []string{`1:14 unresolved cn "buttonVariants({ size })"`},
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			got := summarise(Extract(test.path, test.source))
+			if strings.Join(got, "|") != strings.Join(test.want, "|") {
+				t.Fatalf("got %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+// A cva call holds class lists in three places and variant names in two others.
+// Reading a variant name as a class list is a fabricated finding, so the
+// distinction is asserted rather than assumed.
+func TestExtractReadsCvaLeavesButNotVariantNames(t *testing.T) {
+	source := `const button = cva("inline-flex", {
+  variants: {
+    size: { sm: "h-8 px-3", "icon-lg": "size-10" },
+  },
+  compoundVariants: [{ size: "sm", class: "gap-1" }],
+  defaultVariants: { size: "sm" },
+})`
+	got := summarise(Extract("button.tsx", source))
+	want := []string{
+		`1:21 resolved cva-leaf "inline-flex"`,
+		`3:18 resolved cva-leaf "h-8 px-3"`,
+		`3:41 resolved cva-leaf "size-10"`,
+		`5:44 resolved cva-leaf "gap-1"`,
+	}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+}
+
+func TestExtractReadsFrameworkBindings(t *testing.T) {
+	cases := []struct {
+		name   string
+		path   string
+		source string
+		want   []string
+	}{
+		{
+			name:   "vue bound class keeps the binding shape",
+			path:   "nav.vue",
+			source: `<template><div :class="cn('flex gap-2', props.class)"></div></template>`,
+			want: []string{
+				`1:28 resolved vue-bind-class "flex gap-2"`,
+				`1:41 unresolved vue-bind-class "props.class"`,
+			},
+		},
+		{
+			name:   "astro class:list array and object keys",
+			path:   "page.astro",
+			source: `<div class:list={['p-4', { active: isOpen }, other]}></div>`,
+			want: []string{
+				`1:20 resolved astro-class-list "p-4"`,
+				`1:28 resolved astro-class-list "active"`,
+				`1:46 unresolved astro-class-list "other"`,
+			},
+		},
+		{
+			name:   "jsx template literal splits at the substitution",
+			path:   "card.tsx",
+			source: "const a = <div className={`size-4 rounded ${tone}`} />",
+			want: []string{
+				`1:43 unresolved jsx-template "${tone}"`,
+				`1:28 resolved jsx-template "size-4 rounded"`,
+			},
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			got := summarise(Extract(test.path, test.source))
+			if strings.Join(got, "|") != strings.Join(test.want, "|") {
+				t.Fatalf("got %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestExtractReadsApplyRules(t *testing.T) {
+	cases := []struct {
+		name   string
+		path   string
+		source string
+		want   []string
+	}{
+		{
+			name:   "css file",
+			path:   "site.css",
+			source: ".card {\n\t@apply rounded-lg p-4;\n}",
+			want:   []string{`2:9 resolved css-apply "rounded-lg p-4"`},
+		},
+		{
+			name:   "important keyword is not a utility",
+			path:   "site.css",
+			source: ".card { @apply p-4 !important; }",
+			want:   []string{`1:16 resolved css-apply "p-4"`},
+		},
+		{
+			name:   "style block of a component",
+			path:   "card.vue",
+			source: "<template><i /></template>\n<style>\n.card { @apply p-2; }\n</style>",
+			want:   []string{`3:16 resolved css-apply "p-2"`},
+		},
+		{
+			name:   "commented out apply",
+			path:   "site.css",
+			source: ".card {\n\t/* @apply p-4; */\n}",
+			want:   nil,
+		},
+	}
+
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			got := summarise(Extract(test.path, test.source))
+			if strings.Join(got, "|") != strings.Join(test.want, "|") {
+				t.Fatalf("got %v, want %v", got, test.want)
+			}
+		})
 	}
 }

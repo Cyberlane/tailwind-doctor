@@ -26,4 +26,4 @@
 # Not class attributes.
 55:18 ignore decoy "button"
 # The call site composes at runtime; the leaves above are where the classes live.
-58:18 unresolved cn "cn(buttonVariants({ variant, size, className }))"
+58:21 unresolved cn "buttonVariants({ variant, size, className })"
