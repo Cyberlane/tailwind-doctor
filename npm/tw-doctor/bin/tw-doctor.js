@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 
-const { spawnSync } = require("node:child_process");
+// Version 0.0.0 exists only to hold the package name. It intentionally ships no
+// binary and no download step, so running it explains itself instead of failing
+// with a confusing "command not found".
+//
+// The real launcher lands with the first tagged release: it resolves a prebuilt
+// Go binary from a platform-specific optional dependency and forwards argv to it.
+// Exit code 2 matches the CLI's operational-error code.
 
-const binary = process.platform === "win32" ? "tw-doctor.exe" : "tw-doctor";
-const result = spawnSync(binary, process.argv.slice(2), { stdio: "inherit" });
+console.error(
+  [
+    "tw-doctor has not been released yet.",
+    "This 0.0.0 publish reserves the package name; it contains no binary.",
+    "",
+    "To try the current development version, build it from source:",
+    "  go run ./cmd/tw-doctor .",
+    "",
+    "https://github.com/Cyberlane/tailwind-doctor",
+  ].join("\n")
+);
 
-if (result.error) {
-  console.error("tw-doctor binary was not found. Install a release binary or use the official npm package once published.");
-  process.exit(1);
-}
-
-process.exit(result.status ?? 1);
+process.exit(2);

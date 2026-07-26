@@ -1,12 +1,22 @@
 {
   "name": "tailwind-doctor",
   "version": "0.0.0",
-  "description": "Alias package for the Tailwind Doctor CLI; installs and runs tw-doctor",
+  "description": "Alias for the Tailwind Doctor CLI. This 0.0.0 publish reserves the name; the tool is not released yet.",
+  "keywords": [
+    "tailwind",
+    "tailwindcss",
+    "design-system",
+    "design-tokens",
+    "lint",
+    "static-analysis",
+    "cli"
+  ],
+  "homepage": "https://github.com/Cyberlane/tailwind-doctor#readme",
+  "bugs": {
+    "url": "https://github.com/Cyberlane/tailwind-doctor/issues"
+  },
   "bin": {
     "tailwind-doctor": "bin/tailwind-doctor.js"
-  },
-  "dependencies": {
-    "tw-doctor": "0.0.0"
   },
   "files": ["bin"],
   "license": "MIT",

@@ -1,7 +1,20 @@
 {
   "name": "tw-doctor",
   "version": "0.0.0",
-  "description": "npm launcher for the Tailwind Doctor CLI",
+  "description": "Tailwind Doctor CLI. This 0.0.0 publish reserves the name; the tool is not released yet.",
+  "keywords": [
+    "tailwind",
+    "tailwindcss",
+    "design-system",
+    "design-tokens",
+    "lint",
+    "static-analysis",
+    "cli"
+  ],
+  "homepage": "https://github.com/Cyberlane/tailwind-doctor#readme",
+  "bugs": {
+    "url": "https://github.com/Cyberlane/tailwind-doctor/issues"
+  },
   "bin": {
     "tw-doctor": "bin/tw-doctor.js",
     "tailwind-doctor": "bin/tw-doctor.js"
