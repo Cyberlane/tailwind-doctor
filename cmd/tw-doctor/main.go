@@ -26,6 +26,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("tw-doctor", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	jsonOutput := flags.Bool("json", false, "write a machine-readable report")
+	sarifOutput := flags.Bool("sarif", false, "write a SARIF 2.1.0 report for code scanning and editors")
 	failUnder := flags.Int("fail-under", 0, "exit 1 when the score is below this value (0-100)")
 	version := flags.Bool("version", false, "print the version")
 	writeBaseline := flags.Bool("write-baseline", false,
@@ -41,6 +42,13 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if *version {
 		fmt.Fprintln(stdout, "tw-doctor "+audit.Version)
 		return exitSuccess
+	}
+
+	// One report, one format. Interleaving two on the same stream would produce
+	// something neither consumer can parse.
+	if *jsonOutput && *sarifOutput {
+		fmt.Fprintln(stderr, "tw-doctor: --json and --sarif cannot be combined; choose one")
+		return exitOperationalError
 	}
 
 	// Validate before scanning: an unusable threshold should be reported
@@ -67,12 +75,18 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitOperationalError
 	}
 
-	if *jsonOutput {
+	switch {
+	case *jsonOutput:
 		if err := audit.WriteJSON(stdout, report); err != nil {
 			fmt.Fprintln(stderr, "tw-doctor:", err)
 			return exitOperationalError
 		}
-	} else {
+	case *sarifOutput:
+		if err := audit.WriteSARIF(stdout, report); err != nil {
+			fmt.Fprintln(stderr, "tw-doctor:", err)
+			return exitOperationalError
+		}
+	default:
 		audit.WriteHuman(stdout, report)
 	}
 

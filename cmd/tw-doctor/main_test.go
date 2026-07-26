@@ -122,3 +122,27 @@ func TestRunWritesTheReportBeforeGating(t *testing.T) {
 		t.Fatalf("expected a report on stdout even when the gate fails, got %q", stdout.String())
 	}
 }
+
+func TestRunRefusesTwoOutputFormats(t *testing.T) {
+	root := t.TempDir()
+	var stdout, stderr bytes.Buffer
+
+	if code := run([]string{"--json", "--sarif", root}, &stdout, &stderr); code != exitOperationalError {
+		t.Errorf("exit code = %d, want %d", code, exitOperationalError)
+	}
+	if !strings.Contains(stderr.String(), "--json") || !strings.Contains(stderr.String(), "--sarif") {
+		t.Errorf("stderr should name both flags: %q", stderr.String())
+	}
+}
+
+func TestRunWritesSARIF(t *testing.T) {
+	root := writeProject(t, debtSource)
+
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--sarif", root}, &stdout, &stderr); code != exitSuccess {
+		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"version": "2.1.0"`) {
+		t.Errorf("stdout is not a SARIF log:\n%s", stdout.String())
+	}
+}

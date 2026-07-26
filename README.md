@@ -43,6 +43,10 @@ tw-doctor .
 
 # Machine-readable report for CI
 tw-doctor --json .
+
+# SARIF for GitHub code scanning or an editor
+tw-doctor --sarif .
+
 tw-doctor --write-baseline .   # record current debt; later runs gate on new findings
 
 # Fail CI below a score threshold
