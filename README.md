@@ -81,6 +81,14 @@ go run ./cmd/tw-doctor --json .
 
 Tailwind Doctor is local, deterministic, and read-only. It does not execute application code, upload source files, or require credentials.
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Trademark
+
+"Tailwind" is a trademark of Tailwind Labs. This project is not affiliated with or endorsed by Tailwind Labs.
+
 ## License
 
 [MIT](LICENSE)

@@ -1,6 +1,7 @@
 # Contributing
 
-Thanks for helping make Tailwind projects easier to maintain.
+Thanks for helping make Tailwind projects easier to maintain. Participation in
+this project is governed by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Setup
 
