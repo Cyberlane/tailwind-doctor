@@ -1,46 +1,82 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/Cyberlane/tailwind-doctor/internal/audit"
 )
 
+// Exit codes are part of the public contract; see the README.
+const (
+	exitSuccess          = 0
+	exitBelowThreshold   = 1
+	exitOperationalError = 2
+)
+
+// maximumScore is the highest score the audit can report, and therefore the
+// highest threshold --fail-under can meaningfully be given.
+const maximumScore = 100
+
 func main() {
-	jsonOutput := flag.Bool("json", false, "write a machine-readable report")
-	failUnder := flag.Int("fail-under", 0, "exit non-zero when the score is below this value")
-	version := flag.Bool("version", false, "print the version")
-	flag.Parse()
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+func run(args []string, stdout, stderr io.Writer) int {
+	flags := flag.NewFlagSet("tw-doctor", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	jsonOutput := flags.Bool("json", false, "write a machine-readable report")
+	failUnder := flags.Int("fail-under", 0, "exit 1 when the score is below this value (0-100)")
+	version := flags.Bool("version", false, "print the version")
+
+	if err := flags.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return exitSuccess
+		}
+		return exitOperationalError
+	}
 
 	if *version {
-		fmt.Println("tw-doctor dev")
-		return
+		fmt.Fprintln(stdout, "tw-doctor dev")
+		return exitSuccess
+	}
+
+	// Validate before scanning: an unusable threshold should be reported
+	// immediately rather than after a full audit.
+	if *failUnder < 0 || *failUnder > maximumScore {
+		fmt.Fprintf(stderr, "tw-doctor: --fail-under must be between 0 and %d, got %d\n", maximumScore, *failUnder)
+		return exitOperationalError
 	}
 
 	path := "."
-	if flag.NArg() > 0 {
-		path = flag.Arg(0)
+	if flags.NArg() > 0 {
+		path = flags.Arg(0)
 	}
 
 	report, err := audit.Run(filepath.Clean(path))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "tw-doctor:", err)
-		os.Exit(2)
+		fmt.Fprintln(stderr, "tw-doctor:", err)
+		return exitOperationalError
 	}
 
 	if *jsonOutput {
-		if err := audit.WriteJSON(os.Stdout, report); err != nil {
-			fmt.Fprintln(os.Stderr, "tw-doctor:", err)
-			os.Exit(2)
+		if err := audit.WriteJSON(stdout, report); err != nil {
+			fmt.Fprintln(stderr, "tw-doctor:", err)
+			return exitOperationalError
 		}
 	} else {
-		audit.WriteHuman(os.Stdout, report)
+		audit.WriteHuman(stdout, report)
 	}
 
-	if *failUnder > 0 && report.Score < *failUnder {
-		os.Exit(1)
+	// The threshold is always applied. A threshold of 0 is a valid, always-passing
+	// gate, which keeps a templated `--fail-under $THRESHOLD` honest instead of
+	// silently disabling the check.
+	if report.Score < *failUnder {
+		return exitBelowThreshold
 	}
+	return exitSuccess
 }

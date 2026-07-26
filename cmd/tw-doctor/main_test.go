@@ -1,0 +1,122 @@
+package main
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// writeProject creates a directory holding a single source file, so a test can
+// control the score the audit produces.
+func writeProject(t *testing.T, contents string) string {
+	t.Helper()
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "card.tsx"), []byte(contents), 0o644); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	return root
+}
+
+const (
+	cleanSource = `<div className="p-4 md:p-6">ok</div>`
+	debtSource  = `<div className="p-4 p-2 text-[#123456]">debt</div>`
+)
+
+func TestRunExitCodes(t *testing.T) {
+	cleanProject := writeProject(t, cleanSource)
+	debtProject := writeProject(t, debtSource)
+
+	tests := []struct {
+		name string
+		args []string
+		want int
+	}{
+		{
+			name: "no threshold reports without gating",
+			args: []string{debtProject},
+			want: exitSuccess,
+		},
+		{
+			name: "zero threshold accepts any score",
+			args: []string{"--fail-under", "0", debtProject},
+			want: exitSuccess,
+		},
+		{
+			name: "score at the threshold passes",
+			args: []string{"--fail-under", "96", debtProject},
+			want: exitSuccess,
+		},
+		{
+			name: "score below the threshold fails",
+			args: []string{"--fail-under", "97", debtProject},
+			want: exitBelowThreshold,
+		},
+		{
+			name: "a perfect score satisfies the strictest threshold",
+			args: []string{"--fail-under", "100", cleanProject},
+			want: exitSuccess,
+		},
+		{
+			name: "a negative threshold is an operational error",
+			args: []string{"--fail-under", "-1", cleanProject},
+			want: exitOperationalError,
+		},
+		{
+			name: "a threshold above the maximum score is an operational error",
+			args: []string{"--fail-under", "101", cleanProject},
+			want: exitOperationalError,
+		},
+		{
+			name: "an unreadable path is an operational error",
+			args: []string{filepath.Join(cleanProject, "missing")},
+			want: exitOperationalError,
+		},
+		{
+			name: "an unknown flag is an operational error",
+			args: []string{"--nope", cleanProject},
+			want: exitOperationalError,
+		},
+		{
+			name: "the threshold is ignored when printing the version",
+			args: []string{"--version", "--fail-under", "100"},
+			want: exitSuccess,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			got := run(test.args, &stdout, &stderr)
+			if got != test.want {
+				t.Fatalf("run(%q) = %d, want %d (stderr: %s)", test.args, got, test.want, stderr.String())
+			}
+		})
+	}
+}
+
+func TestRunRejectsOutOfRangeThresholdWithAnExplanation(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	if code := run([]string{"--fail-under", "150", writeProject(t, cleanSource)}, &stdout, &stderr); code != exitOperationalError {
+		t.Fatalf("exit code = %d, want %d", code, exitOperationalError)
+	}
+	if !strings.Contains(stderr.String(), "--fail-under") {
+		t.Fatalf("stderr does not explain the rejected flag: %q", stderr.String())
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("expected no report on stdout, got %q", stdout.String())
+	}
+}
+
+func TestRunWritesTheReportBeforeGating(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+
+	if code := run([]string{"--fail-under", "100", writeProject(t, debtSource)}, &stdout, &stderr); code != exitBelowThreshold {
+		t.Fatalf("exit code = %d, want %d", code, exitBelowThreshold)
+	}
+	if !strings.Contains(stdout.String(), "Tailwind Doctor:") {
+		t.Fatalf("expected a report on stdout even when the gate fails, got %q", stdout.String())
+	}
+}
