@@ -44,13 +44,15 @@ func TestRunExitCodes(t *testing.T) {
 			want: exitSuccess,
 		},
 		{
+			// Two findings over three utilities is dense debt, so the fixture
+			// scores 11: D = 3 x 1/3 + 2 x 1/3, and 100 x 0.2/1.8667 rounds to 11.
 			name: "score at the threshold passes",
-			args: []string{"--fail-under", "96", debtProject},
+			args: []string{"--fail-under", "11", debtProject},
 			want: exitSuccess,
 		},
 		{
 			name: "score below the threshold fails",
-			args: []string{"--fail-under", "97", debtProject},
+			args: []string{"--fail-under", "12", debtProject},
 			want: exitBelowThreshold,
 		},
 		{

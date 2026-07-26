@@ -182,8 +182,9 @@ func TestSeverityDecidesWhatMovesTheScore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if report.Score != MaximumScore-2 {
-		t.Fatalf("score = %d, want %d", report.Score, MaximumScore-2)
+	// One conflict over two utilities: D = 3 x 1/2, so 100 x 0.2/1.7 rounds to 12.
+	if report.Score != 12 {
+		t.Fatalf("score = %d, want 12", report.Score)
 	}
 
 	writeFile(t, root, ConfigFileName, "[rules]\nno-conflicting-utilities = \"warn\"\n")

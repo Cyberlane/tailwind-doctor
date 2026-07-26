@@ -141,8 +141,10 @@ func TestWriteJSONEmitsAnEmptyFindingsArray(t *testing.T) {
 	if err := WriteJSON(&buffer, report); err != nil {
 		t.Fatalf("WriteJSON: %v", err)
 	}
-	if strings.Contains(buffer.String(), "null") {
-		t.Fatalf("report serialized a null field: %s", buffer.String())
+	// The only null in a report is an unmeasured category's score, which is
+	// deliberate: 100 there would read as a clean bill of health.
+	if strings.Contains(buffer.String(), `"findings": null`) {
+		t.Fatalf("findings serialized as null: %s", buffer.String())
 	}
 	if !strings.Contains(buffer.String(), `"findings": []`) {
 		t.Fatalf("expected an empty findings array, got: %s", buffer.String())

@@ -39,7 +39,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	}
 
 	if *version {
-		fmt.Fprintln(stdout, "tw-doctor dev")
+		fmt.Fprintln(stdout, "tw-doctor "+audit.Version)
 		return exitSuccess
 	}
 

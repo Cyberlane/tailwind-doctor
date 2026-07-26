@@ -22,19 +22,51 @@ Configuration is read from an optional `twdoctor.toml` and accepted debt from an
 
 There is deliberately no dependency here. No Go parser exists for JSX, Svelte, Astro, or Vue single-file components, and a tree-sitter grammar would require cgo, which would end the single static binary this project ships.
 
-## JSON Output
+## Output Formats
 
-`--json` writes a single indented object: `score`, `files`, `suppressed`, and
-`findings`. Each finding carries `rule`, `message`, `file`, `class`, `line`,
-`column`, and `severity`. A project with no findings emits `"findings": []`,
-never `null`, so a consumer can iterate the field unconditionally.
+`--json` and `--sarif` are mutually exclusive; passing both exits 2 rather than
+interleaving two documents on one stream.
 
-The schema is not versioned yet; versioning lands with the scoring model. Until
-then fields may be added, and the ones above may change.
+`--json` writes a single indented object at `schemaVersion` 1:
+
+| Field | Meaning |
+|---|---|
+| `schemaVersion` | Read this first. The shape below only changes with it |
+| `tool` | `name` and `version` of the build that produced the report |
+| `score` | The headline score, 0–100 |
+| `scoreExcludingBaseline` | The score with no suppressions applied |
+| `scoreModel` | `version`, `transferFunction`, `halfScoreDensity`, `weights` |
+| `categories` | Per-category `score`, `exposure`, and finding counts. `score` is `null` for a category with no enabled scoring rule |
+| `scanned` | `files`, `classLists`, `utilities` — the score's denominators |
+| `configuredRules` | Every rule with the `severity` and `confidence` it ran at |
+| `findings` | Always an array, never `null` |
+| `suppressed` | How many findings the baseline absorbed |
+
+Each finding carries `rule`, `category`, `message`, `file`, `class`, `line`,
+`column`, `severity`, `confidence`, and `scored`.
+
+SARIF output is 2.1.0. Results carry `partialFingerprints` keyed on rule, file,
+and class list — the same key the baseline uses — so reformatting a file does not
+present old debt to code scanning as new. A finding the score does not count
+reports at level `note`, which keeps a code-scanning gate and the score in
+agreement about what matters.
 
 ## Scoring
 
-The current score is `100 - 2 × findings`, clamped at zero. This is placeholder arithmetic: it has no size denominator, so it collapses to zero on any codebase with fifty or more findings regardless of how large that codebase is. It exists to make the report shape complete, and will be replaced by a size-normalized model with published weights and confidence tiers before the score is presented as trustworthy.
+Each rule declares the unit it is measured against, so its rate is weighted
+findings over the count of that unit: utilities for `no-arbitrary-value` and
+`no-conflicting-utilities`, class lists for `responsive-bloat`. Those rates sum
+into a debt density `D`, which maps onto 0–100 by `100 × H / (H + D)` with
+`H = 1/5`.
+
+The arithmetic runs in `math/big` rationals with no floating point, because
+`math.Exp` and `math.Pow` are implemented per architecture and byte-identical
+output is a product boundary rather than a nicety.
+
+Exposure counts resolved class lists only, and only high-confidence findings move
+the score by default. The formula, the weights, and the reasoning behind `H` are
+argued in [scoring.md](scoring.md); the compatibility rules around changing any
+of it are in [rule-stability.md](rule-stability.md).
 
 ## Future Adapters
 

@@ -1,9 +1,7 @@
 package audit
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -26,20 +24,10 @@ type Finding struct {
 	// Confidence is decided by the rule, not by configuration. Only high
 	// confidence moves the score by default.
 	Confidence Confidence `json:"confidence"`
+	// Scored records whether this finding moved the score, so a reader never has
+	// to re-derive the severity and confidence rules to explain the number.
+	Scored bool `json:"scored"`
 }
-
-type Report struct {
-	Score    int       `json:"score"`
-	Scanned  Scanned   `json:"scanned"`
-	Findings []Finding `json:"findings"`
-	// Suppressed counts findings that matched the baseline. Reporting the count
-	// keeps accepted debt visible rather than letting it vanish.
-	Suppressed int `json:"suppressed"`
-}
-
-// MaximumScore is the score a project with no findings receives, and therefore
-// the highest threshold a caller can meaningfully gate on.
-const MaximumScore = 100
 
 // Run analyses a directory tree. Configuration and the baseline are read from
 // the root, so a caller needs nothing but a path.
@@ -61,7 +49,15 @@ func Run(root string) (Report, error) {
 func RunWithConfig(root string, config Config, baseline *Baseline) (Report, error) {
 	// Findings starts non-nil so a clean project serializes as [] rather than
 	// null, which every JSON consumer would otherwise have to special-case.
-	report := Report{Score: MaximumScore, Findings: []Finding{}}
+	report := Report{
+		SchemaVersion: SchemaVersion,
+		Tool:          ToolInfo{Name: "tw-doctor", Version: Version},
+		ScoreModel:    scoreModel(),
+		Findings:      []Finding{},
+	}
+	// Suppressed findings are kept, unreported, only so the score the project
+	// would have without its baseline can be computed.
+	suppressed := []Finding{}
 	ignores := newIgnoreRules(config.IgnorePaths)
 
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
@@ -120,6 +116,8 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 				}
 				if baseline.suppresses(finding) {
 					report.Suppressed++
+					finding.Scored = config.scores(finding)
+					suppressed = append(suppressed, finding)
 					continue
 				}
 				report.Findings = append(report.Findings, finding)
@@ -133,18 +131,17 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 
 	sortFindings(report.Findings)
 
-	// Only findings the project treats as errors move the score. A warning is
-	// reported so it can be acted on, without changing what a build gates on.
-	scored := 0
-	for _, finding := range report.Findings {
-		if finding.Severity == SeverityError {
-			scored++
-		}
+	for index := range report.Findings {
+		report.Findings[index].Scored = config.scores(report.Findings[index])
 	}
-	report.Score -= scored * 2
-	if report.Score < 0 {
-		report.Score = 0
-	}
+
+	report.Score = transfer(weightedDensity(report.Findings, report.Scanned, config, nil))
+	// The same arithmetic over the findings a baseline hides, so accepted debt
+	// stays visible rather than disappearing into a file.
+	unsuppressed := append(append([]Finding(nil), report.Findings...), suppressed...)
+	report.ScoreExcludingBaseline = transfer(weightedDensity(unsuppressed, report.Scanned, config, nil))
+	report.Categories = categoryScores(report.Findings, report.Scanned, config)
+	report.ConfiguredRules = configuredRules(config)
 	return report, nil
 }
 
@@ -269,23 +266,4 @@ func sortFindings(findings []Finding) {
 		}
 		return left.Message < right.Message
 	})
-}
-
-func WriteJSON(writer io.Writer, report Report) error {
-	encoder := json.NewEncoder(writer)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(report)
-}
-
-func WriteHuman(writer io.Writer, report Report) {
-	fmt.Fprintf(writer, "Tailwind Doctor: %d/100\n", report.Score)
-	fmt.Fprintf(writer, "Scanned %d source files\n", report.Scanned.Files)
-	if len(report.Findings) == 0 {
-		fmt.Fprintln(writer, "No findings. Your class lists look healthy.")
-		return
-	}
-	fmt.Fprintf(writer, "\n%d finding(s):\n", len(report.Findings))
-	for _, finding := range report.Findings {
-		fmt.Fprintf(writer, "- [%s] %s:%d:%d: %s\n", finding.Rule, finding.File, finding.Line, finding.Column, finding.Message)
-	}
 }
