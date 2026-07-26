@@ -224,3 +224,26 @@ func TestInspectReportsResponsiveBloatAtMediumConfidence(t *testing.T) {
 		t.Errorf("confidence = %q, want medium", findings[0].Confidence)
 	}
 }
+
+// Exposure is the score's denominator, so it counts resolved lists only. A
+// className the tool cannot read must not enlarge the denominator: that would
+// dilute measured debt in proportion to how much of a codebase is unanalysable.
+func TestRunCountsResolvedExposureOnly(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "page.html", `<div class="p-4 text-sm"></div>`)
+	writeFile(t, root, "src/card.tsx", "export const Card = ({x}) => <div className={x} />;\n")
+
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if report.Scanned.Files != 2 {
+		t.Errorf("files = %d, want 2", report.Scanned.Files)
+	}
+	if report.Scanned.ClassLists != 1 {
+		t.Errorf("class lists = %d, want 1: the dynamic className is unresolved", report.Scanned.ClassLists)
+	}
+	if report.Scanned.Utilities != 2 {
+		t.Errorf("utilities = %d, want 2", report.Scanned.Utilities)
+	}
+}

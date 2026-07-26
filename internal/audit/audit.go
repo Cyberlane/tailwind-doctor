@@ -30,7 +30,7 @@ type Finding struct {
 
 type Report struct {
 	Score    int       `json:"score"`
-	Files    int       `json:"files"`
+	Scanned  Scanned   `json:"scanned"`
 	Findings []Finding `json:"findings"`
 	// Suppressed counts findings that matched the baseline. Reporting the count
 	// keeps accepted debt visible rather than letting it vanish.
@@ -100,13 +100,16 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 		if err != nil {
 			return err
 		}
-		report.Files++
+		report.Scanned.Files++
 		for _, list := range Extract(path, string(content)) {
 			// An unresolved site names an expression, not a set of utilities.
-			// Linting it would report classes the source never contained.
+			// Linting it would report classes the source never contained, and
+			// counting it would dilute the score's denominator.
 			if !list.Resolved {
 				continue
 			}
+			report.Scanned.ClassLists++
+			report.Scanned.Utilities += len(splitUtilities(list))
 			for _, finding := range inspect(relative, list, config.Syntax) {
 				finding.Severity = config.severityFor(finding.Rule)
 				if finding.Severity == SeverityOff {
@@ -276,7 +279,7 @@ func WriteJSON(writer io.Writer, report Report) error {
 
 func WriteHuman(writer io.Writer, report Report) {
 	fmt.Fprintf(writer, "Tailwind Doctor: %d/100\n", report.Score)
-	fmt.Fprintf(writer, "Scanned %d source files\n", report.Files)
+	fmt.Fprintf(writer, "Scanned %d source files\n", report.Scanned.Files)
 	if len(report.Findings) == 0 {
 		fmt.Fprintln(writer, "No findings. Your class lists look healthy.")
 		return

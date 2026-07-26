@@ -139,8 +139,8 @@ func TestRunHonoursIgnoredPaths(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if report.Files != 1 {
-		t.Fatalf("scanned %d files, want 1", report.Files)
+	if report.Scanned.Files != 1 {
+		t.Fatalf("scanned %d files, want 1", report.Scanned.Files)
 	}
 	if len(report.Findings) != 1 || report.Findings[0].File != "src/page.html" {
 		t.Fatalf("findings = %#v", report.Findings)
@@ -160,8 +160,8 @@ func TestRunHonoursGitignore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if report.Files != 1 {
-		t.Fatalf("scanned %d files, want 1", report.Files)
+	if report.Scanned.Files != 1 {
+		t.Fatalf("scanned %d files, want 1", report.Scanned.Files)
 	}
 
 	writeFile(t, root, ConfigFileName, "[paths]\nrespect-gitignore = false\n")
@@ -169,8 +169,8 @@ func TestRunHonoursGitignore(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
-	if report.Files != 3 {
-		t.Fatalf("scanned %d files with gitignore off, want 3", report.Files)
+	if report.Scanned.Files != 3 {
+		t.Fatalf("scanned %d files with gitignore off, want 3", report.Scanned.Files)
 	}
 }
 
