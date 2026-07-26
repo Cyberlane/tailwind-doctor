@@ -45,6 +45,8 @@ go test -race ./...
 gofmt -l .            # must print nothing
 go run ./cmd/tw-doctor .
 go run ./cmd/tw-doctor --json .
+go run ./cmd/tw-doctor --sarif .
+go test ./internal/audit/ -run TestGoldenReports -update   # regenerate committed expectations
 ```
 
 Run `gofmt -l .`, `go vet ./...` and `go test ./...` before proposing any change.

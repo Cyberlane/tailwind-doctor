@@ -9,13 +9,18 @@ go run ./cmd/tw-doctor .
 ```
 
 ```text
-Tailwind Doctor: 94/100
-Scanned 42 source files
+Tailwind Doctor: 91/100
+Scanned 42 file(s), 310 class list(s), 1840 utilities
+
+  Accessibility    not measured
+  Correctness      96
+  Consistency      95
+  Maintainability  100
 
 3 finding(s):
-- [no-conflicting-utilities] src/card.tsx: p-4 conflicts with p-2 in the same variant.
-- [no-arbitrary-value] src/card.tsx: Avoid arbitrary values; prefer a named design token.
-- [responsive-bloat] src/card.tsx: Five or more variant utilities make this class list difficult to maintain.
+- [no-conflicting-utilities] src/card.tsx:12:22: p-4 conflicts with p-2 in the same variant.
+- [no-arbitrary-value] src/card.tsx:12:31: Avoid arbitrary values; prefer a named design token.
+- [responsive-bloat] src/nav.tsx:8:14: Five or more variant utilities make this class list difficult to maintain. (medium confidence, not scored)
 ```
 
 ## What Exists Today
@@ -26,14 +31,22 @@ Three high-confidence rules run over every `.astro`, `.html`, `.jsx`, `.tsx`, `.
 - Arbitrary values, such as `text-[#123456]`.
 - Overly dense responsive class lists with five or more variant utilities.
 
+Class lists are read out of `class` and `className` attributes, template literals, `clsx`/`cn`/`cva` leaves, Vue `:class`, Svelte `class:foo`, Astro `class:list`, and CSS `@apply`. A value that cannot be resolved statically is recorded as unresolved and never linted. The measured precision and recall are published in [docs/extraction-accuracy.md](docs/extraction-accuracy.md) and enforced in CI.
+
+**The score is size-normalized and documented.** Debt density is measured per rule against the unit that rule occurs in, then mapped onto 0–100 by `100 × H / (H + D)` with `H = 1/5`. Two projects of very different sizes with proportionally similar debt score alike. The formula, the category weights, and the reasoning behind `H` are in [docs/scoring.md](docs/scoring.md) — arguments welcome.
+
+Scores are comparable across projects only when `scoreModel.version` and the enabled rule set match. Both ship in every report, so a published number is checkable rather than merely asserted.
+
 The limitations matter as much as the features, so they are stated plainly:
 
-- **The scoring model is not final.** The score is currently `100 - 2 × findings`, clamped at zero. It is not normalized by project size, so a large codebase bottoms out at zero while a small one with proportionally identical debt still scores well. Treat the number as a relative signal within one project over time, not as something to compare between projects or publish as a badge. A size-normalized model with documented weights and confidence tiers will replace it, and doing so **will change your score**.
-- **Extraction is a single regex over `class` and `className` string literals.** Template literals, `clsx`/`cn`/`cva`, Vue `:class`, Svelte `class:foo`, Astro `class:list`, and multiline attributes are not handled yet, so findings are undercounted in projects that use them.
-- Findings report a file, not a line and column.
-- There is no SARIF output yet, and the `--json` schema is not versioned, so it may change. Configuration and suppression baselines are documented in [docs/configuration.md](docs/configuration.md).
+- **Accessibility is not measured yet.** The category reports `null`, not 100, because "not measured" and "clean" are different claims. Contrast checking arrives with the colour resolver.
+- **There is no theme-token inventory yet**, so `no-arbitrary-value` cannot tell you which token you should have used, and unused custom tokens are not detected.
+- **Two signals report at medium confidence and are score-neutral by default:** `responsive-bloat`, and `no-conflicting-utilities` on `text-`, `bg-`, and `border-`, where a shorthand and a colour still land in the same utility group. Both are reported and tagged rather than hidden; see [docs/configuration.md](docs/configuration.md).
+- **Adding a rule will change your score.** New rules ship disabled for one minor release before that happens; the policy is in [docs/rule-stability.md](docs/rule-stability.md).
 
-Contrast analysis, theme-token discovery, and unused-token detection are planned once structural parsing and the Tailwind configuration adapters are in place.
+Contrast analysis, theme-token discovery, and unused-token detection are planned once the Tailwind configuration adapters are in place.
+
+Rule severities, path ignores, an arbitrary-value allowlist, and `[score] min-confidence` are configured in `twdoctor.toml`; existing debt is recorded in a baseline. Both are documented in [docs/configuration.md](docs/configuration.md).
 
 ## CLI
 
