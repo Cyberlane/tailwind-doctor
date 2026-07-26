@@ -169,7 +169,7 @@ disclosed instead. Every report carries `configuredRules` and
 `scoreModel.version`. Two scores are comparable only when both match — which is
 what makes a published badge checkable rather than merely asserted.
 
-## The Heavy Tail
+## The Heavy Tail, And Where The Scale Actually Ends
 
 The curve is forgiving at the extreme: a genuinely terrible codebase scores
 around 10 to 17 rather than 0. Someone will reasonably call that generous.
@@ -177,6 +177,22 @@ around 10 to 17 rather than 0. Someone will reasonably call that generous.
 It is the accepted cost of having no clamp. Being able to distinguish degrees of
 bad, and to show a project moving from 12 to 19, is worth more than the
 rhetorical satisfaction of printing a zero.
+
+An integer scale does have to reach zero somewhere, so it is worth being precise
+about where. `100 × H / (H + D)` rounds to zero once `D` exceeds 39.8.
+
+The current rule set cannot get near that. Each rule's rate is bounded by one
+finding per unit of its own exposure, so `D` is bounded by the sum of the weights
+involved: 2 for `no-arbitrary-value`, 3 for `no-conflicting-utilities`, and 1 for
+`responsive-bloat` — a hard ceiling of 6, which scores 3. A codebase in which
+*every* utility is an arbitrary value, *every* utility conflicts, and *every*
+class list is responsively bloated still scores 3 and can still improve. The
+floor is more than six times further out than the worst input the rules can
+produce, which is the property that matters: no real project can reach it.
+
+Adding a rule raises that ceiling by its category weight. The floor stays where
+it is, so this stays true for a long time — but it is checked by a test rather
+than assumed, and the test names the ceiling explicitly.
 
 ## Stability
 

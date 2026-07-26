@@ -31,6 +31,9 @@ type Config struct {
 	AllowedArbitrary map[string]bool
 	Syntax           UtilitySyntax
 	BaselinePath     string
+	// MinConfidence is the lowest confidence a finding may carry and still move
+	// the score. Findings below it are reported and tagged, never hidden.
+	MinConfidence Confidence
 }
 
 func defaultConfig() Config {
@@ -40,6 +43,7 @@ func defaultConfig() Config {
 		AllowedArbitrary: map[string]bool{},
 		Syntax:           defaultUtilitySyntax(),
 		BaselinePath:     BaselineFileName,
+		MinConfidence:    ConfidenceHigh,
 	}
 }
 
@@ -125,6 +129,17 @@ func LoadConfig(root string) (Config, error) {
 			return config, fmt.Errorf("%s: tailwind.separator must not be empty", ConfigFileName)
 		}
 		config.Syntax.Separator = separator
+	}
+
+	if minimum, present, err := document["score"].stringValue("min-confidence"); err != nil {
+		return config, fmt.Errorf("%s: score.%w", ConfigFileName, err)
+	} else if present {
+		confidence := Confidence(minimum)
+		if confidenceRank(confidence) == 0 {
+			return config, fmt.Errorf("%s: score.min-confidence is %q; expected high, medium, or low",
+				ConfigFileName, minimum)
+		}
+		config.MinConfidence = confidence
 	}
 
 	if baseline, present, err := document["baseline"].stringValue("path"); err != nil {

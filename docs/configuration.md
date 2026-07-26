@@ -44,6 +44,11 @@ prefix = "tw-"
 # The Tailwind v3 `separator` option. Defaults to ":".
 separator = ":"
 
+[score]
+# The lowest confidence a finding may carry and still move the score.
+# high (default) | medium | low
+min-confidence = "high"
+
 [baseline]
 # Where the suppression file lives. Defaults to twdoctor-baseline.json.
 path = "twdoctor-baseline.json"
@@ -61,6 +66,28 @@ A rule's severity decides what it does when it matches:
 - **`off`** — not reported.
 
 Severity appears in JSON output as the `severity` field on each finding.
+
+### Confidence
+
+Severity is what you configure; confidence is what the tool is willing to stand
+behind. They are independent, and a finding is scored only when it clears both:
+its severity is `error` *and* its confidence is at least `min-confidence`.
+
+Nothing is ever hidden by confidence. A finding below the threshold is reported,
+tagged in every output format, and carries `"scored": false` in JSON — a visibly
+uncertain finding costs less trust than a silent miss.
+
+Two things report below `high` today, so `min-confidence = "medium"` is what
+scores them:
+
+- `responsive-bloat`, because a five-variant threshold is a heuristic with no
+  defect behind it.
+- `no-conflicting-utilities` on `text-`, `bg-`, and `border-`, where a shorthand
+  and a colour still land in the same utility group and a conflict may be a
+  false positive.
+
+See [scoring.md](scoring.md) for what the score does with them, and
+[rules.md](rules.md) for the per-rule detail.
 
 ### Path ignores
 
