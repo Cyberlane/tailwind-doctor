@@ -6,12 +6,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 )
-
-var classAttribute = regexp.MustCompile(`(?s)(?:class|className)\s*=\s*["']([^"']+)["']`)
 
 var sourceExtensions = map[string]bool{
 	".astro": true, ".html": true, ".jsx": true, ".tsx": true,
@@ -63,8 +60,13 @@ func Run(root string) (Report, error) {
 		if err != nil {
 			return err
 		}
-		for _, match := range classAttribute.FindAllStringSubmatch(string(content), -1) {
-			report.Findings = append(report.Findings, inspect(relative, match[1])...)
+		for _, list := range Extract(path, string(content)) {
+			// An unresolved site names an expression, not a set of utilities.
+			// Linting it would report classes the source never contained.
+			if !list.Resolved {
+				continue
+			}
+			report.Findings = append(report.Findings, inspect(relative, list.Value)...)
 		}
 		return nil
 	})

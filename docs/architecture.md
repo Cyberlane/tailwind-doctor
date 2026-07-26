@@ -10,9 +10,13 @@ source files -> class attribute extractor -> deterministic rules -> report -> te
 
 ## Extraction
 
-Extraction is currently a single regular expression matching a literal `class` or `className` attribute. Its accuracy is measured rather than assumed: `testdata/corpus` holds fixtures from real open-source projects with hand-written ground truth, and a test reports precision, recall, and a per-shape breakdown against it. The measured figure and the policy governing it are in [extraction-accuracy.md](extraction-accuracy.md) and [false-positive-policy.md](false-positive-policy.md).
+Extraction is a hand-written scanner, not a parser and not a regular expression. It tracks just enough syntax to know whether the text under the cursor is markup, a string, a comment, or an expression, which is what separates a class attribute from prose that merely mentions one. One tag parser serves both markup files and JSX; the difference between them is only what counts as noise outside a tag.
 
-The measurement exists so that replacing the regex with structural parsing can be shown to be an improvement rather than asserted to be one. CI gates on the committed baseline.
+Every class list carries a line and column. Where a value cannot be read statically — a helper call, a variable, a runtime substitution — the site is recorded as unresolved and no classes are invented for it. Unresolved entries never reach the rules.
+
+Accuracy is measured rather than assumed: `testdata/corpus` holds fixtures from real open-source projects with hand-written ground truth, and a test reports precision, recall, and a per-shape breakdown against it. The measured figure and the policy governing it are in [extraction-accuracy.md](extraction-accuracy.md) and [false-positive-policy.md](false-positive-policy.md). CI gates on the committed baseline.
+
+There is deliberately no dependency here. No Go parser exists for JSX, Svelte, Astro, or Vue single-file components, and a tree-sitter grammar would require cgo, which would end the single static binary this project ships.
 
 ## JSON Output
 

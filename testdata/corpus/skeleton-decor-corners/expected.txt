@@ -4,7 +4,7 @@
 23:17 extract attr-literal "relative"
 25:20 extract attr-interpolated "absolute stroke-surface-600-400 size-elem-sm"
 25:65 unresolved attr-interpolated "{cornerClasses[corner]}"
-27:13 unresolved attr-interpolated "{classList}"
+27:14 unresolved attr-interpolated "classList"
 # A plain object whose values happen to be class lists, read by a computed key.
 # Whether a tool should follow this is genuinely arguable, so it is skipped:
 # counted and printed, never folded into the rate. See docs/false-positive-policy.md.

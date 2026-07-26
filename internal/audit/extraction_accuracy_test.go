@@ -14,10 +14,9 @@ import (
 	"testing"
 )
 
-// The extractor is measured, not modified. This file drives the same regex and
-// the same extension filter that Run uses, from outside, so that the accuracy
-// figure describes the shipped behaviour rather than a convenient subset of it.
-// Nothing here may be imported by non-test code.
+// This file calls the real extractor through the same extension filter Run
+// applies, so the accuracy figure describes shipped behaviour rather than a
+// convenient subset of it. Nothing here may be imported by non-test code.
 
 var (
 	updateBaseline = flag.Bool("update", false, "rewrite testdata/corpus/baseline.json from the measured result")
@@ -87,6 +86,8 @@ type measurement struct {
 	FalsePositives            int             `json:"false_positives"`
 	FalseNegatives            int             `json:"false_negatives"`
 	Skipped                   int             `json:"skipped"`
+	ExpectedUnresolvedSites   int             `json:"expected_unresolved_sites"`
+	UnresolvedSitesReported   int             `json:"unresolved_sites_reported"`
 	Precision                 float64         `json:"precision"`
 	Recall                    float64         `json:"recall"`
 	PrecisionTarget           float64         `json:"precision_target"`
@@ -205,20 +206,43 @@ func parseExpected(path string) ([]record, error) {
 	return records, nil
 }
 
-// extractWithCurrentExtractor reproduces exactly what Run does to a file: the
-// extension filter, then the class-attribute regex. Any change to either must
-// change this measurement, which is the whole point of keeping it a mirror
-// rather than an independent reimplementation.
-func extractWithCurrentExtractor(inputPath, content string) []string {
+// extractedClassLists applies the same extension filter Run applies and then
+// calls the real extractor, so the measurement describes shipped behaviour. Only
+// resolved entries are class lists; an unresolved entry names an expression and
+// is counted separately.
+func extractedClassLists(inputPath, content string) ([]ClassList, int) {
 	if !sourceExtensions[filepath.Ext(inputPath)] {
-		return nil
+		return nil, 0
 	}
-	matches := classAttribute.FindAllStringSubmatch(content, -1)
-	values := make([]string, 0, len(matches))
-	for _, match := range matches {
-		values = append(values, match[1])
+	values := make([]ClassList, 0)
+	unresolved := 0
+	for _, list := range Extract(inputPath, content) {
+		if list.Resolved {
+			values = append(values, list)
+			continue
+		}
+		unresolved++
 	}
-	return values
+	return values, unresolved
+}
+
+// take consumes the extracted class list answering a ground-truth record. When
+// exact is set only a position match counts, which is how every record that can
+// be matched precisely claims its own entry before any record is allowed to
+// match on value alone. A fixture can hold the same class list twice under two
+// shapes, and without that ordering the first record swallows the other's entry
+// and the per-shape breakdown credits the wrong shape.
+func take(extracted []ClassList, used []bool, entry record, exact bool) int {
+	for index, candidate := range extracted {
+		if used[index] || candidate.Value != entry.value {
+			continue
+		}
+		if exact && (candidate.Line != entry.line || candidate.Column != entry.column) {
+			continue
+		}
+		return index
+	}
+	return -1
 }
 
 // TestCorpusGroundTruthIsWellFormed checks the corpus against itself before any
@@ -317,9 +341,11 @@ func measure(fixtures []fixture, accepted []falsePositive) measurement {
 	result := measurement{
 		Note: "Extraction accuracy against testdata/corpus. Regenerate with: " +
 			"go test ./internal/audit -run TestExtractionAccuracy -update",
-		Fixtures:               len(fixtures),
-		PrecisionTarget:        0.995,
-		EnforcePrecisionTarget: false,
+		Fixtures:        len(fixtures),
+		PrecisionTarget: 0.995,
+		// Turned on when structural parsing reached the target, and never turned
+		// off again. Every later extraction change is held to it.
+		EnforcePrecisionTarget: true,
 		AcceptedFalsePositives: accepted,
 	}
 
@@ -327,20 +353,37 @@ func measure(fixtures []fixture, accepted []falsePositive) measurement {
 	observed := make([]falsePositive, 0)
 
 	for _, current := range fixtures {
-		remaining := make(map[string]int)
-		for _, value := range extractWithCurrentExtractor(current.inputPath, current.content) {
-			remaining[value]++
-			result.ActualExtractions++
+		extracted, unresolved := extractedClassLists(current.inputPath, current.content)
+		result.UnresolvedSitesReported += unresolved
+		result.ActualExtractions += len(extracted)
+		used := make([]bool, len(extracted))
+
+		wanted := make([]record, 0, len(current.records))
+		for _, entry := range current.records {
+			switch entry.status {
+			case statusSkip:
+				result.Skipped++
+			case statusUnresolved:
+				result.ExpectedUnresolvedSites++
+			case statusExtract:
+				wanted = append(wanted, entry)
+			}
 		}
 
-		for _, entry := range current.records {
-			if entry.status == statusSkip {
-				result.Skipped++
-				continue
+		matched := make([]bool, len(wanted))
+		for _, exact := range []bool{true, false} {
+			for position, entry := range wanted {
+				if matched[position] {
+					continue
+				}
+				if index := take(extracted, used, entry, exact); index >= 0 {
+					used[index] = true
+					matched[position] = true
+				}
 			}
-			if entry.status != statusExtract {
-				continue
-			}
+		}
+
+		for position, entry := range wanted {
 			result.ExpectedExtractions++
 			shape, ok := shapes[entry.shape]
 			if !ok {
@@ -348,17 +391,16 @@ func measure(fixtures []fixture, accepted []falsePositive) measurement {
 				shapes[entry.shape] = shape
 			}
 			shape.Expected++
-			if remaining[entry.value] > 0 {
-				remaining[entry.value]--
+			if matched[position] {
 				result.TruePositives++
 				shape.Found++
 			}
 		}
 
-		leftovers := make([]string, 0, len(remaining))
-		for value, count := range remaining {
-			for range count {
-				leftovers = append(leftovers, value)
+		leftovers := make([]string, 0)
+		for index, candidate := range extracted {
+			if !used[index] {
+				leftovers = append(leftovers, candidate.Value)
 			}
 		}
 		sort.Strings(leftovers)
@@ -395,6 +437,8 @@ func render(result measurement) string {
 	fmt.Fprintf(&builder, "  false positives %d (%d unexplained)\n", result.FalsePositives, result.UnexplainedFalsePositives)
 	fmt.Fprintf(&builder, "  false negatives %d\n", result.FalseNegatives)
 	fmt.Fprintf(&builder, "  skipped         %d\n", result.Skipped)
+	fmt.Fprintf(&builder, "  unresolved sites %d reported, %d in the corpus\n",
+		result.UnresolvedSitesReported, result.ExpectedUnresolvedSites)
 	fmt.Fprintf(&builder, "  precision %.4f  recall %.4f\n\n", result.Precision, result.Recall)
 	fmt.Fprintf(&builder, "  %-24s %8s %8s %8s\n", "shape", "expected", "found", "recall")
 	for _, shape := range result.PerShape {

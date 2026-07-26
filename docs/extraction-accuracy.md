@@ -12,38 +12,54 @@ Measured against the 16-fixture corpus in `testdata/corpus`.
 
 | Metric | Value |
 | --- | --- |
-| Precision | **0.7000** |
-| Recall | **0.4118** |
+| Precision | **1.0000** |
+| Recall | **0.5059** |
 | Expected class lists | 85 |
-| Extracted class lists | 50 |
-| True positives | 35 |
-| False positives | 15 (15 unexplained) |
-| False negatives | 50 |
+| Extracted class lists | 43 |
+| True positives | 43 |
+| False positives | 0 (0 unexplained) |
+| False negatives | 42 |
 | Skipped (disputed) | 4 |
+| Unresolved sites reported | 8 of 12 |
 
 Per shape:
 
 | Shape | Expected | Found | Recall |
 | --- | --- | --- | --- |
-| `attr-literal` | 35 | 34 | 0.9714 |
-| `vue-bind-class` | 3 | 1 | 0.3333 |
+| `attr-literal` | 35 | 35 | 1.0000 |
+| `attr-interpolated` | 2 | 2 | 1.0000 |
+| `svelte-class-directive` | 5 | 5 | 1.0000 |
+| `svelte-class-shorthand` | 1 | 1 | 1.0000 |
 | `astro-class-list` | 5 | 0 | 0.0000 |
-| `attr-interpolated` | 2 | 0 | 0.0000 |
 | `clsx` | 4 | 0 | 0.0000 |
 | `css-apply` | 7 | 0 | 0.0000 |
 | `cva-leaf` | 22 | 0 | 0.0000 |
 | `jsx-template` | 1 | 0 | 0.0000 |
-| `svelte-class-directive` | 5 | 0 | 0.0000 |
-| `svelte-class-shorthand` | 1 | 0 | 0.0000 |
+| `vue-bind-class` | 3 | 0 | 0.0000 |
 
-Read plainly: the current extractor handles a literal `class="..."` attribute well
-and handles nothing else at all. It finds 41% of the class lists in the corpus,
-and 3 in every 10 things it reports were never written on an element.
+Read plainly: everything the extractor reports is real, and it finds about half of
+what is there. What it misses is composition — `cva`, `clsx`, and the framework
+binding syntaxes — which is where a component library keeps most of its classes.
 
-The false positives are not near-misses. They include `cn(` reported as a class
-list, because the regex's character class stops at the first single quote inside
-`:class="cn('flex items-center', props.class)"`, and four class lists lifted out
-of a commented-out block of HTML that never reaches the browser.
+### History
+
+| Change | Precision | Recall |
+| --- | --- | --- |
+| Regex over `class`/`className` | 0.7000 | 0.4118 |
+| Structural scanner, attributes and Svelte directives | 1.0000 | 0.5059 |
+
+The regex's 15 false positives were not near-misses. They included `cn(` reported
+as a class list, because its character class stopped at the first single quote
+inside `:class="cn('flex items-center', props.class)"`, and four class lists
+lifted out of a commented-out block of HTML that never reaches the browser. The
+scanner knows the difference between markup, a string, and a comment, so all of
+them are gone.
+
+Two shapes changed meaning rather than regressing. `vue-bind-class` previously
+read 0.3333 because a value-only match credited it with another shape's class
+list; matching now prefers an exact position, and its true score with no `:class`
+support is zero. The scanner also stopped treating `:class` as `class`, which is
+what removed the `cn(` false positives.
 
 ## What Is Measured
 
@@ -57,9 +73,11 @@ one source location. Comparison is a multiset match on the exact string.
   statically knowable, because inventing classes for an unknowable site is the
   fabrication the project's rules forbid.
 
-Line and column are recorded for every record in the corpus but are not yet
-checked, because the current extractor reports no positions at all. Position
-becomes a gate when structural parsing lands.
+Line and column are recorded for every record in the corpus. The extractor now
+reports both, and matching prefers an exact position before falling back to
+matching on value alone, so a fixture holding the same class list under two
+shapes credits each to the right one. Position is not yet *required* for a match;
+that gate turns on once findings carry positions end to end.
 
 ## The Target
 
@@ -68,9 +86,9 @@ Every accepted false positive must be named in `testdata/corpus/baseline.json`
 with a written reason, so exceptions appear in review rather than hiding inside a
 loosened threshold.
 
-That gate is not enforceable against a regex, so `baseline.json` carries
-`enforce_precision_target: false`. It is turned on when structural parsing lands,
-and is never turned off again.
+That gate is **enforced**: `baseline.json` carries
+`enforce_precision_target: true`, set once structural parsing reached the target.
+It is never turned off again, so every later extraction change is held to it.
 
 Recall is measured per shape and gated as *must not decrease*. An absolute recall
 floor is not useful while whole shapes sit at zero.
