@@ -2,6 +2,8 @@
 
 Tailwind Doctor (`tw-doctor`) is a fast, read-only CLI that measures design-system debt in Tailwind class lists. It reports a project-wide **Design System Health Score** with file-level evidence.
 
+> **Status: early development.** The tool runs and its output is deterministic, but nothing here is stable yet. Read [What Exists Today](#what-exists-today) before relying on the number it prints.
+
 ```bash
 go run ./cmd/tw-doctor .
 ```
@@ -16,13 +18,22 @@ Scanned 42 source files
 - [responsive-bloat] src/card.tsx: Five or more variant utilities make this class list difficult to maintain.
 ```
 
-## What It Checks Today
+## What Exists Today
+
+Three high-confidence rules run over every `.astro`, `.html`, `.jsx`, `.tsx`, `.vue`, and `.svelte` file:
 
 - Conflicting utilities in the same Tailwind variant, such as `p-4 p-2`.
 - Arbitrary values, such as `text-[#123456]`.
 - Overly dense responsive class lists with five or more variant utilities.
 
-The initial rules are intentionally high-confidence. Contrast analysis, theme-token discovery, and unused-token detection are planned once the parser and Tailwind configuration adapters are in place.
+The limitations matter as much as the features, so they are stated plainly:
+
+- **The scoring model is not final.** The score is currently `100 - 2 × findings`, clamped at zero. It is not normalized by project size, so a large codebase bottoms out at zero while a small one with proportionally identical debt still scores well. Treat the number as a relative signal within one project over time, not as something to compare between projects or publish as a badge. A size-normalized model with documented weights and confidence tiers will replace it, and doing so **will change your score**.
+- **Extraction is a single regex over `class` and `className` string literals.** Template literals, `clsx`/`cn`/`cva`, Vue `:class`, Svelte `class:foo`, Astro `class:list`, and multiline attributes are not handled yet, so findings are undercounted in projects that use them.
+- Findings report a file, not a line and column.
+- There is no configuration file, no suppression baseline, and no SARIF output yet. The `--json` schema is not versioned and may change.
+
+Contrast analysis, theme-token discovery, and unused-token detection are planned once structural parsing and the Tailwind configuration adapters are in place.
 
 ## CLI
 
@@ -30,7 +41,7 @@ The initial rules are intentionally high-confidence. Contrast analysis, theme-to
 # Human-readable report
 tw-doctor .
 
-# Versioned machine-readable report for CI
+# Machine-readable report for CI
 tw-doctor --json .
 
 # Fail CI below a score threshold

@@ -6,7 +6,11 @@ Tailwind Doctor is a local static-analysis CLI. The first release keeps the depe
 source files -> class attribute extractor -> deterministic rules -> report -> terminal / JSON / CI
 ```
 
-`internal/audit` owns source discovery, extraction, scoring, and report rendering. The CLI only parses flags and selects an output format.
+`internal/audit` owns source discovery, extraction, scoring, and report rendering. The CLI only parses flags, selects an output format, and maps the result onto the documented exit codes.
+
+## Scoring
+
+The current score is `100 - 2 × findings`, clamped at zero. This is placeholder arithmetic: it has no size denominator, so it collapses to zero on any codebase with fifty or more findings regardless of how large that codebase is. It exists to make the report shape complete, and will be replaced by a size-normalized model with published weights and confidence tiers before the score is presented as trustworthy.
 
 ## Future Adapters
 
