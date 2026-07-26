@@ -31,8 +31,14 @@ type Report struct {
 	Findings []Finding `json:"findings"`
 }
 
+// MaximumScore is the score a project with no findings receives, and therefore
+// the highest threshold a caller can meaningfully gate on.
+const MaximumScore = 100
+
 func Run(root string) (Report, error) {
-	report := Report{Score: 100}
+	// Findings starts non-nil so a clean project serializes as [] rather than
+	// null, which every JSON consumer would otherwise have to special-case.
+	report := Report{Score: MaximumScore, Findings: []Finding{}}
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr

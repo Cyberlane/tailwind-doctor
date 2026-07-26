@@ -18,10 +18,6 @@ const (
 	exitOperationalError = 2
 )
 
-// maximumScore is the highest score the audit can report, and therefore the
-// highest threshold --fail-under can meaningfully be given.
-const maximumScore = 100
-
 func main() {
 	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
 }
@@ -47,8 +43,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	// Validate before scanning: an unusable threshold should be reported
 	// immediately rather than after a full audit.
-	if *failUnder < 0 || *failUnder > maximumScore {
-		fmt.Fprintf(stderr, "tw-doctor: --fail-under must be between 0 and %d, got %d\n", maximumScore, *failUnder)
+	if *failUnder < 0 || *failUnder > audit.MaximumScore {
+		fmt.Fprintf(stderr, "tw-doctor: --fail-under must be between 0 and %d, got %d\n", audit.MaximumScore, *failUnder)
 		return exitOperationalError
 	}
 

@@ -8,6 +8,13 @@ source files -> class attribute extractor -> deterministic rules -> report -> te
 
 `internal/audit` owns source discovery, extraction, scoring, and report rendering. The CLI only parses flags, selects an output format, and maps the result onto the documented exit codes.
 
+## JSON Output
+
+`--json` writes a single indented object: `score`, `files`, and `findings`. A
+project with no findings emits `"findings": []`, never `null`, so a consumer can
+iterate the field unconditionally. The schema is not versioned yet; versioning
+lands with the scoring model.
+
 ## Scoring
 
 The current score is `100 - 2 × findings`, clamped at zero. This is placeholder arithmetic: it has no size denominator, so it collapses to zero on any codebase with fifty or more findings regardless of how large that codebase is. It exists to make the report shape complete, and will be replaced by a size-normalized model with published weights and confidence tiers before the score is presented as trustworthy.
