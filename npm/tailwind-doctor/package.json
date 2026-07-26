@@ -1,0 +1,20 @@
+{
+  "name": "tailwind-doctor",
+  "version": "0.0.0",
+  "description": "Alias package for the Tailwind Doctor CLI; installs and runs tw-doctor",
+  "bin": {
+    "tailwind-doctor": "bin/tailwind-doctor.js"
+  },
+  "dependencies": {
+    "tw-doctor": "0.0.0"
+  },
+  "files": ["bin"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cyberlane/tailwind-doctor.git"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
