@@ -1,0 +1,140 @@
+{
+  "note": "Extraction accuracy against testdata/corpus. Regenerate with: go test ./internal/audit -run TestExtractionAccuracy -update",
+  "fixtures": 16,
+  "expected_extractions": 85,
+  "actual_extractions": 50,
+  "true_positives": 35,
+  "false_positives": 15,
+  "false_negatives": 50,
+  "skipped": 4,
+  "precision": 0.7,
+  "recall": 0.4118,
+  "precision_target": 0.995,
+  "enforce_precision_target": false,
+  "per_shape": [
+    {
+      "shape": "astro-class-list",
+      "expected": 5,
+      "found": 0,
+      "recall": 0
+    },
+    {
+      "shape": "attr-interpolated",
+      "expected": 2,
+      "found": 0,
+      "recall": 0
+    },
+    {
+      "shape": "attr-literal",
+      "expected": 35,
+      "found": 34,
+      "recall": 0.9714
+    },
+    {
+      "shape": "clsx",
+      "expected": 4,
+      "found": 0,
+      "recall": 0
+    },
+    {
+      "shape": "css-apply",
+      "expected": 7,
+      "found": 0,
+      "recall": 0
+    },
+    {
+      "shape": "cva-leaf",
+      "expected": 22,
+      "found": 0,
+      "recall": 0
+    },
+    {
+      "shape": "jsx-template",
+      "expected": 1,
+      "found": 0,
+      "recall": 0
+    },
+    {
+      "shape": "svelte-class-directive",
+      "expected": 5,
+      "found": 0,
+      "recall": 0
+    },
+    {
+      "shape": "svelte-class-shorthand",
+      "expected": 1,
+      "found": 0,
+      "recall": 0
+    },
+    {
+      "shape": "vue-bind-class",
+      "expected": 3,
+      "found": 1,
+      "recall": 0.3333
+    }
+  ],
+  "unexplained_false_positives": 15,
+  "accepted_false_positives": null,
+  "observed_false_positives": [
+    {
+      "fixture": "decoy-commented-markup",
+      "value": "flex items-center justify-between p-6"
+    },
+    {
+      "fixture": "decoy-commented-markup",
+      "value": "hover:bg-slate-100"
+    },
+    {
+      "fixture": "decoy-commented-markup",
+      "value": "rounded border p-2"
+    },
+    {
+      "fixture": "decoy-commented-markup",
+      "value": "text-sm font-medium"
+    },
+    {
+      "fixture": "decoy-non-attributes",
+      "value": "flex items-center gap-2"
+    },
+    {
+      "fixture": "decoy-non-attributes",
+      "value": "grid grid-cols-3 gap-4"
+    },
+    {
+      "fixture": "decoy-non-attributes",
+      "value": "p-4 m-2 text-sm"
+    },
+    {
+      "fixture": "decoy-non-attributes",
+      "value": "p-8 shadow"
+    },
+    {
+      "fixture": "decoy-non-attributes",
+      "value": "rounded-lg border"
+    },
+    {
+      "fixture": "decoy-non-attributes",
+      "value": "underline decoration-dotted"
+    },
+    {
+      "fixture": "gradio-walkthrough",
+      "value": "stepper {elem_classes.join("
+    },
+    {
+      "fixture": "shadcn-vue-colors-nav",
+      "value": "cn("
+    },
+    {
+      "fixture": "shadcn-vue-colors-nav",
+      "value": "cn(\n            "
+    },
+    {
+      "fixture": "shadcn-vue-page-nav",
+      "value": "cn("
+    },
+    {
+      "fixture": "skeleton-decor-corners",
+      "value": "absolute stroke-surface-600-400 size-elem-sm {cornerClasses[corner]}"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+# shadcn-ui/ui — sera/empty-state/components/empty-directory.tsx, lines 46-95
+# A JSX template literal on line 36 with a static prefix and one substitution:
+# the prefix is real Tailwind and must be linted, the substitution is not
+# knowable. This is the shape the current regex cannot see at all.
+4:22 extract attr-literal "py-24"
+5:31 extract attr-literal "flex flex-col items-center gap-10"
+6:27 extract attr-literal "min-h-96"
+10:26 extract attr-literal "size-14 rounded-full bg-muted/70 text-muted-foreground"
+12:40 extract attr-literal "size-5"
+14:36 extract attr-literal "font-heading text-2xl tracking-normal normal-case"
+29:31 extract attr-literal "max-w-2xl"
+30:25 extract attr-literal "grid w-full max-w-2xl grid-cols-1 gap-8 sm:grid-cols-3"
+32:44 extract attr-literal "flex flex-col gap-2"
+36:31 extract jsx-template "size-1.5 rounded-full"
+36:53 unresolved jsx-template "${stage.dotClassName}"
+41:29 extract attr-literal "text-xs leading-relaxed text-muted-foreground"
+# A data attribute whose value is not a class list.
+24:36 ignore decoy "inline-start"

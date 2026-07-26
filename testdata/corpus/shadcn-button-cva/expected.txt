@@ -1,0 +1,29 @@
+# shadcn-ui/ui — button.tsx
+# The canonical cva shape: a base string, two variant groups of literal leaves,
+# and a defaultVariants block whose values are variant NAMES, not class lists.
+8:4 extract cva-leaf "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+12:19 extract cva-leaf "bg-primary text-primary-foreground hover:bg-primary/90"
+14:12 extract cva-leaf "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40"
+16:12 extract cva-leaf "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50"
+18:12 extract cva-leaf "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+20:12 extract cva-leaf "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
+21:16 extract cva-leaf "text-primary underline-offset-4 hover:underline"
+24:19 extract cva-leaf "h-9 px-4 py-2 has-[>svg]:px-3"
+25:14 extract cva-leaf "h-6 gap-1 rounded-md px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3"
+26:14 extract cva-leaf "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5"
+27:14 extract cva-leaf "h-10 rounded-md px-6 has-[>svg]:px-4"
+28:16 extract cva-leaf "size-9"
+29:21 extract cva-leaf "size-6 rounded-md [&_svg:not([class*='size-'])]:size-3"
+30:21 extract cva-leaf "size-8"
+31:21 extract cva-leaf "size-10"
+# Quoted variant KEYS. Strings in the same object, never class lists.
+29:10 ignore cva-variant-key "icon-xs"
+30:10 ignore cva-variant-key "icon-sm"
+31:10 ignore cva-variant-key "icon-lg"
+# defaultVariants values name a variant, so extracting them fabricates classes.
+35:17 ignore cva-default-variant "default"
+36:14 ignore cva-default-variant "default"
+# Not class attributes.
+55:18 ignore decoy "button"
+# The call site composes at runtime; the leaves above are where the classes live.
+58:18 unresolved cn "cn(buttonVariants({ variant, size, className }))"

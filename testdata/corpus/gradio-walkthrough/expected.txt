@@ -1,0 +1,18 @@
+# gradio-app/gradio — js/tabs/shared/Walkthrough.svelte, lines 182-220
+# Svelte class: directives, including the shorthand form with no expression.
+# The class names here are component-scoped rather than Tailwind utilities,
+# which is irrelevant to extraction: the extractor's job is to find class lists,
+# and the rules decide separately whether anything in one is a utility.
+2:9 extract attr-interpolated "stepper"
+2:17 unresolved attr-interpolated "{elem_classes.join(' ')}"
+3:8 extract svelte-class-directive "hide"
+4:8 extract svelte-class-directive "hidden"
+7:8 extract svelte-class-shorthand "compact"
+11:14 extract attr-literal "step-title"
+17:11 extract attr-literal "stepper-wrapper"
+22:12 extract attr-literal "stepper-container"
+28:19 extract attr-literal "step-item"
+32:16 extract attr-literal "step-button"
+33:15 extract svelte-class-directive "active"
+34:15 extract svelte-class-directive "completed"
+35:15 extract svelte-class-directive "pending"

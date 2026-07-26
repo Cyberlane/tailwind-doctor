@@ -1,0 +1,11 @@
+# Authored for this corpus. No upstream source.
+# Every record is an ignore: these are the strings a text-matching extractor
+# picks up and reports as classes that were never written on an element.
+# The one real class attribute is on line 17.
+17:25 extract attr-literal "flex flex-col gap-4"
+4:17 ignore decoy "p-4 m-2 text-sm"
+5:48 ignore decoy "flex items-center gap-2"
+7:38 ignore decoy "grid grid-cols-3 gap-4"
+9:34 ignore decoy "rounded-lg border"
+18:37 ignore decoy "p-8 shadow"
+19:34 ignore decoy "underline decoration-dotted"

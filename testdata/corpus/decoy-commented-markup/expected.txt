@@ -1,0 +1,10 @@
+# Authored for this corpus. No upstream source.
+# Markup that is present in the file but not present in the rendered document:
+# a commented-out block, an HTML-escaped code sample, and an inert template
+# script. Extracting from these reports debt in code that does not ship.
+3:16 extract attr-literal "min-h-screen bg-white"
+9:18 extract attr-literal "mx-auto max-w-3xl px-4"
+5:17 ignore decoy "flex items-center justify-between p-6"
+6:20 ignore decoy "text-sm font-medium"
+10:33 ignore decoy "rounded border p-2"
+12:20 ignore decoy "hover:bg-slate-100"

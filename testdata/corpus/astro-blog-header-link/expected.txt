@@ -1,0 +1,5 @@
+# withastro/astro — examples/blog/src/components/HeaderLink.astro
+# Astro class:list taking an array of a variable and an object. Object KEYS in
+# class:list are class names, so "active" is real; the variable is not knowable.
+12:29 unresolved astro-class-list "className"
+12:42 extract astro-class-list "active"

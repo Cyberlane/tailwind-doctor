@@ -1,0 +1,3 @@
+# Frontendland/webcoreui — src/static/Box.astro
+# class:list given a bare variable built from CSS-module lookups. Nothing static.
+25:18 unresolved astro-class-list "classes"

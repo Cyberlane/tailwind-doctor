@@ -1,0 +1,10 @@
+# themesberg/flowbite — src/docs.css, lines 39-65
+# CSS @apply. The current extractor does not scan .css at all, so every record
+# here is a false negative in the committed baseline. That is the point.
+2:9 extract css-apply "overflow-x-hidden font-medium"
+6:9 extract css-apply "py-2"
+10:9 extract css-apply "block pl-2.5 font-medium border-l text-body hover:text-heading border-transparent duration-200 transition-none hover:border-default after:content-['#'] after:text-fg-brand after:ml-2 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-100"
+14:9 extract css-apply "pl-6 border-l border-transparent duration-200 text-body hover:text-heading transition-none hover:border-default after:content-['#'] after:text-fg-brand after:ml-2 after:opacity-0 hover:after:opacity-100 after:transition-opacity after:duration-100"
+18:9 extract css-apply "pt-2"
+22:9 extract css-apply "py-2"
+26:9 extract css-apply "pb-0"

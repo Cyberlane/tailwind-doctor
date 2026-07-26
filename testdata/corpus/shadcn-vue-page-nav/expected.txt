@@ -1,0 +1,5 @@
+# unovue/shadcn-vue — PageNav.vue
+# The smallest complete Vue case: one :class binding, one plain class attribute.
+11:20 extract vue-bind-class "container-wrapper scroll-mt-24"
+11:53 unresolved cn "props.class"
+12:17 extract attr-literal "container flex items-center justify-between gap-4 py-4"

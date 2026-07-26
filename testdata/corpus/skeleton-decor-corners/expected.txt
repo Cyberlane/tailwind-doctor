@@ -1,0 +1,14 @@
+# skeletonlabs/skeleton — decor-corners.svelte
+# A Svelte class attribute with a literal prefix and an interpolated suffix. The
+# literal part is real and must be linted; the interpolation is not knowable.
+23:17 extract attr-literal "relative"
+25:20 extract attr-interpolated "absolute stroke-surface-600-400 size-elem-sm"
+25:65 unresolved attr-interpolated "{cornerClasses[corner]}"
+27:13 unresolved attr-interpolated "{classList}"
+# A plain object whose values happen to be class lists, read by a computed key.
+# Whether a tool should follow this is genuinely arguable, so it is skipped:
+# counted and printed, never folded into the rate. See docs/false-positive-policy.md.
+16:8 skip object-map "top-0 left-0 translate-x-[-50%] translate-y-[-50%]"
+17:8 skip object-map "top-0 right-0 translate-x-[50%] translate-y-[-50%]"
+18:8 skip object-map "bottom-0 left-0 translate-x-[-50%] translate-y-[50%]"
+19:8 skip object-map "bottom-0 right-0 translate-x-[50%] translate-y-[50%]"

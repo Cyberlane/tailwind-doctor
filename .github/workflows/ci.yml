@@ -29,3 +29,17 @@ jobs:
       - run: go vet ./...
       - run: go test ./...
       - run: go test -race ./...
+
+  extraction-accuracy:
+    # Kept separate from the test job so that a red build reads as "extraction
+    # regressed" rather than "a test failed". The gate is the committed baseline
+    # in testdata/corpus/baseline.json; see docs/extraction-accuracy.md.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.x"
+          cache: false
+      - name: Measure extraction against the fixture corpus
+        run: go test ./internal/audit -run 'TestCorpusGroundTruthIsWellFormed|TestExtractionAccuracy' -v

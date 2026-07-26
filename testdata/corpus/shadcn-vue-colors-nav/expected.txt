@@ -1,0 +1,9 @@
+# unovue/shadcn-vue — ColorsNav.vue
+# Vue :class bound to cn(), including one call whose argument list spans three
+# lines. That multi-line binding is this corpus's attr-multiline coverage.
+16:20 extract vue-bind-class "flex items-center"
+16:40 unresolved cn "props.class"
+17:24 extract attr-literal "max-w-full"
+18:19 extract attr-literal "flex items-center"
+28:14 extract vue-bind-class "text-muted-foreground hover:text-primary data-[active=true]:text-primary flex h-7 items-center justify-center px-4 text-center text-base font-medium capitalize transition-colors"
+34:50 extract attr-literal "invisible"

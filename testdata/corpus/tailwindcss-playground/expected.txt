@@ -1,0 +1,5 @@
+# tailwindlabs/tailwindcss — playgrounds/vite/src/index.html
+# Plain HTML, two trivial class attributes. The easy case, present so that a
+# regression in the simplest shape cannot hide behind the harder ones.
+2:24 extract attr-literal "h-full"
+8:16 extract attr-literal "h-full"

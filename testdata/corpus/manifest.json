@@ -1,0 +1,165 @@
+{
+  "note": "Provenance for every extraction fixture. MANIFEST.md renders the same data for humans. Fixtures are upstream source files, copied verbatim unless trimmed is set, and are not edited within a kept region.",
+  "fixtures": [
+    {
+      "slug": "astro-blog-header-link",
+      "input": "input.astro",
+      "repository": "https://github.com/withastro/astro",
+      "path": "examples/blog/src/components/HeaderLink.astro",
+      "commit": "04aede3255996774ab917ffa6fdd68be925bc084",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["astro-class-list"]
+    },
+    {
+      "slug": "decoy-commented-markup",
+      "input": "input.html",
+      "repository": null,
+      "path": null,
+      "commit": null,
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["attr-literal", "decoy"]
+    },
+    {
+      "slug": "decoy-non-attributes",
+      "input": "input.tsx",
+      "repository": null,
+      "path": null,
+      "commit": null,
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["attr-literal", "decoy"]
+    },
+    {
+      "slug": "flowbite-astro-sidebar",
+      "input": "input.astro",
+      "repository": "https://github.com/themesberg/flowbite-astro-admin-dashboard",
+      "path": "src/app/SideBar.astro",
+      "commit": "29402237dc724d5dc8e95251d8647f3578620943",
+      "licence": "MIT",
+      "trimmed": "lines 1-30",
+      "shapes": ["astro-class-list", "attr-literal"]
+    },
+    {
+      "slug": "flowbite-docs-toc",
+      "input": "input.css",
+      "repository": "https://github.com/themesberg/flowbite",
+      "path": "src/docs.css",
+      "commit": "9637a897195ce7dd57f07d75910e6cf2ded5b393",
+      "licence": "MIT",
+      "trimmed": "lines 39-65",
+      "shapes": ["css-apply"]
+    },
+    {
+      "slug": "flowbite-svelte-kbd",
+      "input": "input.svelte",
+      "repository": "https://github.com/themesberg/flowbite-svelte",
+      "path": "src/lib/kbd/Kbd.svelte",
+      "commit": "37fcc334d0b517d8882dd1110d350ba55dc69a4f",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["clsx", "attr-interpolated", "decoy"]
+    },
+    {
+      "slug": "gradio-walkthrough",
+      "input": "input.svelte",
+      "repository": "https://github.com/gradio-app/gradio",
+      "path": "js/tabs/shared/Walkthrough.svelte",
+      "commit": "53cb4cae1ec3521e9170d12867253516413ba37a",
+      "licence": "Apache-2.0",
+      "trimmed": "lines 182-220",
+      "shapes": ["svelte-class-directive", "svelte-class-shorthand", "attr-interpolated", "attr-literal"]
+    },
+    {
+      "slug": "headlessui-clsx",
+      "input": "input.tsx",
+      "repository": "https://github.com/tailwindlabs/headlessui",
+      "path": "playgrounds/react/page-examples/transitions/both-apis.tsx",
+      "commit": "b0dcd8fc6ce78bc80221e602c0b1aa94e304ef81",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["clsx", "attr-literal", "out-of-scope-prop"]
+    },
+    {
+      "slug": "shadcn-badge-cva",
+      "input": "input.tsx",
+      "repository": "https://github.com/shadcn-ui/ui",
+      "path": "apps/v4/registry/new-york-v4/ui/badge.tsx",
+      "commit": "f31ed81983653919dd4fe77aee4b4859f610f1dc",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["cva-leaf", "cva-default-variant", "cn", "decoy"]
+    },
+    {
+      "slug": "shadcn-button-cva",
+      "input": "input.tsx",
+      "repository": "https://github.com/shadcn-ui/ui",
+      "path": "apps/v4/registry/new-york-v4/ui/button.tsx",
+      "commit": "f31ed81983653919dd4fe77aee4b4859f610f1dc",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["cva-leaf", "cva-variant-key", "cva-default-variant", "cn", "decoy"]
+    },
+    {
+      "slug": "shadcn-empty-directory",
+      "input": "input.tsx",
+      "repository": "https://github.com/shadcn-ui/ui",
+      "path": "apps/v4/app/(app)/(styles)/sera/empty-state/components/empty-directory.tsx",
+      "commit": "7ec2acc87d1d952e8ee965d13ad2b1f358f6fe81",
+      "licence": "MIT",
+      "trimmed": "lines 46-95",
+      "shapes": ["jsx-template", "attr-literal", "decoy"]
+    },
+    {
+      "slug": "shadcn-vue-colors-nav",
+      "input": "input.vue",
+      "repository": "https://github.com/unovue/shadcn-vue",
+      "path": "apps/v4/components/ColorsNav.vue",
+      "commit": "85506d49abc604ec0dc04e19a954cdd49288e6e6",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["vue-bind-class", "attr-literal", "attr-multiline", "cn"]
+    },
+    {
+      "slug": "shadcn-vue-page-nav",
+      "input": "input.vue",
+      "repository": "https://github.com/unovue/shadcn-vue",
+      "path": "apps/v4/components/PageNav.vue",
+      "commit": "85506d49abc604ec0dc04e19a954cdd49288e6e6",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["vue-bind-class", "attr-literal", "cn"]
+    },
+    {
+      "slug": "skeleton-decor-corners",
+      "input": "input.svelte",
+      "repository": "https://github.com/skeletonlabs/skeleton",
+      "path": "sites/plus.skeleton.dev/src/lib/components/layout/decor-corners.svelte",
+      "commit": "7575cbebae2899f342b6ef90779d6609f5272028",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["attr-interpolated", "attr-literal", "object-map"]
+    },
+    {
+      "slug": "tailwindcss-playground",
+      "input": "input.html",
+      "repository": "https://github.com/tailwindlabs/tailwindcss",
+      "path": "playgrounds/vite/src/index.html",
+      "commit": "d59f1b3e5d8c1489f0295e8b3ff18e7058ff2f8f",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["attr-literal"]
+    },
+    {
+      "slug": "webcoreui-box",
+      "input": "input.astro",
+      "repository": "https://github.com/Frontendland/webcoreui",
+      "path": "src/static/Box.astro",
+      "commit": "a6776533a6bed36b2352a91d0820628071e137cd",
+      "licence": "MIT",
+      "trimmed": null,
+      "shapes": ["astro-class-list"]
+    }
+  ]
+}
