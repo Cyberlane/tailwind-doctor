@@ -47,6 +47,7 @@ func (s *scanner) scanApplyRule(end int) {
 		return
 	}
 	s.record(ClassList{
-		Value: value, Line: line, Column: column, Shape: shapeCSSApply, Resolved: true,
+		Value: value, Line: line, Column: column,
+		Shape: shapeCSSApply, Resolved: true, Verbatim: true,
 	})
 }

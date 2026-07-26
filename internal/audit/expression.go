@@ -184,7 +184,7 @@ func (s *scanner) readClassStringLiteral(shape, fallback string) {
 	}
 	s.record(ClassList{
 		Value: content, Line: line, Column: column,
-		Shape: shapeOrDefault(shape, fallback), Resolved: true,
+		Shape: shapeOrDefault(shape, fallback), Resolved: true, Verbatim: true,
 	})
 }
 
@@ -209,7 +209,7 @@ func (s *scanner) scanConditionObject(end int, shape string) {
 			if strings.TrimSpace(content) != "" {
 				s.record(ClassList{
 					Value: content, Line: line, Column: column,
-					Shape: shapeOrDefault(shape, shapeClsx), Resolved: true,
+					Shape: shapeOrDefault(shape, shapeClsx), Resolved: true, Verbatim: true,
 				})
 			}
 		case isNameStart(s.peek(0)):
@@ -219,7 +219,7 @@ func (s *scanner) scanConditionObject(end int, shape string) {
 			if s.peek(0) == ':' && name != "" {
 				s.record(ClassList{
 					Value: name, Line: line, Column: column,
-					Shape: shapeOrDefault(shape, shapeClsx), Resolved: true,
+					Shape: shapeOrDefault(shape, shapeClsx), Resolved: true, Verbatim: true,
 				})
 			}
 		default:
@@ -427,7 +427,7 @@ func (s *scanner) scanCvaVariants(end int) {
 		if strings.TrimSpace(content) != "" {
 			s.record(ClassList{
 				Value: content, Line: line, Column: column,
-				Shape: shapeCvaLeaf, Resolved: true,
+				Shape: shapeCvaLeaf, Resolved: true, Verbatim: true,
 			})
 		}
 	}

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 )
 
 var sourceExtensions = map[string]bool{
@@ -20,6 +19,8 @@ type Finding struct {
 	Message string `json:"message"`
 	File    string `json:"file"`
 	Class   string `json:"class"`
+	Line    int    `json:"line"`
+	Column  int    `json:"column"`
 }
 
 type Report struct {
@@ -36,6 +37,7 @@ func Run(root string) (Report, error) {
 	// Findings starts non-nil so a clean project serializes as [] rather than
 	// null, which every JSON consumer would otherwise have to special-case.
 	report := Report{Score: MaximumScore, Findings: []Finding{}}
+	syntax := defaultUtilitySyntax()
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -66,7 +68,7 @@ func Run(root string) (Report, error) {
 			if !list.Resolved {
 				continue
 			}
-			report.Findings = append(report.Findings, inspect(relative, list.Value)...)
+			report.Findings = append(report.Findings, inspect(relative, list, syntax)...)
 		}
 		return nil
 	})
@@ -74,12 +76,7 @@ func Run(root string) (Report, error) {
 		return Report{}, err
 	}
 
-	sort.Slice(report.Findings, func(i, j int) bool {
-		if report.Findings[i].File == report.Findings[j].File {
-			return report.Findings[i].Rule < report.Findings[j].Rule
-		}
-		return report.Findings[i].File < report.Findings[j].File
-	})
+	sortFindings(report.Findings)
 	report.Score -= len(report.Findings) * 2
 	if report.Score < 0 {
 		report.Score = 0
@@ -87,55 +84,106 @@ func Run(root string) (Report, error) {
 	return report, nil
 }
 
-func inspect(file, classes string) []Finding {
-	utilities := strings.Fields(classes)
+// utilityToken is one utility and where it sits in the source. Positions are
+// only meaningful when the class list was taken verbatim from the file; a list
+// assembled from the literal parts of an interpolated value has no single span,
+// so every utility in it reports the position of the list itself.
+type utilityToken struct {
+	text   string
+	line   int
+	column int
+}
+
+func splitUtilities(list ClassList) []utilityToken {
+	tokens := make([]utilityToken, 0, 8)
+	position := &positionTracker{line: list.Line, column: list.Column}
+	start := -1
+
+	for index := 0; index <= len(list.Value); index++ {
+		atEnd := index == len(list.Value)
+		if !atEnd && !isSpace(list.Value[index]) {
+			if start < 0 {
+				start = index
+				if list.Verbatim {
+					tokens = append(tokens, utilityToken{line: position.line, column: position.column})
+				} else {
+					tokens = append(tokens, utilityToken{line: list.Line, column: list.Column})
+				}
+			}
+		} else if start >= 0 {
+			tokens[len(tokens)-1].text = list.Value[start:index]
+			start = -1
+		}
+		if !atEnd {
+			position.advance(list.Value[index])
+		}
+	}
+	return tokens
+}
+
+func inspect(file string, list ClassList, syntax UtilitySyntax) []Finding {
 	findings := make([]Finding, 0)
 	seen := make(map[string]string)
-	responsive := 0
+	variants := 0
 
-	for _, utility := range utilities {
-		if strings.Contains(utility, "[") {
+	for _, token := range splitUtilities(list) {
+		parsed := parseUtility(token.text, syntax)
+
+		if parsed.hasArbitraryValue() {
 			findings = append(findings, Finding{
-				Rule: "no-arbitrary-value", File: file, Class: utility,
+				Rule: "no-arbitrary-value", File: file, Class: token.text,
+				Line: token.line, Column: token.column,
 				Message: "Avoid arbitrary values; prefer a named design token.",
 			})
 		}
 
-		base := utility[strings.LastIndex(utility, ":")+1:]
-		if strings.Contains(utility, ":") {
-			responsive++
+		if len(parsed.Variants) > 0 {
+			variants++
 		}
-		group := utilityGroup(base)
+
+		group := utilityGroup(parsed.Base)
 		if group == "" {
 			continue
 		}
-		key := utility[:len(utility)-len(base)] + group
+		key := parsed.variantKey() + "|" + group
 		if previous, ok := seen[key]; ok {
 			findings = append(findings, Finding{
-				Rule: "no-conflicting-utilities", File: file, Class: classes,
-				Message: fmt.Sprintf("%s conflicts with %s in the same variant.", previous, utility),
+				Rule: "no-conflicting-utilities", File: file, Class: list.Value,
+				Line: token.line, Column: token.column,
+				Message: fmt.Sprintf("%s conflicts with %s in the same variant.", previous, token.text),
 			})
 			continue
 		}
-		seen[key] = utility
+		seen[key] = token.text
 	}
 
-	if responsive >= 5 {
+	if variants >= 5 {
 		findings = append(findings, Finding{
-			Rule: "responsive-bloat", File: file, Class: classes,
+			Rule: "responsive-bloat", File: file, Class: list.Value,
+			Line: list.Line, Column: list.Column,
 			Message: "Five or more variant utilities make this class list difficult to maintain.",
 		})
 	}
 	return findings
 }
 
-func utilityGroup(utility string) string {
-	for _, prefix := range []string{"p-", "px-", "py-", "pt-", "pr-", "pb-", "pl-", "m-", "mx-", "my-", "mt-", "mr-", "mb-", "ml-", "text-", "bg-", "border-"} {
-		if strings.HasPrefix(utility, prefix) {
-			return prefix
+// sortFindings gives the report a total order, so that identical input produces
+// byte-identical output whatever order the filesystem hands files over in.
+func sortFindings(findings []Finding) {
+	sort.Slice(findings, func(i, j int) bool {
+		left, right := findings[i], findings[j]
+		switch {
+		case left.File != right.File:
+			return left.File < right.File
+		case left.Line != right.Line:
+			return left.Line < right.Line
+		case left.Column != right.Column:
+			return left.Column < right.Column
+		case left.Rule != right.Rule:
+			return left.Rule < right.Rule
 		}
-	}
-	return ""
+		return left.Message < right.Message
+	})
 }
 
 func WriteJSON(writer io.Writer, report Report) error {
@@ -153,6 +201,6 @@ func WriteHuman(writer io.Writer, report Report) {
 	}
 	fmt.Fprintf(writer, "\n%d finding(s):\n", len(report.Findings))
 	for _, finding := range report.Findings {
-		fmt.Fprintf(writer, "- [%s] %s: %s\n", finding.Rule, finding.File, finding.Message)
+		fmt.Fprintf(writer, "- [%s] %s:%d:%d: %s\n", finding.Rule, finding.File, finding.Line, finding.Column, finding.Message)
 	}
 }

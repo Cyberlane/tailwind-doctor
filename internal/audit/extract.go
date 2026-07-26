@@ -38,6 +38,10 @@ type ClassList struct {
 	Column   int
 	Shape    string
 	Resolved bool
+	// Verbatim records whether Value is a contiguous span of the source file.
+	// A list rebuilt from the literal parts of an interpolated value is not, so
+	// its utilities cannot be given individual positions.
+	Verbatim bool
 }
 
 // Extract reads every class list out of one source file. It is deterministic and
@@ -421,7 +425,7 @@ func (s *scanner) recordDirective(name string, line, column int, shape string) {
 	}
 	s.record(ClassList{
 		Value: class, Line: line, Column: column + len("class:"),
-		Shape: shape, Resolved: true,
+		Shape: shape, Resolved: true, Verbatim: true,
 	})
 }
 
@@ -431,7 +435,8 @@ func (s *scanner) recordQuotedClassValue(value string, line, column int) {
 			return
 		}
 		s.record(ClassList{
-			Value: value, Line: line, Column: column, Shape: shapeAttributeLiteral, Resolved: true,
+			Value: value, Line: line, Column: column,
+			Shape: shapeAttributeLiteral, Resolved: true, Verbatim: true,
 		})
 		return
 	}
