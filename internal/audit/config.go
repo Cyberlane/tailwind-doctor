@@ -43,9 +43,18 @@ func defaultConfig() Config {
 	}
 }
 
+// severityFor resolves what a rule does in this project. Configuration wins;
+// otherwise a rule that has not yet had its release of warning is off, and every
+// other rule takes its registered default. See docs/rule-stability.md.
 func (config Config) severityFor(rule string) Severity {
 	if severity, ok := config.Severities[rule]; ok {
 		return severity
+	}
+	if definition, found := lookupRule(rule); found {
+		if !definition.DefaultOn {
+			return SeverityOff
+		}
+		return definition.DefaultSeverity
 	}
 	return SeverityError
 }

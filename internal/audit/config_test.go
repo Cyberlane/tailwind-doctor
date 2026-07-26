@@ -287,3 +287,25 @@ func TestBaselineRejectsAnUnknownVersion(t *testing.T) {
 		t.Fatalf("expected a version error, got %v", err)
 	}
 }
+
+// A rule that has not yet had its release of warning is off unless the project
+// asks for it, and asking for it must still work.
+func TestSeverityForRespectsDefaultOn(t *testing.T) {
+	config := defaultConfig()
+	original := ruleRegistry
+	ruleRegistry = append(append([]RuleDefinition(nil), original...), RuleDefinition{
+		ID: "test-only-new-rule", Category: CategoryConsistency, Exposure: ExposureUtility,
+		DefaultSeverity: SeverityError, DefaultConfidence: ConfidenceHigh,
+		Since: "0.2.0", DefaultOn: false,
+	})
+	t.Cleanup(func() { ruleRegistry = original })
+
+	if severity := config.severityFor("test-only-new-rule"); severity != SeverityOff {
+		t.Errorf("a rule shipping disabled defaults to %q, want off", severity)
+	}
+
+	config.Severities["test-only-new-rule"] = SeverityError
+	if severity := config.severityFor("test-only-new-rule"); severity != SeverityError {
+		t.Errorf("configuration should be able to enable it, got %q", severity)
+	}
+}

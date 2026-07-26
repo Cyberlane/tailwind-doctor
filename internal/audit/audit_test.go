@@ -148,3 +148,79 @@ func TestWriteJSONEmitsAnEmptyFindingsArray(t *testing.T) {
 		t.Fatalf("expected an empty findings array, got: %s", buffer.String())
 	}
 }
+
+// A finding carries its category and confidence because both decide whether it
+// moves the score, and a user who cannot see them cannot argue with the number.
+func TestInspectAttributesCategoryAndConfidence(t *testing.T) {
+	findings := inspect("src/card.tsx", classList("p-4 p-2 text-[#123456]"), defaultUtilitySyntax())
+
+	byRule := map[string]Finding{}
+	for _, finding := range findings {
+		byRule[finding.Rule] = finding
+	}
+
+	conflict, found := byRule["no-conflicting-utilities"]
+	if !found {
+		t.Fatalf("expected a conflict finding, got %#v", findings)
+	}
+	if conflict.Category != CategoryCorrectness || conflict.Confidence != ConfidenceHigh {
+		t.Errorf("conflict on p-: category %q confidence %q, want correctness/high",
+			conflict.Category, conflict.Confidence)
+	}
+
+	arbitrary, found := byRule["no-arbitrary-value"]
+	if !found {
+		t.Fatalf("expected an arbitrary-value finding, got %#v", findings)
+	}
+	if arbitrary.Category != CategoryConsistency || arbitrary.Confidence != ConfidenceHigh {
+		t.Errorf("arbitrary value: category %q confidence %q, want consistency/high",
+			arbitrary.Category, arbitrary.Confidence)
+	}
+}
+
+// border-r sets a width and border-gray-200 a colour, but utilityGroup puts both
+// in "border-". Until the property taxonomy lands with the token inventory, a
+// conflict in an ambiguous group is reported at medium confidence so a known
+// false positive cannot move the score.
+func TestInspectDemotesAmbiguousConflicts(t *testing.T) {
+	cases := []struct {
+		name       string
+		classes    string
+		confidence Confidence
+	}{
+		{"padding is unambiguous", "p-4 p-2", ConfidenceHigh},
+		{"margin is unambiguous", "mt-4 mt-2", ConfidenceHigh},
+		{"border mixes width and colour", "border-r border-gray-200", ConfidenceMedium},
+		{"background mixes colour and size", "bg-red-500 bg-cover", ConfidenceMedium},
+		{"text mixes size and colour", "text-sm text-red-500", ConfidenceMedium},
+	}
+	for _, testCase := range cases {
+		t.Run(testCase.name, func(t *testing.T) {
+			findings := inspect("src/card.tsx", classList(testCase.classes), defaultUtilitySyntax())
+			if len(findings) != 1 {
+				t.Fatalf("expected one conflict, got %#v", findings)
+			}
+			if findings[0].Confidence != testCase.confidence {
+				t.Errorf("confidence = %q, want %q", findings[0].Confidence, testCase.confidence)
+			}
+		})
+	}
+}
+
+// Responsive bloat is a maintainability heuristic, not a defect. It is reported
+// but must not move a number people publish in a README.
+func TestInspectReportsResponsiveBloatAtMediumConfidence(t *testing.T) {
+	findings := inspect("src/card.tsx",
+		classList("sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10"),
+		defaultUtilitySyntax())
+
+	if len(findings) != 1 || findings[0].Rule != "responsive-bloat" {
+		t.Fatalf("expected one responsive-bloat finding, got %#v", findings)
+	}
+	if findings[0].Category != CategoryMaintainability {
+		t.Errorf("category = %q, want maintainability", findings[0].Category)
+	}
+	if findings[0].Confidence != ConfidenceMedium {
+		t.Errorf("confidence = %q, want medium", findings[0].Confidence)
+	}
+}

@@ -16,12 +16,16 @@ var sourceExtensions = map[string]bool{
 
 type Finding struct {
 	Rule     string   `json:"rule"`
+	Category Category `json:"category"`
 	Message  string   `json:"message"`
 	File     string   `json:"file"`
 	Class    string   `json:"class"`
 	Line     int      `json:"line"`
 	Column   int      `json:"column"`
 	Severity Severity `json:"severity"`
+	// Confidence is decided by the rule, not by configuration. Only high
+	// confidence moves the score by default.
+	Confidence Confidence `json:"confidence"`
 }
 
 type Report struct {
@@ -178,6 +182,17 @@ func splitUtilities(list ClassList) []utilityToken {
 	return tokens
 }
 
+// ambiguousConflictGroups are the groups where utilityGroup cannot separate a
+// shorthand from a colour: border-r sets a width and border-gray-200 a colour,
+// and both land in "border-". A conflict inside one of these may be a false
+// positive, so it is reported at medium confidence and stays out of the score
+// until the property taxonomy arrives with the token inventory.
+var ambiguousConflictGroups = map[string]bool{
+	"text-":   true,
+	"bg-":     true,
+	"border-": true,
+}
+
 func inspect(file string, list ClassList, syntax UtilitySyntax) []Finding {
 	findings := make([]Finding, 0)
 	seen := make(map[string]string)
@@ -188,7 +203,9 @@ func inspect(file string, list ClassList, syntax UtilitySyntax) []Finding {
 
 		if parsed.hasArbitraryValue() {
 			findings = append(findings, Finding{
-				Rule: "no-arbitrary-value", File: file, Class: token.text,
+				Rule: "no-arbitrary-value", Category: CategoryConsistency,
+				Confidence: ConfidenceHigh,
+				File:       file, Class: token.text,
 				Line: token.line, Column: token.column,
 				Message: "Avoid arbitrary values; prefer a named design token.",
 			})
@@ -204,8 +221,14 @@ func inspect(file string, list ClassList, syntax UtilitySyntax) []Finding {
 		}
 		key := parsed.variantKey() + "|" + group
 		if previous, ok := seen[key]; ok {
+			confidence := ConfidenceHigh
+			if ambiguousConflictGroups[group] {
+				confidence = ConfidenceMedium
+			}
 			findings = append(findings, Finding{
-				Rule: "no-conflicting-utilities", File: file, Class: list.Value,
+				Rule: "no-conflicting-utilities", Category: CategoryCorrectness,
+				Confidence: confidence,
+				File:       file, Class: list.Value,
 				Line: token.line, Column: token.column,
 				Message: fmt.Sprintf("%s conflicts with %s in the same variant.", previous, token.text),
 			})
@@ -216,7 +239,9 @@ func inspect(file string, list ClassList, syntax UtilitySyntax) []Finding {
 
 	if variants >= 5 {
 		findings = append(findings, Finding{
-			Rule: "responsive-bloat", File: file, Class: list.Value,
+			Rule: "responsive-bloat", Category: CategoryMaintainability,
+			Confidence: ConfidenceMedium,
+			File:       file, Class: list.Value,
 			Line: list.Line, Column: list.Column,
 			Message: "Five or more variant utilities make this class list difficult to maintain.",
 		})
