@@ -15,41 +15,80 @@ var sourceExtensions = map[string]bool{
 }
 
 type Finding struct {
-	Rule    string `json:"rule"`
-	Message string `json:"message"`
-	File    string `json:"file"`
-	Class   string `json:"class"`
-	Line    int    `json:"line"`
-	Column  int    `json:"column"`
+	Rule     string   `json:"rule"`
+	Message  string   `json:"message"`
+	File     string   `json:"file"`
+	Class    string   `json:"class"`
+	Line     int      `json:"line"`
+	Column   int      `json:"column"`
+	Severity Severity `json:"severity"`
 }
 
 type Report struct {
 	Score    int       `json:"score"`
 	Files    int       `json:"files"`
 	Findings []Finding `json:"findings"`
+	// Suppressed counts findings that matched the baseline. Reporting the count
+	// keeps accepted debt visible rather than letting it vanish.
+	Suppressed int `json:"suppressed"`
 }
 
 // MaximumScore is the score a project with no findings receives, and therefore
 // the highest threshold a caller can meaningfully gate on.
 const MaximumScore = 100
 
+// Run analyses a directory tree. Configuration and the baseline are read from
+// the root, so a caller needs nothing but a path.
 func Run(root string) (Report, error) {
+	config, err := LoadConfig(root)
+	if err != nil {
+		return Report{}, err
+	}
+	baseline, err := LoadBaseline(root, config.BaselinePath)
+	if err != nil {
+		return Report{}, err
+	}
+	return RunWithConfig(root, config, baseline)
+}
+
+// RunWithConfig analyses a directory tree with configuration supplied by the
+// caller, which is what lets the baseline be regenerated from a run that ignores
+// the existing one.
+func RunWithConfig(root string, config Config, baseline *Baseline) (Report, error) {
 	// Findings starts non-nil so a clean project serializes as [] rather than
 	// null, which every JSON consumer would otherwise have to special-case.
 	report := Report{Score: MaximumScore, Findings: []Finding{}}
-	syntax := defaultUtilitySyntax()
+	ignores := newIgnoreRules(config.IgnorePaths)
+
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		relative = filepath.ToSlash(relative)
+
 		if entry.IsDir() {
 			switch entry.Name() {
 			case ".git", "node_modules", "dist", "build", ".next", "vendor":
 				return filepath.SkipDir
 			}
+			if config.RespectGitignore {
+				// WalkDir visits a directory before its contents, so patterns are
+				// recorded in time to apply to everything they govern.
+				if content, err := os.ReadFile(filepath.Join(path, ".gitignore")); err == nil {
+					ignores.addGitignore(relative, string(content))
+				}
+			}
+			if relative != "." && ignores.ignores(relative, true) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
-		if !sourceExtensions[filepath.Ext(path)] {
+
+		if !sourceExtensions[filepath.Ext(path)] || ignores.ignores(relative, false) {
 			return nil
 		}
 
@@ -58,17 +97,26 @@ func Run(root string) (Report, error) {
 			return err
 		}
 		report.Files++
-		relative, err := filepath.Rel(root, path)
-		if err != nil {
-			return err
-		}
 		for _, list := range Extract(path, string(content)) {
 			// An unresolved site names an expression, not a set of utilities.
 			// Linting it would report classes the source never contained.
 			if !list.Resolved {
 				continue
 			}
-			report.Findings = append(report.Findings, inspect(relative, list, syntax)...)
+			for _, finding := range inspect(relative, list, config.Syntax) {
+				finding.Severity = config.severityFor(finding.Rule)
+				if finding.Severity == SeverityOff {
+					continue
+				}
+				if finding.Rule == "no-arbitrary-value" && config.AllowedArbitrary[finding.Class] {
+					continue
+				}
+				if baseline.suppresses(finding) {
+					report.Suppressed++
+					continue
+				}
+				report.Findings = append(report.Findings, finding)
+			}
 		}
 		return nil
 	})
@@ -77,7 +125,16 @@ func Run(root string) (Report, error) {
 	}
 
 	sortFindings(report.Findings)
-	report.Score -= len(report.Findings) * 2
+
+	// Only findings the project treats as errors move the score. A warning is
+	// reported so it can be acted on, without changing what a build gates on.
+	scored := 0
+	for _, finding := range report.Findings {
+		if finding.Severity == SeverityError {
+			scored++
+		}
+	}
+	report.Score -= scored * 2
 	if report.Score < 0 {
 		report.Score = 0
 	}

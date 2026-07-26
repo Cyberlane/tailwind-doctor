@@ -31,7 +31,7 @@ The limitations matter as much as the features, so they are stated plainly:
 - **The scoring model is not final.** The score is currently `100 - 2 × findings`, clamped at zero. It is not normalized by project size, so a large codebase bottoms out at zero while a small one with proportionally identical debt still scores well. Treat the number as a relative signal within one project over time, not as something to compare between projects or publish as a badge. A size-normalized model with documented weights and confidence tiers will replace it, and doing so **will change your score**.
 - **Extraction is a single regex over `class` and `className` string literals.** Template literals, `clsx`/`cn`/`cva`, Vue `:class`, Svelte `class:foo`, Astro `class:list`, and multiline attributes are not handled yet, so findings are undercounted in projects that use them.
 - Findings report a file, not a line and column.
-- There is no configuration file, no suppression baseline, and no SARIF output yet. The `--json` schema is not versioned and may change.
+- There is no SARIF output yet, and the `--json` schema is not versioned, so it may change. Configuration and suppression baselines are documented in [docs/configuration.md](docs/configuration.md).
 
 Contrast analysis, theme-token discovery, and unused-token detection are planned once structural parsing and the Tailwind configuration adapters are in place.
 
@@ -43,6 +43,7 @@ tw-doctor .
 
 # Machine-readable report for CI
 tw-doctor --json .
+tw-doctor --write-baseline .   # record current debt; later runs gate on new findings
 
 # Fail CI below a score threshold
 tw-doctor --fail-under 90 .
@@ -75,6 +76,7 @@ Both sit at `0.0.0`, which is a name reservation rather than a release: they con
 go test ./...
 go vet ./...
 go run ./cmd/tw-doctor --json .
+tw-doctor --write-baseline .   # record current debt; later runs gate on new findings
 ```
 
 ## Privacy

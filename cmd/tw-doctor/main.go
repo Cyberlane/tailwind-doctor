@@ -28,6 +28,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	jsonOutput := flags.Bool("json", false, "write a machine-readable report")
 	failUnder := flags.Int("fail-under", 0, "exit 1 when the score is below this value (0-100)")
 	version := flags.Bool("version", false, "print the version")
+	writeBaseline := flags.Bool("write-baseline", false,
+		"record every current finding in "+audit.BaselineFileName+" so later runs gate on new debt only")
 
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -53,7 +55,13 @@ func run(args []string, stdout, stderr io.Writer) int {
 		path = flags.Arg(0)
 	}
 
-	report, err := audit.Run(filepath.Clean(path))
+	root := filepath.Clean(path)
+
+	if *writeBaseline {
+		return writeBaselineFile(root, stdout, stderr)
+	}
+
+	report, err := audit.Run(root)
 	if err != nil {
 		fmt.Fprintln(stderr, "tw-doctor:", err)
 		return exitOperationalError
@@ -74,5 +82,32 @@ func run(args []string, stdout, stderr io.Writer) int {
 	if report.Score < *failUnder {
 		return exitBelowThreshold
 	}
+	return exitSuccess
+}
+
+// writeBaselineFile records the project's current findings. It deliberately runs
+// without the existing baseline, so the file it writes describes the codebase
+// rather than the difference from the last time it was written.
+func writeBaselineFile(root string, stdout, stderr io.Writer) int {
+	config, err := audit.LoadConfig(root)
+	if err != nil {
+		fmt.Fprintln(stderr, "tw-doctor:", err)
+		return exitOperationalError
+	}
+
+	report, err := audit.RunWithConfig(root, config, nil)
+	if err != nil {
+		fmt.Fprintln(stderr, "tw-doctor:", err)
+		return exitOperationalError
+	}
+
+	destination := filepath.Join(root, config.BaselinePath)
+	baseline := audit.NewBaseline(report)
+	if err := audit.WriteBaseline(destination, baseline); err != nil {
+		fmt.Fprintln(stderr, "tw-doctor:", err)
+		return exitOperationalError
+	}
+
+	fmt.Fprintf(stdout, "Wrote %s with %d suppressed finding(s).\n", destination, len(baseline.Suppressed))
 	return exitSuccess
 }

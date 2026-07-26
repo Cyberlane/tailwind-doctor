@@ -1,0 +1,269 @@
+package audit
+
+import (
+	"fmt"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+)
+
+// ConfigFileName is the optional per-project configuration file, read from the
+// root being analysed. A project without one is analysed with the defaults.
+const ConfigFileName = "twdoctor.toml"
+
+// Severity decides what a rule does when it matches. A warning is reported but
+// does not move the score, which is how a rule can be useful before it is
+// trusted enough to gate a build on.
+type Severity string
+
+const (
+	SeverityError Severity = "error"
+	SeverityWarn  Severity = "warn"
+	SeverityOff   Severity = "off"
+)
+
+// Config is the resolved project configuration.
+type Config struct {
+	Severities       map[string]Severity
+	IgnorePaths      []string
+	RespectGitignore bool
+	AllowedArbitrary map[string]bool
+	Syntax           UtilitySyntax
+	BaselinePath     string
+}
+
+func defaultConfig() Config {
+	return Config{
+		Severities:       map[string]Severity{},
+		RespectGitignore: true,
+		AllowedArbitrary: map[string]bool{},
+		Syntax:           defaultUtilitySyntax(),
+		BaselinePath:     BaselineFileName,
+	}
+}
+
+func (config Config) severityFor(rule string) Severity {
+	if severity, ok := config.Severities[rule]; ok {
+		return severity
+	}
+	return SeverityError
+}
+
+// LoadConfig reads twdoctor.toml from root. A missing file is not an error; a
+// malformed one is, because silently analysing with the wrong settings is worse
+// than refusing to start.
+func LoadConfig(root string) (Config, error) {
+	config := defaultConfig()
+
+	content, err := os.ReadFile(filepath.Join(root, ConfigFileName))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return config, nil
+		}
+		return config, fmt.Errorf("read %s: %w", ConfigFileName, err)
+	}
+
+	document, err := parseTOML(string(content))
+	if err != nil {
+		return config, fmt.Errorf("%s: %w", ConfigFileName, err)
+	}
+
+	for rule, raw := range document["rules"] {
+		text, ok := raw.(string)
+		if !ok {
+			return config, fmt.Errorf("%s: rules.%s must be a string", ConfigFileName, rule)
+		}
+		severity := Severity(text)
+		switch severity {
+		case SeverityError, SeverityWarn, SeverityOff:
+			config.Severities[rule] = severity
+		default:
+			return config, fmt.Errorf("%s: rules.%s is %q; expected error, warn, or off", ConfigFileName, rule, text)
+		}
+	}
+
+	paths := document["paths"]
+	ignore, err := paths.listValue("ignore")
+	if err != nil {
+		return config, fmt.Errorf("%s: paths.%w", ConfigFileName, err)
+	}
+	config.IgnorePaths = ignore
+	if respect, present, err := paths.boolValue("respect-gitignore"); err != nil {
+		return config, fmt.Errorf("%s: paths.%w", ConfigFileName, err)
+	} else if present {
+		config.RespectGitignore = respect
+	}
+
+	allowed, err := document["arbitrary-values"].listValue("allow")
+	if err != nil {
+		return config, fmt.Errorf("%s: arbitrary-values.%w", ConfigFileName, err)
+	}
+	for _, class := range allowed {
+		config.AllowedArbitrary[class] = true
+	}
+
+	tailwind := document["tailwind"]
+	if prefix, present, err := tailwind.stringValue("prefix"); err != nil {
+		return config, fmt.Errorf("%s: tailwind.%w", ConfigFileName, err)
+	} else if present {
+		config.Syntax.Prefix = prefix
+	}
+	if separator, present, err := tailwind.stringValue("separator"); err != nil {
+		return config, fmt.Errorf("%s: tailwind.%w", ConfigFileName, err)
+	} else if present {
+		if separator == "" {
+			return config, fmt.Errorf("%s: tailwind.separator must not be empty", ConfigFileName)
+		}
+		config.Syntax.Separator = separator
+	}
+
+	if baseline, present, err := document["baseline"].stringValue("path"); err != nil {
+		return config, fmt.Errorf("%s: baseline.%w", ConfigFileName, err)
+	} else if present {
+		config.BaselinePath = baseline
+	}
+
+	return config, nil
+}
+
+// matchPath reports whether a slash-separated path matches a glob. A ** matches
+// any number of path segments, including none; a * matches within one segment.
+// filepath.Match has no ** at all, and a tool whose main job is walking a
+// repository needs it: "dist/**" is how everyone writes "that whole directory".
+func matchPath(pattern, target string) bool {
+	return matchSegments(strings.Split(pattern, "/"), strings.Split(target, "/"))
+}
+
+func matchSegments(pattern, target []string) bool {
+	switch {
+	case len(pattern) == 0:
+		return len(target) == 0
+	case pattern[0] == "**":
+		for index := 0; index <= len(target); index++ {
+			if matchSegments(pattern[1:], target[index:]) {
+				return true
+			}
+		}
+		return false
+	case len(target) == 0:
+		return false
+	}
+	matched, err := path.Match(pattern[0], target[0])
+	if err != nil || !matched {
+		return false
+	}
+	return matchSegments(pattern[1:], target[1:])
+}
+
+// ignoreRules holds the patterns that exclude a path from analysis: those
+// configured in twdoctor.toml and those found in .gitignore files. Git applies a
+// .gitignore to its own directory and below, so patterns are kept per directory
+// and a path is tested against every one above it.
+type ignoreRules struct {
+	configured []string
+	perDir     map[string][]gitignorePattern
+	dirs       []string
+}
+
+type gitignorePattern struct {
+	glob          string
+	negated       bool
+	directoryOnly bool
+	anchored      bool
+	segmentAny    bool
+}
+
+func newIgnoreRules(configured []string) *ignoreRules {
+	return &ignoreRules{configured: configured, perDir: map[string][]gitignorePattern{}}
+}
+
+// addGitignore records the patterns of a .gitignore found in directory, which is
+// a path relative to the analysis root.
+func (rules *ignoreRules) addGitignore(directory, content string) {
+	patterns := make([]gitignorePattern, 0)
+	for _, line := range strings.Split(content, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		pattern := gitignorePattern{}
+		if trimmed, found := strings.CutPrefix(line, "!"); found {
+			pattern.negated, line = true, trimmed
+		}
+		if trimmed, found := strings.CutSuffix(line, "/"); found {
+			pattern.directoryOnly, line = true, trimmed
+		}
+		if trimmed, found := strings.CutPrefix(line, "/"); found {
+			pattern.anchored, line = true, trimmed
+		}
+		if strings.Contains(line, "/") {
+			pattern.anchored = true
+		}
+		pattern.glob = line
+		patterns = append(patterns, pattern)
+	}
+	if len(patterns) == 0 {
+		return
+	}
+	if _, seen := rules.perDir[directory]; !seen {
+		rules.dirs = append(rules.dirs, directory)
+	}
+	rules.perDir[directory] = patterns
+}
+
+// ignores reports whether a path relative to the analysis root is excluded.
+func (rules *ignoreRules) ignores(relative string, isDir bool) bool {
+	for _, pattern := range rules.configured {
+		if matchPath(pattern, relative) {
+			return true
+		}
+	}
+
+	ignored := false
+	for _, directory := range rules.dirs {
+		scoped, inside := scopeTo(directory, relative)
+		if !inside {
+			continue
+		}
+		for _, pattern := range rules.perDir[directory] {
+			if pattern.directoryOnly && !isDir {
+				continue
+			}
+			if !matchGitignore(pattern, scoped) {
+				continue
+			}
+			ignored = !pattern.negated
+		}
+	}
+	return ignored
+}
+
+func scopeTo(directory, relative string) (string, bool) {
+	if directory == "." || directory == "" {
+		return relative, true
+	}
+	if !strings.HasPrefix(relative, directory+"/") {
+		return "", false
+	}
+	return strings.TrimPrefix(relative, directory+"/"), true
+}
+
+// matchGitignore applies one pattern. An unanchored pattern matches at any
+// depth, which is what makes "node_modules" in a root .gitignore exclude a
+// nested one too.
+func matchGitignore(pattern gitignorePattern, relative string) bool {
+	if pattern.anchored {
+		return matchPath(pattern.glob, relative)
+	}
+	segments := strings.Split(relative, "/")
+	for index := range segments {
+		if matchPath(pattern.glob, strings.Join(segments[index:], "/")) {
+			return true
+		}
+		if matched, err := path.Match(pattern.glob, segments[index]); err == nil && matched {
+			return true
+		}
+	}
+	return false
+}

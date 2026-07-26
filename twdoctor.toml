@@ -1,0 +1,7 @@
+# Settings for analysing this repository with the tool it builds.
+
+[paths]
+# The extraction corpus is deliberately messy real-world code, kept verbatim
+# from upstream projects. It is evidence, not this project's design debt, so it
+# is excluded from the project's own score.
+ignore = ["testdata/corpus/**"]

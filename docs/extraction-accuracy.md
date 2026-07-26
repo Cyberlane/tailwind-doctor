@@ -13,33 +13,37 @@ Measured against the 16-fixture corpus in `testdata/corpus`.
 | Metric | Value |
 | --- | --- |
 | Precision | **1.0000** |
-| Recall | **0.5059** |
+| Recall | **1.0000** |
 | Expected class lists | 85 |
-| Extracted class lists | 43 |
-| True positives | 43 |
+| Extracted class lists | 85 |
+| True positives | 85 |
 | False positives | 0 (0 unexplained) |
-| False negatives | 42 |
+| False negatives | 0 |
 | Skipped (disputed) | 4 |
-| Unresolved sites reported | 8 of 12 |
+| Unresolved sites reported | 14 of 14 |
 
-Per shape:
+Per shape, every one at 1.0000 recall:
 
-| Shape | Expected | Found | Recall |
-| --- | --- | --- | --- |
-| `attr-literal` | 35 | 35 | 1.0000 |
-| `attr-interpolated` | 2 | 2 | 1.0000 |
-| `svelte-class-directive` | 5 | 5 | 1.0000 |
-| `svelte-class-shorthand` | 1 | 1 | 1.0000 |
-| `astro-class-list` | 5 | 0 | 0.0000 |
-| `clsx` | 4 | 0 | 0.0000 |
-| `css-apply` | 7 | 0 | 0.0000 |
-| `cva-leaf` | 22 | 0 | 0.0000 |
-| `jsx-template` | 1 | 0 | 0.0000 |
-| `vue-bind-class` | 3 | 0 | 0.0000 |
+| Shape | Expected | Found |
+| --- | --- | --- |
+| `attr-literal` | 35 | 35 |
+| `cva-leaf` | 22 | 22 |
+| `css-apply` | 7 | 7 |
+| `astro-class-list` | 5 | 5 |
+| `svelte-class-directive` | 5 | 5 |
+| `clsx` | 4 | 4 |
+| `vue-bind-class` | 3 | 3 |
+| `attr-interpolated` | 2 | 2 |
+| `jsx-template` | 1 | 1 |
+| `svelte-class-shorthand` | 1 | 1 |
 
-Read plainly: everything the extractor reports is real, and it finds about half of
-what is there. What it misses is composition — `cva`, `clsx`, and the framework
-binding syntaxes — which is where a component library keeps most of its classes.
+**A corpus the extractor scores 100% on has stopped being a scale.** These
+numbers say the extractor handles everything this corpus knows how to ask, which
+is not the same as saying it handles everything. The corpus is now a regression
+test rather than a measurement, and it needs new fixtures to become a measurement
+again. The false-positive policy already requires one for every confirmed miss or
+fabrication reported from here on; that is the mechanism by which this number
+becomes informative again.
 
 ### History
 
@@ -47,6 +51,7 @@ binding syntaxes — which is where a component library keeps most of its classe
 | --- | --- | --- |
 | Regex over `class`/`className` | 0.7000 | 0.4118 |
 | Structural scanner, attributes and Svelte directives | 1.0000 | 0.5059 |
+| Expression scanner: helpers, bindings, `@apply` | 1.0000 | 1.0000 |
 
 The regex's 15 false positives were not near-misses. They included `cn(` reported
 as a class list, because its character class stopped at the first single quote
@@ -90,8 +95,9 @@ That gate is **enforced**: `baseline.json` carries
 `enforce_precision_target: true`, set once structural parsing reached the target.
 It is never turned off again, so every later extraction change is held to it.
 
-Recall is measured per shape and gated as *must not decrease*. An absolute recall
-floor is not useful while whole shapes sit at zero.
+Recall is measured per shape and gated as *must not decrease*. No absolute recall
+floor is set, because a floor at the current 1.0000 would only ever be met by a
+corpus that never grows — and the corpus is meant to grow.
 
 ## How CI Uses This
 
@@ -125,6 +131,6 @@ meaningless and the suite says so before reporting a number.
 
 ## A Note On Running The Tool On This Repository
 
-`tw-doctor .` scans `testdata/corpus` and reports a large number of findings
-against the fixtures. They are deliberately messy real-world files. Path ignores
-arrive with the configuration file.
+`testdata/corpus` is excluded by this repository's own `twdoctor.toml`. The
+fixtures are deliberately messy real-world files kept verbatim from upstream
+projects; they are evidence, not this project's design debt.
