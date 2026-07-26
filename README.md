@@ -60,14 +60,14 @@ tw-doctor --fail-under 90 .
 
 ## npm Distribution
 
-The runtime is written in Go. The `npm/tw-doctor` package is the future thin launcher that will make both commands work after release:
+The runtime is written in Go. Two npm packages under `npm/` will eventually make both commands work without a Go toolchain:
 
 ```bash
 npx tw-doctor
 npx tailwind-doctor
 ```
 
-Release builds will package platform-specific Go binaries alongside that launcher. Until then, use `go run ./cmd/tw-doctor .`.
+Both sit at `0.0.0`, which is a name reservation rather than a release: they contain no binary and exit with a notice saying so. Release builds will attach platform-specific Go binaries as optional dependencies; see [docs/releasing.md](docs/releasing.md). Until then, use `go run ./cmd/tw-doctor .`.
 
 ## Development
 
