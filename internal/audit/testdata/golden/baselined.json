@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "tw-doctor",
+    "version": "dev"
+  },
+  "score": 23,
+  "scoreExcludingBaseline": 11,
+  "scoreModel": {
+    "version": 1,
+    "transferFunction": "100 * H / (H + D)",
+    "halfScoreDensity": 0.2,
+    "weights": {
+      "accessibility": 4,
+      "correctness": 3,
+      "consistency": 2,
+      "maintainability": 1
+    }
+  },
+  "categories": [
+    {
+      "name": "accessibility",
+      "score": null,
+      "exposure": 0,
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "correctness",
+      "score": 100,
+      "exposure": 3,
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "consistency",
+      "score": 23,
+      "exposure": 3,
+      "scoredFindings": 1,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "maintainability",
+      "score": 100,
+      "exposure": 1,
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    }
+  ],
+  "scanned": {
+    "files": 1,
+    "classLists": 1,
+    "utilities": 3
+  },
+  "configuredRules": [
+    {
+      "id": "no-arbitrary-value",
+      "severity": "error",
+      "confidence": "high"
+    },
+    {
+      "id": "no-conflicting-utilities",
+      "severity": "error",
+      "confidence": "high"
+    },
+    {
+      "id": "responsive-bloat",
+      "severity": "error",
+      "confidence": "medium"
+    }
+  ],
+  "findings": [
+    {
+      "rule": "no-arbitrary-value",
+      "category": "consistency",
+      "message": "Avoid arbitrary values; prefer a named design token.",
+      "file": "page.html",
+      "class": "text-[#abcdef]",
+      "line": 1,
+      "column": 21,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    }
+  ],
+  "suppressed": 1
+}

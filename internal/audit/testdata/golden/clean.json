@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "tw-doctor",
+    "version": "dev"
+  },
+  "score": 100,
+  "scoreExcludingBaseline": 100,
+  "scoreModel": {
+    "version": 1,
+    "transferFunction": "100 * H / (H + D)",
+    "halfScoreDensity": 0.2,
+    "weights": {
+      "accessibility": 4,
+      "correctness": 3,
+      "consistency": 2,
+      "maintainability": 1
+    }
+  },
+  "categories": [
+    {
+      "name": "accessibility",
+      "score": null,
+      "exposure": 0,
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "correctness",
+      "score": 100,
+      "exposure": 6,
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "consistency",
+      "score": 100,
+      "exposure": 6,
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "maintainability",
+      "score": 100,
+      "exposure": 2,
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    }
+  ],
+  "scanned": {
+    "files": 1,
+    "classLists": 2,
+    "utilities": 6
+  },
+  "configuredRules": [
+    {
+      "id": "no-arbitrary-value",
+      "severity": "error",
+      "confidence": "high"
+    },
+    {
+      "id": "no-conflicting-utilities",
+      "severity": "error",
+      "confidence": "high"
+    },
+    {
+      "id": "responsive-bloat",
+      "severity": "error",
+      "confidence": "medium"
+    }
+  ],
+  "findings": [],
+  "suppressed": 0
+}

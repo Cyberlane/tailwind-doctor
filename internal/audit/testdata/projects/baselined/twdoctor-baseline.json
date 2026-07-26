@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "note": "Fixture baseline: the conflict is accepted debt, the arbitrary value is not.",
+  "suppressed": [
+    {
+      "rule": "no-conflicting-utilities",
+      "file": "page.html",
+      "class": "p-4 p-2 text-[#abcdef]",
+      "reason": "Fixture: exercises a partial baseline."
+    }
+  ]
+}

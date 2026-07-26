@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "tw-doctor",
+          "version": "dev",
+          "informationUri": "https://github.com/Cyberlane/tailwind-doctor",
+          "rules": [
+            {
+              "id": "no-arbitrary-value",
+              "name": "no-arbitrary-value",
+              "shortDescription": {
+                "text": "no-arbitrary-value (consistency)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#no-arbitrary-value",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "category": "consistency",
+                "exposure": "utility",
+                "confidence": "high"
+              }
+            },
+            {
+              "id": "no-conflicting-utilities",
+              "name": "no-conflicting-utilities",
+              "shortDescription": {
+                "text": "no-conflicting-utilities (correctness)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#no-conflicting-utilities",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "category": "correctness",
+                "exposure": "utility",
+                "confidence": "high"
+              }
+            },
+            {
+              "id": "responsive-bloat",
+              "name": "responsive-bloat",
+              "shortDescription": {
+                "text": "responsive-bloat (maintainability)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#responsive-bloat",
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "category": "maintainability",
+                "exposure": "class-list",
+                "confidence": "medium"
+              }
+            }
+          ]
+        }
+      },
+      "results": [],
+      "properties": {
+        "score": 100,
+        "scoreExcludingBaseline": 100,
+        "scoreModelVersion": 1,
+        "categories": [
+          {
+            "name": "accessibility",
+            "score": null,
+            "exposure": 0,
+            "scoredFindings": 0,
+            "unscoredFindings": 0
+          },
+          {
+            "name": "correctness",
+            "score": 100,
+            "exposure": 6,
+            "scoredFindings": 0,
+            "unscoredFindings": 0
+          },
+          {
+            "name": "consistency",
+            "score": 100,
+            "exposure": 6,
+            "scoredFindings": 0,
+            "unscoredFindings": 0
+          },
+          {
+            "name": "maintainability",
+            "score": 100,
+            "exposure": 2,
+            "scoredFindings": 0,
+            "unscoredFindings": 0
+          }
+        ],
+        "scanned": {
+          "files": 1,
+          "classLists": 2,
+          "utilities": 6
+        }
+      }
+    }
+  ]
+}

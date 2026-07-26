@@ -1,0 +1,275 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "tw-doctor",
+          "version": "dev",
+          "informationUri": "https://github.com/Cyberlane/tailwind-doctor",
+          "rules": [
+            {
+              "id": "no-arbitrary-value",
+              "name": "no-arbitrary-value",
+              "shortDescription": {
+                "text": "no-arbitrary-value (consistency)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#no-arbitrary-value",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "category": "consistency",
+                "exposure": "utility",
+                "confidence": "high"
+              }
+            },
+            {
+              "id": "no-conflicting-utilities",
+              "name": "no-conflicting-utilities",
+              "shortDescription": {
+                "text": "no-conflicting-utilities (correctness)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#no-conflicting-utilities",
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "properties": {
+                "category": "correctness",
+                "exposure": "utility",
+                "confidence": "high"
+              }
+            },
+            {
+              "id": "responsive-bloat",
+              "name": "responsive-bloat",
+              "shortDescription": {
+                "text": "responsive-bloat (maintainability)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#responsive-bloat",
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "properties": {
+                "category": "maintainability",
+                "exposure": "class-list",
+                "confidence": "medium"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "no-conflicting-utilities",
+          "level": "note",
+          "message": {
+            "text": "border-r conflicts with border-gray-200 in the same variant."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/card.tsx"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 39
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "71f55ecfc0053d72d453a566180e8f0c963aab4d23525c2213d49c1a10e88c1a"
+          },
+          "properties": {
+            "category": "correctness",
+            "confidence": "medium",
+            "scored": false
+          }
+        },
+        {
+          "ruleId": "no-arbitrary-value",
+          "level": "error",
+          "message": {
+            "text": "Avoid arbitrary values; prefer a named design token."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/card.tsx"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 55
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "e99d1a7ecbda2f576f7bb39f77969e8300519b1f3b6cdd936d41ecc7203bf50a"
+          },
+          "properties": {
+            "category": "consistency",
+            "confidence": "high",
+            "scored": true
+          }
+        },
+        {
+          "ruleId": "no-conflicting-utilities",
+          "level": "error",
+          "message": {
+            "text": "p-4 conflicts with p-2 in the same variant."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/page.html"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 17
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "aa8a1fa7b67614bc2aa7828e1ca8127eab566e1ef31682f07e92d52f7739105a"
+          },
+          "properties": {
+            "category": "correctness",
+            "confidence": "high",
+            "scored": true
+          }
+        },
+        {
+          "ruleId": "no-arbitrary-value",
+          "level": "error",
+          "message": {
+            "text": "Avoid arbitrary values; prefer a named design token."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/page.html"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 21
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "90e1d3e9c0df814ff529f0bbf09d45710b62f96477252ef81a0767714426d0ff"
+          },
+          "properties": {
+            "category": "consistency",
+            "confidence": "high",
+            "scored": true
+          }
+        },
+        {
+          "ruleId": "responsive-bloat",
+          "level": "note",
+          "message": {
+            "text": "Five or more variant utilities make this class list difficult to maintain."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/page.html"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 17
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "8efb08c2331099d38f0f30d867074be7a4bb17b48377130b143687c683c9560b"
+          },
+          "properties": {
+            "category": "maintainability",
+            "confidence": "medium",
+            "scored": false
+          }
+        },
+        {
+          "ruleId": "no-conflicting-utilities",
+          "level": "error",
+          "message": {
+            "text": "px-4 conflicts with px-2 in the same variant."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "styles.css"
+                },
+                "region": {
+                  "startLine": 2,
+                  "startColumn": 40
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "be8a8ffc98a35063067429d6136b989571da28c640d01bf24ce122596c7f3c68"
+          },
+          "properties": {
+            "category": "correctness",
+            "confidence": "high",
+            "scored": true
+          }
+        }
+      ],
+      "properties": {
+        "score": 26,
+        "scoreExcludingBaseline": 26,
+        "scoreModelVersion": 1,
+        "categories": [
+          {
+            "name": "accessibility",
+            "score": null,
+            "exposure": 0,
+            "scoredFindings": 0,
+            "unscoredFindings": 0
+          },
+          {
+            "name": "correctness",
+            "score": 38,
+            "exposure": 18,
+            "scoredFindings": 2,
+            "unscoredFindings": 1
+          },
+          {
+            "name": "consistency",
+            "score": 47,
+            "exposure": 18,
+            "scoredFindings": 2,
+            "unscoredFindings": 0
+          },
+          {
+            "name": "maintainability",
+            "score": 100,
+            "exposure": 6,
+            "scoredFindings": 0,
+            "unscoredFindings": 1
+          }
+        ],
+        "scanned": {
+          "files": 3,
+          "classLists": 6,
+          "utilities": 18
+        }
+      }
+    }
+  ]
+}

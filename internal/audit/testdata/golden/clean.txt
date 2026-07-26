@@ -1,0 +1,9 @@
+Tailwind Doctor: 100/100
+Scanned 1 file(s), 2 class list(s), 6 utilities
+
+  Accessibility    not measured
+  Correctness      100
+  Consistency      100
+  Maintainability  100
+
+No findings. Your class lists look healthy.

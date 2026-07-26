@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "tool": {
+    "name": "tw-doctor",
+    "version": "dev"
+  },
+  "score": 26,
+  "scoreExcludingBaseline": 26,
+  "scoreModel": {
+    "version": 1,
+    "transferFunction": "100 * H / (H + D)",
+    "halfScoreDensity": 0.2,
+    "weights": {
+      "accessibility": 4,
+      "correctness": 3,
+      "consistency": 2,
+      "maintainability": 1
+    }
+  },
+  "categories": [
+    {
+      "name": "accessibility",
+      "score": null,
+      "exposure": 0,
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "correctness",
+      "score": 38,
+      "exposure": 18,
+      "scoredFindings": 2,
+      "unscoredFindings": 1
+    },
+    {
+      "name": "consistency",
+      "score": 47,
+      "exposure": 18,
+      "scoredFindings": 2,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "maintainability",
+      "score": 100,
+      "exposure": 6,
+      "scoredFindings": 0,
+      "unscoredFindings": 1
+    }
+  ],
+  "scanned": {
+    "files": 3,
+    "classLists": 6,
+    "utilities": 18
+  },
+  "configuredRules": [
+    {
+      "id": "no-arbitrary-value",
+      "severity": "error",
+      "confidence": "high"
+    },
+    {
+      "id": "no-conflicting-utilities",
+      "severity": "error",
+      "confidence": "high"
+    },
+    {
+      "id": "responsive-bloat",
+      "severity": "error",
+      "confidence": "medium"
+    }
+  ],
+  "findings": [
+    {
+      "rule": "no-conflicting-utilities",
+      "category": "correctness",
+      "message": "border-r conflicts with border-gray-200 in the same variant.",
+      "file": "src/card.tsx",
+      "class": "rounded-lg border-r border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.1)]",
+      "line": 2,
+      "column": 39,
+      "severity": "error",
+      "confidence": "medium",
+      "scored": false
+    },
+    {
+      "rule": "no-arbitrary-value",
+      "category": "consistency",
+      "message": "Avoid arbitrary values; prefer a named design token.",
+      "file": "src/card.tsx",
+      "class": "shadow-[0_1px_2px_rgba(0,0,0,0.1)]",
+      "line": 2,
+      "column": 55,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    },
+    {
+      "rule": "no-conflicting-utilities",
+      "category": "correctness",
+      "message": "p-4 conflicts with p-2 in the same variant.",
+      "file": "src/page.html",
+      "class": "p-4 p-2 text-[#123456]",
+      "line": 1,
+      "column": 17,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    },
+    {
+      "rule": "no-arbitrary-value",
+      "category": "consistency",
+      "message": "Avoid arbitrary values; prefer a named design token.",
+      "file": "src/page.html",
+      "class": "text-[#123456]",
+      "line": 1,
+      "column": 21,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    },
+    {
+      "rule": "responsive-bloat",
+      "category": "maintainability",
+      "message": "Five or more variant utilities make this class list difficult to maintain.",
+      "file": "src/page.html",
+      "class": "sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10",
+      "line": 2,
+      "column": 17,
+      "severity": "error",
+      "confidence": "medium",
+      "scored": false
+    },
+    {
+      "rule": "no-conflicting-utilities",
+      "category": "correctness",
+      "message": "px-4 conflicts with px-2 in the same variant.",
+      "file": "styles.css",
+      "class": "inline-flex items-center px-4 px-2",
+      "line": 2,
+      "column": 40,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    }
+  ],
+  "suppressed": 0
+}

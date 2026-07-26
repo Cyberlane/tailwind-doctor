@@ -18,10 +18,8 @@ import (
 // applies, so the accuracy figure describes shipped behaviour rather than a
 // convenient subset of it. Nothing here may be imported by non-test code.
 
-var (
-	updateBaseline = flag.Bool("update", false, "rewrite testdata/corpus/baseline.json from the measured result")
-	resolveColumns = flag.Bool("resolve", false, "fill in ground-truth records whose column is written as ?")
-)
+// The -update flag is declared once for the whole package, in golden_test.go.
+var resolveColumns = flag.Bool("resolve", false, "fill in ground-truth records whose column is written as ?")
 
 const (
 	corpusDirectory = "../../testdata/corpus"
@@ -294,7 +292,7 @@ func TestExtractionAccuracy(t *testing.T) {
 	measured := measure(fixtures, baseline.AcceptedFalsePositives)
 	t.Log("\n" + render(measured))
 
-	if *updateBaseline {
+	if *updateFixtures {
 		writeBaseline(t, measured)
 		t.Log("baseline rewritten; review testdata/corpus/baseline.json in the diff")
 		return
@@ -512,7 +510,7 @@ func readBaseline(t *testing.T) measurement {
 	t.Helper()
 	content, err := os.ReadFile(baselinePath)
 	if err != nil {
-		if os.IsNotExist(err) && *updateBaseline {
+		if os.IsNotExist(err) && *updateFixtures {
 			return measurement{}
 		}
 		t.Fatalf("read baseline: %v", err)

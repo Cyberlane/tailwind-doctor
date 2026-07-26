@@ -1,0 +1,15 @@
+Tailwind Doctor: 26/100
+Scanned 3 file(s), 6 class list(s), 18 utilities
+
+  Accessibility    not measured
+  Correctness      38
+  Consistency      47
+  Maintainability  100
+
+6 finding(s):
+- [no-conflicting-utilities] src/card.tsx:2:39: border-r conflicts with border-gray-200 in the same variant. (medium confidence, not scored)
+- [no-arbitrary-value] src/card.tsx:2:55: Avoid arbitrary values; prefer a named design token.
+- [no-conflicting-utilities] src/page.html:1:17: p-4 conflicts with p-2 in the same variant.
+- [no-arbitrary-value] src/page.html:1:21: Avoid arbitrary values; prefer a named design token.
+- [responsive-bloat] src/page.html:2:17: Five or more variant utilities make this class list difficult to maintain. (medium confidence, not scored)
+- [no-conflicting-utilities] styles.css:2:40: px-4 conflicts with px-2 in the same variant.

@@ -1,0 +1,12 @@
+Tailwind Doctor: 23/100 (11 ignoring baseline)
+Scanned 1 file(s), 1 class list(s), 3 utilities
+
+  Accessibility    not measured
+  Correctness      100
+  Consistency      23
+  Maintainability  100
+
+1 finding(s):
+- [no-arbitrary-value] page.html:1:21: Avoid arbitrary values; prefer a named design token.
+
+1 finding(s) suppressed by the baseline.
