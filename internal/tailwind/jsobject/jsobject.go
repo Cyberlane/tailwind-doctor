@@ -63,12 +63,18 @@ type Result struct {
 // Get returns the last object entry for key, matching JavaScript object-literal
 // semantics when a key is repeated.
 func (value Value) Get(key string) (Value, bool) {
+	entry, found := value.Entry(key)
+	return entry.Value, found
+}
+
+// Entry returns the last full object entry for key.
+func (value Value) Entry(key string) (Entry, bool) {
 	for index := len(value.Entries) - 1; index >= 0; index-- {
 		if value.Entries[index].Key == key && !value.Entries[index].Spread {
-			return value.Entries[index].Value, true
+			return value.Entries[index], true
 		}
 	}
-	return Value{}, false
+	return Entry{}, false
 }
 
 // Strings returns the readable string items in an array.
