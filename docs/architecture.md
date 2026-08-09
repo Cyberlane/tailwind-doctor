@@ -28,7 +28,7 @@ There is deliberately no dependency here. No Go parser exists for JSX, Svelte, A
 `--json` and `--sarif` are mutually exclusive; passing both exits 2 rather than
 interleaving two documents on one stream.
 
-`--json` writes a single indented object at `schemaVersion` 2:
+`--json` writes a single indented object at `schemaVersion` 3:
 
 | Field | Meaning |
 |---|---|
@@ -38,10 +38,11 @@ interleaving two documents on one stream.
 | `scoreExcludingBaseline` | The score with no suppressions applied |
 | `scoreModel` | `version`, `transferFunction`, `halfScoreDensity`, `weights` |
 | `categories` | Per-category `score`, ordered `exposures`, and finding counts. `score` is `null` for a category with no enabled scoring rule |
-| `scanned` | `files`, `classLists`, `utilities`, `tokens`, and token confidence counts — the score's denominators |
+| `scanned` | `files`, `classLists`, `utilities`, `tokens`, token confidence counts, and `colorPairs` — the score's denominators |
 | `configuredRules` | Every rule with the `severity` and `confidence` it ran at |
 | `diagnostics` | Configuration constructs the static adapters could not read. Always an array and never score-affecting |
 | `tokens` | Per-package inventory, usage, unused entries, plugin coverage, and confidence evidence. Always an array |
+| `accessibility` | Resolved and unknown colour-pair counts plus sorted coverage-gap reasons |
 | `findings` | Always an array, never `null` |
 | `suppressed` | How many findings the baseline absorbed |
 
@@ -84,8 +85,9 @@ source is loaded.
 
 Each rule declares the unit it is measured against, so its rate is weighted
 findings over the count of that unit: utilities for `no-arbitrary-value` and
-`no-conflicting-utilities`, class lists for `responsive-bloat`, and distinct
-project declarations for `unused-token`. Those rates sum
+`no-conflicting-utilities`, class lists for `responsive-bloat`, distinct
+project declarations for `unused-token`, and statically resolvable colour pairs
+for `color-contrast`. Those rates sum
 into a debt density `D`, which maps onto 0–100 by `100 × H / (H + D)` with
 `H = 1/5`.
 
@@ -98,8 +100,22 @@ the score by default. The formula, the weights, and the reasoning behind `H` are
 argued in [scoring.md](scoring.md); the compatibility rules around changing any
 of it are in [rule-stability.md](rule-stability.md).
 
+## Accessibility
+
+Contrast analysis resolves same-context `text-*` and `bg-*` utilities through
+the package token inventory or a supported arbitrary CSS colour. It calculates
+WCAG 2.2 relative luminance, composites translucent foregrounds over opaque
+backgrounds, and suggests a passing foreground token when one exists.
+
+Coverage is deliberately narrower than CSS. Variant sets must match exactly;
+ancestors and inherited colours are not traversed; text-size thresholds must be
+provable without inventing a root font size; and unsupported gamut mapping,
+runtime variables, background transparency, and opacity composition remain
+unknown. Unknown contexts are summarized in every report and never become
+findings or score exposure.
+
 ## Future Analysis
 
 - Framework-aware AST extraction for dynamic `className` expressions.
-- Color resolution for contrast analysis.
+- Wider CSS colour-space and conservative gamut-mapping support.
 - npm optional-dependency packages that deliver prebuilt Go binaries.

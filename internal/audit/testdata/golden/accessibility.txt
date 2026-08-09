@@ -1,0 +1,29 @@
+Tailwind Doctor: 8/100
+Scanned 4 file(s), 21 class list(s), 47 utilities
+Resolved 11 color pair(s); 11 candidate pair(s) remain unknown
+Inventoried 13 project token(s) across 1 Tailwind package(s)
+
+Accessibility coverage gaps:
+- missing-background: 2
+- missing-foreground: 3
+- multiple-foreground-colors: 1
+- unresolved-foreground-color: 2
+- unresolved-opacity-context: 1
+- unresolved-text-threshold: 1
+- unsupported-color-compositing: 1
+
+  Accessibility    8
+  Correctness      not measured
+  Consistency      not measured
+  Maintainability  not measured
+
+Token coverage:
+- . (Tailwind v4): 13 project token(s), 0 unused, 13 total inventory entries, high confidence
+
+6 finding(s):
+- [color-contrast] known-fail.html:1:11: text-ink on bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
+- [color-contrast] known-fail.html:2:11: text-ink on bg-panel has a 4.48:1 contrast ratio; WCAG 2.2 requires at least 4.5:1. Use text-black for a passing foreground token.
+- [color-contrast] known-fail.html:3:11: text-black/50 on bg-white has a 3.98:1 contrast ratio; WCAG 2.2 requires at least 4.5:1.
+- [color-contrast] known-fail.html:4:11: text-[#777777] on bg-[#888888] has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
+- [color-contrast] known-fail.html:5:11: text-oklch-a on bg-oklch-b has a 1.07:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
+- [color-contrast] known-fail.html:6:11: dark:text-ink on dark:bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use dark:text-black for a passing foreground token.

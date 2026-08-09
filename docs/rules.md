@@ -1,5 +1,34 @@
 # Rule Catalog
 
+## `color-contrast`
+
+Category `accessibility`, measured per statically resolvable colour pair,
+reported at high confidence.
+
+Reports a foreground/background pair whose WCAG 2.2 text contrast ratio is
+decisively below its applicable threshold. The rule uses 4.5:1 when explicit
+same-context pixel font size proves normal text, 3:1 when size and weight prove
+large text, and 3:1 as the universal lower bound when text size is inherited or
+relative. A threshold-dependent ratio from 3:1 through 4.5:1 stays unknown when
+text size cannot be established.
+
+Named `text-*` and `bg-*` utilities resolve through the detected Tailwind token
+inventory. Hexadecimal, RGB, HSL, Oklab, Oklch, basic named CSS colours, and
+`color(srgb ...)` arbitrary values are supported. Foreground alpha is composited
+over an opaque background. Transparent backgrounds, whole-element opacity,
+`currentColor`, runtime variables, unsupported wide-gamut values, multiple
+colour declarations, inherited counterparts, and cross-variant pairing remain
+coverage gaps rather than findings.
+
+Base, dark, responsive, state, and stacked variants are analyzed when both
+colours carry the same normalized variant set in one class list. Ancestors,
+computed styles, runtime theme switches, and the CSS cascade are never guessed.
+When a token in the same package would pass against the fixed background, the
+message names the exact `text-*` replacement.
+
+This rule is disabled by default for its introductory minor release. Enable it
+with `color-contrast = "error"` or `"warn"` under `[rules]`.
+
 ## `no-conflicting-utilities`
 
 Category `correctness`, measured per utility. Reported at high confidence for

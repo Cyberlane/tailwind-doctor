@@ -41,6 +41,7 @@ tagged as such in every output format.
 | `no-conflicting-utilities` | utility |
 | `responsive-bloat` | class list |
 | `unused-token` | distinct project token declaration |
+| `color-contrast` | statically resolvable colour pair |
 
 There is deliberately no single global denominator, for two reasons.
 
@@ -70,6 +71,13 @@ this denominator does not change score model v1 or existing scores by default.
 Only declarations whose coverage meets the configured `min-confidence` enter
 the denominator, so an unreadable class list cannot make a different package's
 measured token debt look healthier.
+
+Colour-pair exposure counts only contexts whose foreground, background, alpha
+composition, and applicable WCAG threshold are decisive. An inherited colour,
+uncertain text-size threshold, runtime variable, or unsupported compositing path
+is published as unknown coverage and contributes to neither side of the rate.
+The `color-contrast` rule is disabled during its introductory minor release, so
+adding this denominator does not change existing default scores.
 
 ## Category Weights
 

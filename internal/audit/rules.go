@@ -53,6 +53,7 @@ const (
 	ExposureUtility   Exposure = "utility"
 	ExposureClassList Exposure = "class-list"
 	ExposureToken     Exposure = "token"
+	ExposureColorPair Exposure = "color-pair"
 )
 
 // Confidence records how sure the tool is that a finding is real. Only high
@@ -119,6 +120,11 @@ var ruleRegistry = []RuleDefinition{
 		ID: "unused-token", Category: CategoryConsistency, Exposure: ExposureToken,
 		DefaultSeverity: SeverityError, DefaultConfidence: ConfidenceHigh,
 		Since: "0.2.0", DefaultOn: false,
+	},
+	{
+		ID: "color-contrast", Category: CategoryAccessibility, Exposure: ExposureColorPair,
+		DefaultSeverity: SeverityError, DefaultConfidence: ConfidenceHigh,
+		Since: "0.3.0", DefaultOn: false,
 	},
 }
 

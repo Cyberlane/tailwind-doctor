@@ -52,8 +52,14 @@ func TestInspectContrast(t *testing.T) {
 		{name: "background alpha", classes: "text-black bg-white/50", unknownReason: unknownUnsupportedCompositing},
 		{name: "whole opacity", classes: "text-black bg-white opacity-50", unknownReason: unknownOpacityContext},
 		{name: "dark pair", classes: "dark:text-gray dark:bg-light", findings: 1, resolved: 1},
+		{name: "stacked variants", classes: "hover:dark:text-gray dark:hover:bg-light", findings: 1, resolved: 1},
+		{name: "responsive pair", classes: "md:text-gray md:bg-light", findings: 1, resolved: 1},
 		{name: "variants do not cross pair", classes: "text-black dark:bg-white", unknownReason: unknownMissingBackground},
 		{name: "arbitrary named colors", classes: "text-[gray] bg-[white] text-body", findings: 1, resolved: 1},
+		{name: "arbitrary rgb and hsl", classes: "text-[rgb(119_119_119)] bg-[hsl(0_0%_53.33%)]", findings: 1, resolved: 1},
+		{name: "multiple backgrounds", classes: "text-black bg-white bg-light", unknownReason: unknownMultipleBackgrounds},
+		{name: "legacy text opacity", classes: "text-black bg-white text-opacity-50", unknownReason: unknownOpacityContext},
+		{name: "legacy background opacity", classes: "text-black bg-white bg-opacity-50", unknownReason: unknownOpacityContext},
 		{name: "untrusted theme", classes: "text-black bg-white", unknownReason: unknownUntrustedTheme},
 	}
 	for _, testCase := range tests {

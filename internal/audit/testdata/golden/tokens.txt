@@ -1,6 +1,10 @@
 Tailwind Doctor: 13/100
 Scanned 1 file(s), 1 class list(s), 3 utilities
+Resolved 0 color pair(s); 1 candidate pair(s) remain unknown
 Inventoried 3 project token(s) across 1 Tailwind package(s)
+
+Accessibility coverage gaps:
+- missing-foreground: 1
 
   Accessibility    not measured
   Correctness      100

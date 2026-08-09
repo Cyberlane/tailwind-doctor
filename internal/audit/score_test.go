@@ -9,7 +9,7 @@ import (
 )
 
 func TestScannedExposurePerUnit(t *testing.T) {
-	scanned := Scanned{Files: 2, ClassLists: 7, Utilities: 41, Tokens: 9, HighConfidenceTokens: 6, MediumConfidenceTokens: 3}
+	scanned := Scanned{Files: 2, ClassLists: 7, Utilities: 41, Tokens: 9, HighConfidenceTokens: 6, MediumConfidenceTokens: 3, ColorPairs: 5}
 
 	if got := scanned.exposure(ExposureUtility, ConfidenceHigh); got != 41 {
 		t.Errorf("utility exposure = %d, want 41", got)
@@ -22,6 +22,9 @@ func TestScannedExposurePerUnit(t *testing.T) {
 	}
 	if got := scanned.exposure(ExposureToken, ConfidenceMedium); got != 9 {
 		t.Errorf("medium-confidence token exposure = %d, want 9", got)
+	}
+	if got := scanned.exposure(ExposureColorPair, ConfidenceHigh); got != 5 {
+		t.Errorf("color-pair exposure = %d, want 5", got)
 	}
 	if got := scanned.exposure(Exposure("nonsense"), ConfidenceHigh); got != 0 {
 		t.Errorf("an unknown unit exposes nothing, got %d", got)
@@ -54,8 +57,9 @@ func TestTransferMatchesThePublishedTable(t *testing.T) {
 // maximumReachableDensity is the largest D the current rule set can produce.
 // Each rule's rate is bounded by one finding per unit of its own exposure, so
 // the sum is bounded by the sum of the category weights involved: 2 for
-// no-arbitrary-value, 3 for no-conflicting-utilities, 1 for responsive-bloat.
-const maximumReachableDensity = 6
+// no-arbitrary-value, 3 for no-conflicting-utilities, 1 for responsive-bloat,
+// and 4 for color contrast when its introductory opt-in is enabled.
+const maximumReachableDensity = 10
 
 // The score must keep falling across the whole range a real codebase can reach,
 // and must not bottom out inside it. That is the entire reason this replaced
@@ -149,8 +153,8 @@ func TestCategoryScoresMatchTheWorkedExample(t *testing.T) {
 		byName[category.Name] = category
 	}
 
-	// Accessibility has no rule yet. Reporting 100 would read as "accessible"
-	// where it means "not measured".
+	// Accessibility's introductory rule is disabled by default. Reporting 100
+	// would read as "accessible" where it means "not measured".
 	if accessibility := byName[CategoryAccessibility]; accessibility.Score != nil {
 		t.Errorf("accessibility score = %d, want null", *accessibility.Score)
 	}

@@ -1,5 +1,9 @@
 Tailwind Doctor: 26/100
 Scanned 3 file(s), 6 class list(s), 18 utilities
+Resolved 0 color pair(s); 1 candidate pair(s) remain unknown
+
+Accessibility coverage gaps:
+- untrusted-theme: 1
 
   Accessibility    not measured
   Correctness      38

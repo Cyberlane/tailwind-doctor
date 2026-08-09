@@ -25,6 +25,7 @@ no-arbitrary-value = "warn"
 responsive-bloat = "off"
 # New in this release and disabled by default for one minor release.
 unused-token = "warn"
+color-contrast = "warn"
 
 [paths]
 # Globs, relative to the analysed directory. ** matches any number of segments.

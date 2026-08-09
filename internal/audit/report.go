@@ -17,7 +17,7 @@ const MaximumScore = 100
 
 // SchemaVersion is the version of the JSON report. A consumer reads this before
 // anything else; the shape below only ever changes with it.
-const SchemaVersion = 2
+const SchemaVersion = 3
 
 // Version is the build's version string, reported in JSON and SARIF so a finding
 // can be traced back to the code that produced it.
@@ -95,6 +95,22 @@ type TokenPackageReport struct {
 	Unused               []TokenReport      `json:"unused"`
 }
 
+// AccessibilityUnknownReason counts one conservative boundary that prevented a
+// candidate foreground/background context from becoming a measured pair.
+type AccessibilityUnknownReason struct {
+	Reason string `json:"reason"`
+	Count  int    `json:"count"`
+}
+
+// AccessibilityReport publishes contrast coverage separately from findings. A
+// context the static analyzer cannot resolve must stay visible without diluting
+// the score or being misrepresented as an accessibility failure.
+type AccessibilityReport struct {
+	ResolvedColorPairs int                          `json:"resolvedColorPairs"`
+	UnknownColorPairs  int                          `json:"unknownColorPairs"`
+	UnknownReasons     []AccessibilityUnknownReason `json:"unknownReasons"`
+}
+
 type Report struct {
 	SchemaVersion int      `json:"schemaVersion"`
 	Tool          ToolInfo `json:"tool"`
@@ -109,6 +125,7 @@ type Report struct {
 	ConfiguredRules        []ConfiguredRule     `json:"configuredRules"`
 	Diagnostics            []ReportDiagnostic   `json:"diagnostics"`
 	Tokens                 []TokenPackageReport `json:"tokens"`
+	Accessibility          AccessibilityReport  `json:"accessibility"`
 	Findings               []Finding            `json:"findings"`
 	themes                 []resolvedTheme
 	// Suppressed counts findings that matched the baseline. Reporting the count
@@ -156,9 +173,20 @@ func WriteHuman(writer io.Writer, report Report) {
 	fmt.Fprintln(writer)
 	fmt.Fprintf(writer, "Scanned %d file(s), %d class list(s), %d utilities\n",
 		report.Scanned.Files, report.Scanned.ClassLists, report.Scanned.Utilities)
+	if report.Accessibility.ResolvedColorPairs > 0 || report.Accessibility.UnknownColorPairs > 0 {
+		fmt.Fprintf(writer, "Resolved %d color pair(s); %d candidate pair(s) remain unknown\n",
+			report.Accessibility.ResolvedColorPairs, report.Accessibility.UnknownColorPairs)
+	}
 	if len(report.Tokens) > 0 {
 		fmt.Fprintf(writer, "Inventoried %d project token(s) across %d Tailwind package(s)\n",
 			report.Scanned.Tokens, len(report.Tokens))
+	}
+
+	if len(report.Accessibility.UnknownReasons) > 0 {
+		fmt.Fprintln(writer, "\nAccessibility coverage gaps:")
+		for _, reason := range report.Accessibility.UnknownReasons {
+			fmt.Fprintf(writer, "- %s: %d\n", reason.Reason, reason.Count)
+		}
 	}
 
 	fmt.Fprintln(writer)

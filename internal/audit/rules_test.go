@@ -50,7 +50,7 @@ func TestEveryRegisteredRuleIsFullyDescribed(t *testing.T) {
 			t.Errorf("rule %q has category %q, which carries no weight", rule.ID, rule.Category)
 		}
 		switch rule.Exposure {
-		case ExposureUtility, ExposureClassList, ExposureToken:
+		case ExposureUtility, ExposureClassList, ExposureToken, ExposureColorPair:
 		default:
 			t.Errorf("rule %q has unknown exposure %q", rule.ID, rule.Exposure)
 		}

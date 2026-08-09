@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 3,
+  "tool": {
+    "name": "tw-doctor",
+    "version": "dev"
+  },
+  "score": 8,
+  "scoreExcludingBaseline": 8,
+  "scoreModel": {
+    "version": 1,
+    "transferFunction": "100 * H / (H + D)",
+    "halfScoreDensity": 0.2,
+    "weights": {
+      "accessibility": 4,
+      "correctness": 3,
+      "consistency": 2,
+      "maintainability": 1
+    }
+  },
+  "categories": [
+    {
+      "name": "accessibility",
+      "score": 8,
+      "exposures": [
+        {
+          "unit": "color-pair",
+          "count": 11
+        }
+      ],
+      "scoredFindings": 6,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "correctness",
+      "score": null,
+      "exposures": [],
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "consistency",
+      "score": null,
+      "exposures": [],
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    },
+    {
+      "name": "maintainability",
+      "score": null,
+      "exposures": [],
+      "scoredFindings": 0,
+      "unscoredFindings": 0
+    }
+  ],
+  "scanned": {
+    "files": 4,
+    "classLists": 21,
+    "utilities": 47,
+    "tokens": 13,
+    "highConfidenceTokens": 13,
+    "mediumConfidenceTokens": 0,
+    "colorPairs": 11
+  },
+  "configuredRules": [
+    {
+      "id": "no-arbitrary-value",
+      "severity": "off",
+      "confidence": "high"
+    },
+    {
+      "id": "no-conflicting-utilities",
+      "severity": "off",
+      "confidence": "high"
+    },
+    {
+      "id": "responsive-bloat",
+      "severity": "off",
+      "confidence": "medium"
+    },
+    {
+      "id": "unused-token",
+      "severity": "off",
+      "confidence": "high"
+    },
+    {
+      "id": "color-contrast",
+      "severity": "error",
+      "confidence": "high"
+    }
+  ],
+  "diagnostics": [],
+  "tokens": [
+    {
+      "package": ".",
+      "tailwindVersion": "4",
+      "confidence": "high",
+      "confidenceReasons": [],
+      "resolvedClassLists": 21,
+      "unresolvedClassLists": 0,
+      "plugins": [],
+      "inventory": [
+        {
+          "family": "color",
+          "name": "black",
+          "path": "--color-black",
+          "value": "#000000",
+          "raw": "#000000",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 5,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "color",
+          "name": "dark",
+          "path": "--color-dark",
+          "value": "#111111",
+          "raw": "#111111",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 10,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "color",
+          "name": "ink",
+          "path": "--color-ink",
+          "value": "#777777",
+          "raw": "#777777",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 7,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "color",
+          "name": "near",
+          "path": "--color-near",
+          "value": "#888888",
+          "raw": "#888888",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 8,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "color",
+          "name": "oklch-a",
+          "path": "--color-oklch-a",
+          "value": "oklch(80% 0 0)",
+          "raw": "oklch(80% 0 0)",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 11,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "color",
+          "name": "oklch-b",
+          "path": "--color-oklch-b",
+          "value": "oklch(82% 0 0)",
+          "raw": "oklch(82% 0 0)",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 12,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "color",
+          "name": "panel",
+          "path": "--color-panel",
+          "value": "#ffffff",
+          "raw": "#ffffff",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 9,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "color",
+          "name": "variable",
+          "path": "--color-variable",
+          "value": "",
+          "raw": "var(--runtime-color)",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 13,
+            "column": 3
+          },
+          "unresolvable": true,
+          "used": true
+        },
+        {
+          "family": "color",
+          "name": "white",
+          "path": "--color-white",
+          "value": "#ffffff",
+          "raw": "#ffffff",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 6,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "font-size",
+          "name": "body",
+          "path": "--text-body",
+          "value": "16px",
+          "raw": "16px",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 14,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "font-size",
+          "name": "bold-large",
+          "path": "--text-bold-large",
+          "value": "19px",
+          "raw": "19px",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 16,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "font-size",
+          "name": "large",
+          "path": "--text-large",
+          "value": "24px",
+          "raw": "24px",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 15,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        },
+        {
+          "family": "font-weight",
+          "name": "bold",
+          "path": "--font-weight-bold",
+          "value": "700",
+          "raw": "700",
+          "origin": "project",
+          "declaration": {
+            "file": "app.css",
+            "line": 17,
+            "column": 3
+          },
+          "unresolvable": false,
+          "used": true
+        }
+      ],
+      "unused": []
+    }
+  ],
+  "accessibility": {
+    "resolvedColorPairs": 11,
+    "unknownColorPairs": 11,
+    "unknownReasons": [
+      {
+        "reason": "missing-background",
+        "count": 2
+      },
+      {
+        "reason": "missing-foreground",
+        "count": 3
+      },
+      {
+        "reason": "multiple-foreground-colors",
+        "count": 1
+      },
+      {
+        "reason": "unresolved-foreground-color",
+        "count": 2
+      },
+      {
+        "reason": "unresolved-opacity-context",
+        "count": 1
+      },
+      {
+        "reason": "unresolved-text-threshold",
+        "count": 1
+      },
+      {
+        "reason": "unsupported-color-compositing",
+        "count": 1
+      }
+    ]
+  },
+  "findings": [
+    {
+      "rule": "color-contrast",
+      "category": "accessibility",
+      "message": "text-ink on bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.",
+      "file": "known-fail.html",
+      "class": "text-ink bg-near",
+      "line": 1,
+      "column": 11,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    },
+    {
+      "rule": "color-contrast",
+      "category": "accessibility",
+      "message": "text-ink on bg-panel has a 4.48:1 contrast ratio; WCAG 2.2 requires at least 4.5:1. Use text-black for a passing foreground token.",
+      "file": "known-fail.html",
+      "class": "text-ink bg-panel",
+      "line": 2,
+      "column": 11,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    },
+    {
+      "rule": "color-contrast",
+      "category": "accessibility",
+      "message": "text-black/50 on bg-white has a 3.98:1 contrast ratio; WCAG 2.2 requires at least 4.5:1.",
+      "file": "known-fail.html",
+      "class": "text-black/50 bg-white",
+      "line": 3,
+      "column": 11,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    },
+    {
+      "rule": "color-contrast",
+      "category": "accessibility",
+      "message": "text-[#777777] on bg-[#888888] has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.",
+      "file": "known-fail.html",
+      "class": "text-[#777777] bg-[#888888]",
+      "line": 4,
+      "column": 11,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    },
+    {
+      "rule": "color-contrast",
+      "category": "accessibility",
+      "message": "text-oklch-a on bg-oklch-b has a 1.07:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.",
+      "file": "known-fail.html",
+      "class": "text-oklch-a bg-oklch-b",
+      "line": 5,
+      "column": 11,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    },
+    {
+      "rule": "color-contrast",
+      "category": "accessibility",
+      "message": "dark:text-ink on dark:bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use dark:text-black for a passing foreground token.",
+      "file": "known-fail.html",
+      "class": "dark:text-ink dark:bg-near",
+      "line": 6,
+      "column": 11,
+      "severity": "error",
+      "confidence": "high",
+      "scored": true
+    }
+  ],
+  "suppressed": 0
+}

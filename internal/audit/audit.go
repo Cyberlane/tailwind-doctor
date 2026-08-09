@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
+	"github.com/Cyberlane/tailwind-doctor/internal/tailwind/plugins"
 	"github.com/Cyberlane/tailwind-doctor/internal/tokens"
 )
 
@@ -70,8 +71,10 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 		ScoreModel:    scoreModel(),
 		Diagnostics:   []ReportDiagnostic{},
 		Tokens:        []TokenPackageReport{},
+		Accessibility: AccessibilityReport{UnknownReasons: []AccessibilityUnknownReason{}},
 		Findings:      []Finding{},
 	}
+	contrastUnknownReasons := map[string]int{}
 	layout, err := tailwind.Discover(os.DirFS(root))
 	if err != nil {
 		return Report{}, fmt.Errorf("discover Tailwind packages: %w", err)
@@ -149,6 +152,14 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 				allowSuggestions = !resolvedTheme.theme.Degraded
 			}
 			findings, usedTokens := inspectWithInventory(relative, list, syntax, inventory, allowSuggestions)
+			trustedContrastTheme := resolvedTheme != nil && !resolvedTheme.theme.Degraded &&
+				plugins.Complete(resolvedTheme.theme.PluginCoverage)
+			contrast := inspectContrast(relative, list, syntax, inventory, trustedContrastTheme)
+			report.Scanned.ColorPairs += contrast.resolvedPairs
+			for reason, count := range contrast.unknownReasons {
+				contrastUnknownReasons[reason] += count
+			}
+			findings = append(findings, contrast.findings...)
 			if resolvedTheme != nil {
 				for _, token := range usedTokens {
 					resolvedTheme.usedTokens[tokenIdentity(token)] = true
@@ -168,6 +179,7 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 			report.themes[index].ambiguousLists = unscopedClassLists
 		}
 	}
+	report.Accessibility = summarizeAccessibility(report.Scanned.ColorPairs, contrastUnknownReasons)
 
 	tokenAnalysis := analyzeTokens(report.themes)
 	report.Tokens = tokenAnalysis.packages

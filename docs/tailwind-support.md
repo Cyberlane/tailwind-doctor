@@ -87,6 +87,11 @@ a missing version, or a version outside the reviewed range is explicit
 incomplete coverage. Token findings use that evidence to lower confidence rather
 than pretending the analyzer saw utilities it cannot classify safely.
 
+Contrast analysis requires a non-degraded theme and complete configured-plugin
+coverage before it trusts named colour utilities. A partial static read or an
+unknown plugin makes candidate pairs explicit unknown coverage instead of
+allowing a possibly overridden colour value to produce a false failure.
+
 ## Monorepos
 
 Every source file is scoped to the nearest Tailwind configuration in an

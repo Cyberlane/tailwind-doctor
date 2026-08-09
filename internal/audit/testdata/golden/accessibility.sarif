@@ -100,203 +100,221 @@
       ],
       "results": [
         {
-          "ruleId": "no-arbitrary-value",
+          "ruleId": "color-contrast",
           "level": "error",
           "message": {
-            "text": "Avoid arbitrary values; prefer a named design token."
+            "text": "text-ink on bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token."
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/card.tsx"
-                },
-                "region": {
-                  "startLine": 2,
-                  "startColumn": 55
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "twDoctorRuleFileClass/v1": "e99d1a7ecbda2f576f7bb39f77969e8300519b1f3b6cdd936d41ecc7203bf50a"
-          },
-          "properties": {
-            "category": "consistency",
-            "confidence": "high",
-            "scored": true
-          }
-        },
-        {
-          "ruleId": "no-conflicting-utilities",
-          "level": "error",
-          "message": {
-            "text": "p-4 conflicts with p-2 in the same variant."
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/page.html"
+                  "uri": "known-fail.html"
                 },
                 "region": {
                   "startLine": 1,
-                  "startColumn": 17
+                  "startColumn": 11
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "twDoctorRuleFileClass/v1": "aa8a1fa7b67614bc2aa7828e1ca8127eab566e1ef31682f07e92d52f7739105a"
+            "twDoctorRuleFileClass/v1": "4d3b7292bf5b686c35f48b44fed8e8ab8202236724f7e0049b021887343d94ea"
           },
           "properties": {
-            "category": "correctness",
+            "category": "accessibility",
             "confidence": "high",
             "scored": true
           }
         },
         {
-          "ruleId": "no-arbitrary-value",
+          "ruleId": "color-contrast",
           "level": "error",
           "message": {
-            "text": "Avoid arbitrary values; prefer a named design token."
+            "text": "text-ink on bg-panel has a 4.48:1 contrast ratio; WCAG 2.2 requires at least 4.5:1. Use text-black for a passing foreground token."
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/page.html"
+                  "uri": "known-fail.html"
                 },
                 "region": {
-                  "startLine": 1,
-                  "startColumn": 21
+                  "startLine": 2,
+                  "startColumn": 11
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "twDoctorRuleFileClass/v1": "90e1d3e9c0df814ff529f0bbf09d45710b62f96477252ef81a0767714426d0ff"
+            "twDoctorRuleFileClass/v1": "77e24608dc7695ab2a3cb25ea188f1de2f7a7ddeb50a4e7d8904abf5fb44b1c2"
           },
           "properties": {
-            "category": "consistency",
+            "category": "accessibility",
             "confidence": "high",
             "scored": true
           }
         },
         {
-          "ruleId": "responsive-bloat",
-          "level": "note",
+          "ruleId": "color-contrast",
+          "level": "error",
           "message": {
-            "text": "Five or more variant utilities make this class list difficult to maintain."
+            "text": "text-black/50 on bg-white has a 3.98:1 contrast ratio; WCAG 2.2 requires at least 4.5:1."
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "src/page.html"
+                  "uri": "known-fail.html"
                 },
                 "region": {
-                  "startLine": 2,
-                  "startColumn": 17
+                  "startLine": 3,
+                  "startColumn": 11
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "twDoctorRuleFileClass/v1": "8efb08c2331099d38f0f30d867074be7a4bb17b48377130b143687c683c9560b"
+            "twDoctorRuleFileClass/v1": "27a74be04133458c613c9ccf035abcc46bc32106164e7efef8876a01201148bf"
           },
           "properties": {
-            "category": "maintainability",
-            "confidence": "medium",
-            "scored": false
+            "category": "accessibility",
+            "confidence": "high",
+            "scored": true
           }
         },
         {
-          "ruleId": "no-conflicting-utilities",
+          "ruleId": "color-contrast",
           "level": "error",
           "message": {
-            "text": "px-4 conflicts with px-2 in the same variant."
+            "text": "text-[#777777] on bg-[#888888] has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token."
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "styles.css"
+                  "uri": "known-fail.html"
                 },
                 "region": {
-                  "startLine": 2,
-                  "startColumn": 40
+                  "startLine": 4,
+                  "startColumn": 11
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "twDoctorRuleFileClass/v1": "be8a8ffc98a35063067429d6136b989571da28c640d01bf24ce122596c7f3c68"
+            "twDoctorRuleFileClass/v1": "137249623607f040023316713f14ac322fa0203e445deca258d0c329ae9674e0"
           },
           "properties": {
-            "category": "correctness",
+            "category": "accessibility",
+            "confidence": "high",
+            "scored": true
+          }
+        },
+        {
+          "ruleId": "color-contrast",
+          "level": "error",
+          "message": {
+            "text": "text-oklch-a on bg-oklch-b has a 1.07:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "known-fail.html"
+                },
+                "region": {
+                  "startLine": 5,
+                  "startColumn": 11
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "3fddc3ca6a7d08d3d1dc680088e8cfde376bcb184cde3330d6bc90e5434a8361"
+          },
+          "properties": {
+            "category": "accessibility",
+            "confidence": "high",
+            "scored": true
+          }
+        },
+        {
+          "ruleId": "color-contrast",
+          "level": "error",
+          "message": {
+            "text": "dark:text-ink on dark:bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use dark:text-black for a passing foreground token."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "known-fail.html"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 11
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "7b636c26e4a8f8bf0368bb1a797c126fba90509efd426487dd0f9ad5ffb5e22f"
+          },
+          "properties": {
+            "category": "accessibility",
             "confidence": "high",
             "scored": true
           }
         }
       ],
       "properties": {
-        "score": 26,
-        "scoreExcludingBaseline": 26,
+        "score": 8,
+        "scoreExcludingBaseline": 8,
         "scoreModelVersion": 1,
         "categories": [
           {
             "name": "accessibility",
+            "score": 8,
+            "exposures": [
+              {
+                "unit": "color-pair",
+                "count": 11
+              }
+            ],
+            "scoredFindings": 6,
+            "unscoredFindings": 0
+          },
+          {
+            "name": "correctness",
             "score": null,
             "exposures": [],
             "scoredFindings": 0,
             "unscoredFindings": 0
           },
           {
-            "name": "correctness",
-            "score": 38,
-            "exposures": [
-              {
-                "unit": "utility",
-                "count": 18
-              }
-            ],
-            "scoredFindings": 2,
-            "unscoredFindings": 0
-          },
-          {
             "name": "consistency",
-            "score": 47,
-            "exposures": [
-              {
-                "unit": "utility",
-                "count": 18
-              }
-            ],
-            "scoredFindings": 2,
+            "score": null,
+            "exposures": [],
+            "scoredFindings": 0,
             "unscoredFindings": 0
           },
           {
             "name": "maintainability",
-            "score": 100,
-            "exposures": [
-              {
-                "unit": "class-list",
-                "count": 6
-              }
-            ],
+            "score": null,
+            "exposures": [],
             "scoredFindings": 0,
-            "unscoredFindings": 1
+            "unscoredFindings": 0
           }
         ],
         "scanned": {
-          "files": 3,
-          "classLists": 6,
-          "utilities": 18,
-          "tokens": 0,
-          "highConfidenceTokens": 0,
+          "files": 4,
+          "classLists": 21,
+          "utilities": 47,
+          "tokens": 13,
+          "highConfidenceTokens": 13,
           "mediumConfidenceTokens": 0,
-          "colorPairs": 0
+          "colorPairs": 11
         }
       }
     }

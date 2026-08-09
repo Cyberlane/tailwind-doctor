@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "tool": {
     "name": "tw-doctor",
     "version": "dev"
@@ -68,7 +68,8 @@
     "utilities": 6,
     "tokens": 0,
     "highConfidenceTokens": 0,
-    "mediumConfidenceTokens": 0
+    "mediumConfidenceTokens": 0,
+    "colorPairs": 0
   },
   "configuredRules": [
     {
@@ -90,10 +91,20 @@
       "id": "unused-token",
       "severity": "off",
       "confidence": "high"
+    },
+    {
+      "id": "color-contrast",
+      "severity": "off",
+      "confidence": "high"
     }
   ],
   "diagnostics": [],
   "tokens": [],
+  "accessibility": {
+    "resolvedColorPairs": 0,
+    "unknownColorPairs": 0,
+    "unknownReasons": []
+  },
   "findings": [],
   "suppressed": 0
 }

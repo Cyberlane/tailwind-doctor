@@ -1,0 +1,6 @@
+[rules]
+color-contrast = "error"
+no-arbitrary-value = "off"
+no-conflicting-utilities = "off"
+responsive-bloat = "off"
+unused-token = "off"

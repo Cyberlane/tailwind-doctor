@@ -100,6 +100,9 @@ func TestSARIFIsValidAndCarriesTheScore(t *testing.T) {
 		if rule.HelpURI == "" {
 			t.Errorf("rule %q has no helpUri", rule.ID)
 		}
+		if rule.ID == "color-contrast" && rule.DefaultConfiguration.Level != "none" {
+			t.Errorf("introductory color-contrast SARIF level = %q, want none", rule.DefaultConfiguration.Level)
+		}
 	}
 
 	if len(run.Results) != len(report.Findings) {

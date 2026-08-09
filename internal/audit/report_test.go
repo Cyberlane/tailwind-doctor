@@ -108,15 +108,17 @@ func TestJSONCarriesTheVersionedSchema(t *testing.T) {
 			Score *int   `json:"score"`
 		} `json:"categories"`
 		Scanned struct {
-			Utilities int `json:"utilities"`
-			Tokens    int `json:"tokens"`
+			Utilities  int `json:"utilities"`
+			Tokens     int `json:"tokens"`
+			ColorPairs int `json:"colorPairs"`
 		} `json:"scanned"`
 		ConfiguredRules []struct {
 			ID string `json:"id"`
 		} `json:"configuredRules"`
-		Diagnostics []ReportDiagnostic   `json:"diagnostics"`
-		Tokens      []TokenPackageReport `json:"tokens"`
-		Findings    []struct {
+		Diagnostics   []ReportDiagnostic   `json:"diagnostics"`
+		Tokens        []TokenPackageReport `json:"tokens"`
+		Accessibility AccessibilityReport  `json:"accessibility"`
+		Findings      []struct {
 			Category   string `json:"category"`
 			Confidence string `json:"confidence"`
 			Scored     bool   `json:"scored"`
@@ -140,7 +142,7 @@ func TestJSONCarriesTheVersionedSchema(t *testing.T) {
 	}
 	for _, category := range decoded.Categories {
 		if category.Name == string(CategoryAccessibility) && category.Score != nil {
-			t.Errorf("accessibility has no rule yet and must report null, got %d", *category.Score)
+			t.Errorf("accessibility rule is disabled by default and must report null, got %d", *category.Score)
 		}
 	}
 	if len(decoded.ConfiguredRules) != len(ruleRegistry) {
@@ -151,6 +153,9 @@ func TestJSONCarriesTheVersionedSchema(t *testing.T) {
 	}
 	if decoded.Tokens == nil {
 		t.Fatal("tokens must be an array, not null")
+	}
+	if decoded.Accessibility.UnknownReasons == nil {
+		t.Fatal("accessibility.unknownReasons must be an array, not null")
 	}
 	if len(decoded.Findings) == 0 {
 		t.Fatal("the fixture has arbitrary values and should report findings")

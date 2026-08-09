@@ -72,6 +72,22 @@
                 "exposure": "token",
                 "confidence": "high"
               }
+            },
+            {
+              "id": "color-contrast",
+              "name": "color-contrast",
+              "shortDescription": {
+                "text": "color-contrast (accessibility)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#color-contrast",
+              "defaultConfiguration": {
+                "level": "none"
+              },
+              "properties": {
+                "category": "accessibility",
+                "exposure": "color-pair",
+                "confidence": "high"
+              }
             }
           ]
         }
@@ -199,7 +215,8 @@
           "utilities": 3,
           "tokens": 3,
           "highConfidenceTokens": 3,
-          "mediumConfidenceTokens": 0
+          "mediumConfidenceTokens": 0,
+          "colorPairs": 0
         }
       }
     }

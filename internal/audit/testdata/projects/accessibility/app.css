@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --*: initial;
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --color-ink: #777777;
+  --color-near: #888888;
+  --color-panel: #ffffff;
+  --color-dark: #111111;
+  --color-oklch-a: oklch(80% 0 0);
+  --color-oklch-b: oklch(82% 0 0);
+  --color-variable: var(--runtime-color);
+  --text-body: 16px;
+  --text-large: 24px;
+  --text-bold-large: 19px;
+  --font-weight-bold: 700;
+}

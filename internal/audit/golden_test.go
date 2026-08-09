@@ -19,7 +19,7 @@ var updateFixtures = flag.Bool("update", false,
 	"rewrite the golden reports and the extraction accuracy baseline from the current output")
 
 func TestGoldenReports(t *testing.T) {
-	for _, project := range []string{"clean", "mixed", "baselined", "tokens"} {
+	for _, project := range []string{"clean", "mixed", "baselined", "tokens", "accessibility"} {
 		t.Run(project, func(t *testing.T) {
 			report, err := Run(filepath.Join("testdata", "projects", project))
 			if err != nil {

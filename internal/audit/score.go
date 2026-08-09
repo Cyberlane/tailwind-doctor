@@ -13,6 +13,7 @@ type Scanned struct {
 	Tokens                 int `json:"tokens"`
 	HighConfidenceTokens   int `json:"highConfidenceTokens"`
 	MediumConfidenceTokens int `json:"mediumConfidenceTokens"`
+	ColorPairs             int `json:"colorPairs"`
 }
 
 // exposure returns the denominator for one exposure unit. An unrecognised unit
@@ -33,6 +34,8 @@ func (scanned Scanned) exposure(unit Exposure, minimum Confidence) int64 {
 		default:
 			return int64(scanned.HighConfidenceTokens)
 		}
+	case ExposureColorPair:
+		return int64(scanned.ColorPairs)
 	}
 	return 0
 }

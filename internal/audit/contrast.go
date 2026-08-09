@@ -60,6 +60,23 @@ type opacityContext struct {
 	background bool
 }
 
+func summarizeAccessibility(resolved int, unknown map[string]int) AccessibilityReport {
+	reasons := make([]AccessibilityUnknownReason, 0, len(unknown))
+	total := 0
+	for reason, count := range unknown {
+		reasons = append(reasons, AccessibilityUnknownReason{Reason: reason, Count: count})
+		total += count
+	}
+	sort.Slice(reasons, func(left, right int) bool {
+		return reasons[left].Reason < reasons[right].Reason
+	})
+	return AccessibilityReport{
+		ResolvedColorPairs: resolved,
+		UnknownColorPairs:  total,
+		UnknownReasons:     reasons,
+	}
+}
+
 func inspectContrast(file string, list ClassList, syntax tailwind.UtilitySyntax, inventory *tokens.Inventory, trustedTheme bool) contrastInspection {
 	inspection := contrastInspection{findings: []Finding{}, unknownReasons: map[string]int{}}
 	contexts := map[string]*contrastContext{}
