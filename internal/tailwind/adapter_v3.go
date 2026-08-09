@@ -16,20 +16,7 @@ type adapterVersion3 struct{}
 func (adapterVersion3) Version() Version { return Version3 }
 
 func (adapterVersion3) Load(fsys fs.FS, pkg Package) (Theme, error) {
-	theme := Theme{
-		Inventory: defaults.Theme("3"),
-		Syntax:    DefaultUtilitySyntax(),
-		Plugins:   []string{},
-	}
-	if pkg.ConfigFile == "" {
-		return theme, fmt.Errorf("Tailwind v3 package %s has no config file", pkg.Dir)
-	}
-	active := map[string]bool{}
-	if err := loadVersion3Config(fsys, cleanPath(pkg.ConfigFile), &theme, active, 0); err != nil {
-		return Theme{}, err
-	}
-	SortDiagnostics(theme.Diagnostics)
-	return theme, nil
+	return loadAdapterTheme(fsys, pkg, pkg.ConfigFile, "3", loadVersion3Config)
 }
 
 func loadVersion3Config(fsys fs.FS, file string, theme *Theme, active map[string]bool, depth int) error {

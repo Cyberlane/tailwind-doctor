@@ -61,3 +61,19 @@ func TestHasArbitraryValueIgnoresArbitraryVariants(t *testing.T) {
 		t.Error("text-[#123456] has an arbitrary value")
 	}
 }
+
+func TestParseUtilityStripsAVariantPrefix(t *testing.T) {
+	syntax := UtilitySyntax{Prefix: "tw", PrefixIsVariant: true, Separator: ":"}
+	parsed := ParseUtility("tw:p-4", syntax)
+	if parsed.Base != "p-4" || len(parsed.Variants) != 0 {
+		t.Errorf("parsed = %+v, want unvaried p-4", parsed)
+	}
+	stacked := ParseUtility("tw:hover:p-4", syntax)
+	if stacked.Base != "p-4" || len(stacked.Variants) != 1 || stacked.Variants[0] != "hover" {
+		t.Errorf("stacked = %+v", stacked)
+	}
+	negative := ParseUtility("-tw:mt-2", syntax)
+	if negative.Base != "mt-2" || !negative.Negative {
+		t.Errorf("negative = %+v", negative)
+	}
+}

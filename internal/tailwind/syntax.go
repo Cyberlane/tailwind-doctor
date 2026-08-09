@@ -19,6 +19,9 @@ type UtilitySyntax struct {
 	// Prefix is the Tailwind v3 `prefix` option, for example "tw-" giving
 	// "tw-p-4". Tailwind v4 spells its prefix as a leading variant instead.
 	Prefix string
+	// PrefixIsVariant records the Tailwind v4 spelling "tw:p-4" rather than
+	// the v3 name prefix "tw-p-4".
+	PrefixIsVariant bool
 	// Separator is the Tailwind v3 `separator` option, ":" unless configured.
 	Separator string
 }
@@ -86,6 +89,16 @@ func SplitOnSeparator(raw, separator string) []string {
 // ParseUtility parses a utility using project-level syntax options.
 func ParseUtility(raw string, syntax UtilitySyntax) ParsedUtility {
 	segments := SplitOnSeparator(raw, syntax.separator())
+	prefixNegative := false
+	if syntax.PrefixIsVariant && syntax.Prefix != "" && len(segments) > 1 {
+		switch segments[0] {
+		case syntax.Prefix:
+			segments = segments[1:]
+		case "-" + syntax.Prefix:
+			segments = segments[1:]
+			prefixNegative = true
+		}
+	}
 	parsed := ParsedUtility{Base: segments[len(segments)-1]}
 	if len(segments) > 1 {
 		parsed.Variants = segments[:len(segments)-1]
@@ -104,7 +117,10 @@ func ParseUtility(raw string, syntax UtilitySyntax) ParsedUtility {
 	if trimmed, found := strings.CutPrefix(parsed.Base, "-"); found {
 		parsed.Base, parsed.Negative = trimmed, true
 	}
-	if syntax.Prefix != "" {
+	if prefixNegative {
+		parsed.Negative = true
+	}
+	if syntax.Prefix != "" && !syntax.PrefixIsVariant {
 		parsed.Base = strings.TrimPrefix(parsed.Base, syntax.Prefix)
 	}
 
