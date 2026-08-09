@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-500: #3b82f6;
+  --spacing-gutter: 1.5rem;
+  --radius-card: 0.75rem;
+  --breakpoint-3xl: 120rem;
+}

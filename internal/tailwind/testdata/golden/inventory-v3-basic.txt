@@ -1,0 +1,18 @@
+package .
+  version 3
+  degraded false
+  prefix tw- variant=false
+  plugin @tailwindcss/typography
+  token color brand-500 = #3b82f6 (colors.brand.500) tailwind.config.js:8:11
+  token spacing gutter = 1.5rem (spacing.gutter) tailwind.config.js:12:9
+  token radius card = 0.75rem (borderRadius.card) tailwind.config.js:15:9
+  defaults breakpoint 5
+  defaults color 247
+  defaults font-family 3
+  defaults font-size 13
+  defaults font-weight 9
+  defaults letter-spacing 6
+  defaults line-height 14
+  defaults radius 9
+  defaults shadow 8
+  defaults spacing 35

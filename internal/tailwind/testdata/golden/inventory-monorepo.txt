@@ -1,0 +1,29 @@
+package packages/ui
+  version 3
+  degraded false
+  token color brand = #2563eb (colors.brand) packages/ui/tailwind.config.js:5:9
+  defaults breakpoint 5
+  defaults color 247
+  defaults font-family 3
+  defaults font-size 13
+  defaults font-weight 9
+  defaults letter-spacing 6
+  defaults line-height 14
+  defaults radius 9
+  defaults shadow 8
+  defaults spacing 35
+package packages/web
+  version 4
+  degraded false
+  token color brand = #059669 (--color-brand) packages/web/src/app.css:4:3
+  defaults breakpoint 5
+  defaults color 244
+  defaults container 13
+  defaults font-family 3
+  defaults font-size 13
+  defaults font-weight 9
+  defaults letter-spacing 6
+  defaults line-height 5
+  defaults radius 8
+  defaults shadow 8
+  defaults spacing 1

@@ -1,0 +1,14 @@
+package .
+  version 3
+  degraded true
+  diagnostic unreadable-config tailwind.config.js:7:9 Cannot read Tailwind theme without executing its spread.
+  defaults breakpoint 5
+  defaults color 247
+  defaults font-family 3
+  defaults font-size 13
+  defaults font-weight 9
+  defaults letter-spacing 6
+  defaults line-height 14
+  defaults radius 9
+  defaults shadow 8
+  defaults spacing 35

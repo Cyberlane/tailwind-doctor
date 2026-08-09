@@ -1,0 +1,18 @@
+package src
+  version 4
+  degraded false
+  token color brand-500 = #3b82f6 (--color-brand-500) src/app.css:4:3
+  token spacing gutter = 1.5rem (--spacing-gutter) src/app.css:5:3
+  token radius card = 0.75rem (--radius-card) src/app.css:6:3
+  token breakpoint 3xl = 120rem (--breakpoint-3xl) src/app.css:7:3
+  defaults breakpoint 5
+  defaults color 244
+  defaults container 13
+  defaults font-family 3
+  defaults font-size 13
+  defaults font-weight 9
+  defaults letter-spacing 6
+  defaults line-height 5
+  defaults radius 8
+  defaults shadow 8
+  defaults spacing 1
