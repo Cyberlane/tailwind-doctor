@@ -198,7 +198,7 @@ func parseOKLabColor(body string, polar bool) (cssColor, bool) {
 	if !found && polar {
 		third, found = parseAngle(components[2])
 	}
-	if !found {
+	if !found || (polar && thirdPercent) {
 		return cssColor{}, false
 	}
 	if thirdPercent {
@@ -268,33 +268,58 @@ func functionalComponents(body string, allowLegacyAlpha bool) ([]string, float64
 	if strings.Count(body, "/") > 1 {
 		return nil, 0, false
 	}
-	main, alphaText, hasAlpha := strings.Cut(body, "/")
-	main = strings.ReplaceAll(main, ",", " ")
-	components := strings.Fields(main)
-	if !hasAlpha && allowLegacyAlpha && len(components) == 4 {
-		alphaText = components[3]
-		components = components[:3]
-		hasAlpha = true
+	if strings.Contains(body, ",") {
+		if strings.Contains(body, "/") || !allowLegacyAlpha {
+			return nil, 0, false
+		}
+		fields := strings.Split(body, ",")
+		if len(fields) != 3 && len(fields) != 4 {
+			return nil, 0, false
+		}
+		for index := range fields {
+			fields[index] = strings.TrimSpace(fields[index])
+			if fields[index] == "" {
+				return nil, 0, false
+			}
+		}
+		alpha := 1.0
+		if len(fields) == 4 {
+			var found bool
+			alpha, found = parseAlphaComponent(fields[3])
+			if !found {
+				return nil, 0, false
+			}
+			fields = fields[:3]
+		}
+		return fields, alpha, true
 	}
+
+	main, alphaText, hasAlpha := strings.Cut(body, "/")
+	components := strings.Fields(main)
 	alpha := 1.0
 	if hasAlpha {
-		fields := strings.Fields(strings.ReplaceAll(alphaText, ",", " "))
+		fields := strings.Fields(alphaText)
 		if len(fields) != 1 {
 			return nil, 0, false
 		}
-		value, percent, found := numericComponent(fields[0])
+		var found bool
+		alpha, found = parseAlphaComponent(fields[0])
 		if !found {
 			return nil, 0, false
 		}
-		if percent {
-			value /= 100
-		}
-		if !inUnitRange(value) {
-			return nil, 0, false
-		}
-		alpha = value
 	}
 	return components, alpha, true
+}
+
+func parseAlphaComponent(raw string) (float64, bool) {
+	value, percent, found := numericComponent(raw)
+	if !found {
+		return 0, false
+	}
+	if percent {
+		value /= 100
+	}
+	return value, inUnitRange(value)
 }
 
 func numericComponent(raw string) (float64, bool, bool) {
@@ -308,12 +333,18 @@ func numericComponent(raw string) (float64, bool, bool) {
 
 func parseAngle(raw string) (float64, bool) {
 	multiplier := 1.0
-	for suffix, factor := range map[string]float64{
-		"deg": 1, "grad": 0.9, "rad": 180 / math.Pi, "turn": 360,
+	for _, unit := range []struct {
+		suffix     string
+		multiplier float64
+	}{
+		{suffix: "grad", multiplier: 0.9},
+		{suffix: "turn", multiplier: 360},
+		{suffix: "deg", multiplier: 1},
+		{suffix: "rad", multiplier: 180 / math.Pi},
 	} {
-		if strings.HasSuffix(raw, suffix) {
-			raw = strings.TrimSuffix(raw, suffix)
-			multiplier = factor
+		if strings.HasSuffix(raw, unit.suffix) {
+			raw = strings.TrimSuffix(raw, unit.suffix)
+			multiplier = unit.multiplier
 			break
 		}
 	}

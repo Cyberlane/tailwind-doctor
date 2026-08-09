@@ -22,6 +22,7 @@ func TestParseCSSColor(t *testing.T) {
 		{name: "legacy rgba", value: "rgba(0, 255, 0, .25)", green: 1, alpha: 0.25},
 		{name: "percentage rgb", value: "rgb(0% 0% 100%)", blue: 1, alpha: 1},
 		{name: "hsl", value: "hsl(120deg 100% 50%)", green: 1, alpha: 1},
+		{name: "hsl gradians", value: "hsl(100grad 100% 50%)", red: 0.5, green: 1, alpha: 1},
 		{name: "oklch white", value: "oklch(100% 0 0)", red: 1, green: 1, blue: 1, alpha: 1},
 		{name: "oklab black", value: "oklab(0 0 0)", alpha: 1},
 		{name: "predefined srgb", value: "color(srgb 1 0 0 / 75%)", red: 1, alpha: 0.75},
@@ -51,6 +52,8 @@ func TestParseCSSColorRejectsUnknownContext(t *testing.T) {
 	for _, value := range []string{
 		"", "currentColor", "var(--brand)", "rgb(calc(1) 0 0)",
 		"color(display-p3 1 0 0)", "oklch(70% 0.4 30)", "rgb(300 0 0)",
+		"rgb(255, 0 0)", "rgb(255, 0, 0 / 50%)", "rgb(0 0 0 50%)",
+		"oklab(50%, 0, 0)", "oklch(50% 0.1 25%)", "color(srgb 1, 0, 0)",
 	} {
 		if _, found := parseCSSColor(value); found {
 			t.Errorf("parseCSSColor(%q) resolved an unsupported value", value)
