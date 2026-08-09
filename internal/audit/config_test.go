@@ -296,6 +296,9 @@ func TestBaselineRejectsAnUnknownVersion(t *testing.T) {
 // asks for it, and asking for it must still work.
 func TestSeverityForRespectsDefaultOn(t *testing.T) {
 	config := defaultConfig()
+	if severity := config.severityFor("unused-token"); severity != SeverityOff {
+		t.Errorf("unused-token defaults to %q, want off", severity)
+	}
 	original := ruleRegistry
 	ruleRegistry = append(append([]RuleDefinition(nil), original...), RuleDefinition{
 		ID: "test-only-new-rule", Category: CategoryConsistency, Exposure: ExposureUtility,

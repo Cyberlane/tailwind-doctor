@@ -6,8 +6,7 @@ Scanned 3 file(s), 6 class list(s), 18 utilities
   Consistency      47
   Maintainability  100
 
-6 finding(s):
-- [no-conflicting-utilities] src/card.tsx:2:39: border-r conflicts with border-gray-200 in the same variant. (medium confidence, not scored)
+5 finding(s):
 - [no-arbitrary-value] src/card.tsx:2:55: Avoid arbitrary values; prefer a named design token.
 - [no-conflicting-utilities] src/page.html:1:17: p-4 conflicts with p-2 in the same variant.
 - [no-arbitrary-value] src/page.html:1:21: Avoid arbitrary values; prefer a named design token.

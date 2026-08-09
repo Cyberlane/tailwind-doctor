@@ -21,18 +21,18 @@ const (
 
 // Pattern identifies plugin utilities without evaluating the plugin.
 type Pattern struct {
-	Exact  string
-	Prefix string
+	Exact  string `json:"exact,omitempty"`
+	Prefix string `json:"prefix,omitempty"`
 }
 
 // Coverage is the resolved registry evidence for one configured plugin.
 type Coverage struct {
-	Specifier    string
-	VersionRange string
-	Support      Support
-	Complete     bool
-	Reason       string
-	Patterns     []Pattern
+	Specifier    string    `json:"specifier"`
+	VersionRange string    `json:"versionRange"`
+	Support      Support   `json:"support"`
+	Complete     bool      `json:"complete"`
+	Reason       string    `json:"reason,omitempty"`
+	Patterns     []Pattern `json:"patterns"`
 }
 
 type versionBand struct {
@@ -108,7 +108,7 @@ func Resolve(specifiers []string, versions map[string]string) []Coverage {
 		if !found {
 			coverage = append(coverage, Coverage{
 				Specifier: specifier, Support: SupportUnknown,
-				Reason: "plugin is not in the curated registry",
+				Reason: "plugin is not in the curated registry", Patterns: []Pattern{},
 			})
 			continue
 		}
@@ -118,7 +118,7 @@ func Resolve(specifiers []string, versions map[string]string) []Coverage {
 		}
 		resolved := Coverage{
 			Specifier: specifier, VersionRange: versionRange,
-			Patterns: append([]Pattern(nil), entry.patterns...),
+			Patterns: append([]Pattern{}, entry.patterns...),
 		}
 		if versionRange == "" {
 			resolved.Support = SupportMissingVersion

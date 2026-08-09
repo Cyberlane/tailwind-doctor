@@ -113,30 +113,22 @@ func TestInspectAttributesCategoryAndConfidence(t *testing.T) {
 	}
 }
 
-// border-r sets a width and border-gray-200 a colour, but utilityGroup puts both
-// in "border-". Until the property taxonomy lands with the token inventory, a
-// conflict in an ambiguous group is reported at medium confidence so a known
-// false positive cannot move the score.
-func TestInspectDemotesAmbiguousConflicts(t *testing.T) {
+func TestInspectSeparatesAmbiguousPropertyFamilies(t *testing.T) {
 	cases := []struct {
-		name       string
-		classes    string
-		confidence Confidence
+		name    string
+		classes string
+		count   int
 	}{
-		{"padding is unambiguous", "p-4 p-2", ConfidenceHigh},
-		{"margin is unambiguous", "mt-4 mt-2", ConfidenceHigh},
-		{"border mixes width and colour", "border-r border-gray-200", ConfidenceMedium},
-		{"background mixes colour and size", "bg-red-500 bg-cover", ConfidenceMedium},
-		{"text mixes size and colour", "text-sm text-red-500", ConfidenceMedium},
+		{"padding conflict", "p-4 p-2", 1},
+		{"margin conflict", "mt-4 mt-2", 1},
+		{"border width and colour", "border-r border-gray-200", 0},
+		{"background colour and size", "bg-red-500 bg-cover", 0},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
 			findings := inspect("src/card.tsx", classList(testCase.classes), tailwind.DefaultUtilitySyntax())
-			if len(findings) != 1 {
-				t.Fatalf("expected one conflict, got %#v", findings)
-			}
-			if findings[0].Confidence != testCase.confidence {
-				t.Errorf("confidence = %q, want %q", findings[0].Confidence, testCase.confidence)
+			if len(findings) != testCase.count {
+				t.Fatalf("expected %d finding(s), got %#v", testCase.count, findings)
 			}
 		})
 	}

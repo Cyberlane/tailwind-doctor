@@ -56,6 +56,22 @@
                 "exposure": "class-list",
                 "confidence": "medium"
               }
+            },
+            {
+              "id": "unused-token",
+              "name": "unused-token",
+              "shortDescription": {
+                "text": "unused-token (consistency)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#unused-token",
+              "defaultConfiguration": {
+                "level": "none"
+              },
+              "properties": {
+                "category": "consistency",
+                "exposure": "token",
+                "confidence": "high"
+              }
             }
           ]
         }
@@ -67,34 +83,6 @@
         }
       ],
       "results": [
-        {
-          "ruleId": "no-conflicting-utilities",
-          "level": "note",
-          "message": {
-            "text": "border-r conflicts with border-gray-200 in the same variant."
-          },
-          "locations": [
-            {
-              "physicalLocation": {
-                "artifactLocation": {
-                  "uri": "src/card.tsx"
-                },
-                "region": {
-                  "startLine": 2,
-                  "startColumn": 39
-                }
-              }
-            }
-          ],
-          "partialFingerprints": {
-            "twDoctorRuleFileClass/v1": "71f55ecfc0053d72d453a566180e8f0c963aab4d23525c2213d49c1a10e88c1a"
-          },
-          "properties": {
-            "category": "correctness",
-            "confidence": "medium",
-            "scored": false
-          }
-        },
         {
           "ruleId": "no-arbitrary-value",
           "level": "error",
@@ -244,28 +232,43 @@
           {
             "name": "accessibility",
             "score": null,
-            "exposure": 0,
+            "exposures": [],
             "scoredFindings": 0,
             "unscoredFindings": 0
           },
           {
             "name": "correctness",
             "score": 38,
-            "exposure": 18,
+            "exposures": [
+              {
+                "unit": "utility",
+                "count": 18
+              }
+            ],
             "scoredFindings": 2,
-            "unscoredFindings": 1
+            "unscoredFindings": 0
           },
           {
             "name": "consistency",
             "score": 47,
-            "exposure": 18,
+            "exposures": [
+              {
+                "unit": "utility",
+                "count": 18
+              }
+            ],
             "scoredFindings": 2,
             "unscoredFindings": 0
           },
           {
             "name": "maintainability",
             "score": 100,
-            "exposure": 6,
+            "exposures": [
+              {
+                "unit": "class-list",
+                "count": 6
+              }
+            ],
             "scoredFindings": 0,
             "unscoredFindings": 1
           }
@@ -273,7 +276,10 @@
         "scanned": {
           "files": 3,
           "classLists": 6,
-          "utilities": 18
+          "utilities": 18,
+          "tokens": 0,
+          "highConfidenceTokens": 0,
+          "mediumConfidenceTokens": 0
         }
       }
     }

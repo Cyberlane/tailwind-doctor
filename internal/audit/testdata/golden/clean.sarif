@@ -56,6 +56,22 @@
                 "exposure": "class-list",
                 "confidence": "medium"
               }
+            },
+            {
+              "id": "unused-token",
+              "name": "unused-token",
+              "shortDescription": {
+                "text": "unused-token (consistency)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#unused-token",
+              "defaultConfiguration": {
+                "level": "none"
+              },
+              "properties": {
+                "category": "consistency",
+                "exposure": "token",
+                "confidence": "high"
+              }
             }
           ]
         }
@@ -75,28 +91,43 @@
           {
             "name": "accessibility",
             "score": null,
-            "exposure": 0,
+            "exposures": [],
             "scoredFindings": 0,
             "unscoredFindings": 0
           },
           {
             "name": "correctness",
             "score": 100,
-            "exposure": 6,
+            "exposures": [
+              {
+                "unit": "utility",
+                "count": 6
+              }
+            ],
             "scoredFindings": 0,
             "unscoredFindings": 0
           },
           {
             "name": "consistency",
             "score": 100,
-            "exposure": 6,
+            "exposures": [
+              {
+                "unit": "utility",
+                "count": 6
+              }
+            ],
             "scoredFindings": 0,
             "unscoredFindings": 0
           },
           {
             "name": "maintainability",
             "score": 100,
-            "exposure": 2,
+            "exposures": [
+              {
+                "unit": "class-list",
+                "count": 2
+              }
+            ],
             "scoredFindings": 0,
             "unscoredFindings": 0
           }
@@ -104,7 +135,10 @@
         "scanned": {
           "files": 1,
           "classLists": 2,
-          "utilities": 6
+          "utilities": 6,
+          "tokens": 0,
+          "highConfidenceTokens": 0,
+          "mediumConfidenceTokens": 0
         }
       }
     }

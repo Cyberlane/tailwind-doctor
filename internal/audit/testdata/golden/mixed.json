@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "tool": {
     "name": "tw-doctor",
     "version": "dev"
@@ -21,28 +21,43 @@
     {
       "name": "accessibility",
       "score": null,
-      "exposure": 0,
+      "exposures": [],
       "scoredFindings": 0,
       "unscoredFindings": 0
     },
     {
       "name": "correctness",
       "score": 38,
-      "exposure": 18,
+      "exposures": [
+        {
+          "unit": "utility",
+          "count": 18
+        }
+      ],
       "scoredFindings": 2,
-      "unscoredFindings": 1
+      "unscoredFindings": 0
     },
     {
       "name": "consistency",
       "score": 47,
-      "exposure": 18,
+      "exposures": [
+        {
+          "unit": "utility",
+          "count": 18
+        }
+      ],
       "scoredFindings": 2,
       "unscoredFindings": 0
     },
     {
       "name": "maintainability",
       "score": 100,
-      "exposure": 6,
+      "exposures": [
+        {
+          "unit": "class-list",
+          "count": 6
+        }
+      ],
       "scoredFindings": 0,
       "unscoredFindings": 1
     }
@@ -50,7 +65,10 @@
   "scanned": {
     "files": 3,
     "classLists": 6,
-    "utilities": 18
+    "utilities": 18,
+    "tokens": 0,
+    "highConfidenceTokens": 0,
+    "mediumConfidenceTokens": 0
   },
   "configuredRules": [
     {
@@ -67,22 +85,16 @@
       "id": "responsive-bloat",
       "severity": "error",
       "confidence": "medium"
+    },
+    {
+      "id": "unused-token",
+      "severity": "off",
+      "confidence": "high"
     }
   ],
   "diagnostics": [],
+  "tokens": [],
   "findings": [
-    {
-      "rule": "no-conflicting-utilities",
-      "category": "correctness",
-      "message": "border-r conflicts with border-gray-200 in the same variant.",
-      "file": "src/card.tsx",
-      "class": "rounded-lg border-r border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.1)]",
-      "line": 2,
-      "column": 39,
-      "severity": "error",
-      "confidence": "medium",
-      "scored": false
-    },
     {
       "rule": "no-arbitrary-value",
       "category": "consistency",

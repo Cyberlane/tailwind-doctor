@@ -3,9 +3,10 @@
 ## `no-conflicting-utilities`
 
 Category `correctness`, measured per utility. Reported at high confidence for
-utility groups the tool can separate unambiguously, and at medium confidence —
-therefore score-neutral — for `text-`, `bg-`, and `border-`, where a shorthand
-and a colour currently land in the same group.
+utility groups the tool can separate unambiguously. The token-aware property
+taxonomy distinguishes text colour from font size, background colour from size
+and position, and border colour from width and style. A lexical conflict that
+cannot be classified conservatively remains medium confidence and score-neutral.
 
 Reports utility classes in the same variant that target the same simple utility group, such as `p-4 p-2`. Variant-specific utilities such as `p-4 md:p-6` are treated as independent.
 
@@ -20,6 +21,25 @@ Reports bracketed arbitrary values, such as `bg-[#fcfcfc]`. These often fragment
 An arbitrary *variant* is not an arbitrary value: `[&_svg]:size-4` selects where a utility applies rather than hard-coding a value that should have been a token, and is not reported.
 
 Legitimate arbitrary values exist. List them under `[arbitrary-values]` in `twdoctor.toml` so the rule stays on everywhere else; see [configuration.md](configuration.md).
+
+When a resolved project token has exactly the same normalized value, the
+message names the replacement utility. Tailwind v4's `--spacing` base is treated
+as a generator for exact same-unit integer multiples. Units are never converted:
+`16px` does not become `1rem` without a declared root font size.
+
+## `unused-token`
+
+Category `consistency`, measured per distinct project token declaration.
+
+Reports a custom theme token that no resolved class list consumes. Default
+Tailwind tokens are never reported. A declaration imported by multiple packages
+is counted once and is used when any owning package consumes it.
+
+This rule is disabled by default for its introductory minor release. Enable it
+explicitly with `unused-token = "error"` or `"warn"` under `[rules]`. A partially
+readable theme, incomplete plugin surface, unresolved class list, or ambiguous
+monorepo ownership lowers the finding to medium confidence rather than making a
+stronger claim than the evidence supports.
 
 ## `responsive-bloat`
 

@@ -1,0 +1,15 @@
+Tailwind Doctor: 13/100
+Scanned 1 file(s), 1 class list(s), 3 utilities
+Inventoried 3 project token(s) across 1 Tailwind package(s)
+
+  Accessibility    not measured
+  Correctness      100
+  Consistency      13
+  Maintainability  100
+
+Token coverage:
+- . (Tailwind v4): 3 project token(s), 1 unused, 3 total inventory entries, high confidence
+
+2 finding(s):
+- [unused-token] app.css:7:3: Custom token --color-orphan is not used by any resolved class list.
+- [no-arbitrary-value] app.css:11:23: Avoid arbitrary values; use mt-4, which matches --spacing.

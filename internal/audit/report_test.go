@@ -109,11 +109,13 @@ func TestJSONCarriesTheVersionedSchema(t *testing.T) {
 		} `json:"categories"`
 		Scanned struct {
 			Utilities int `json:"utilities"`
+			Tokens    int `json:"tokens"`
 		} `json:"scanned"`
 		ConfiguredRules []struct {
 			ID string `json:"id"`
 		} `json:"configuredRules"`
-		Diagnostics []ReportDiagnostic `json:"diagnostics"`
+		Diagnostics []ReportDiagnostic   `json:"diagnostics"`
+		Tokens      []TokenPackageReport `json:"tokens"`
 		Findings    []struct {
 			Category   string `json:"category"`
 			Confidence string `json:"confidence"`
@@ -146,6 +148,9 @@ func TestJSONCarriesTheVersionedSchema(t *testing.T) {
 	}
 	if decoded.Diagnostics == nil {
 		t.Fatal("diagnostics must be an array, not null")
+	}
+	if decoded.Tokens == nil {
+		t.Fatal("tokens must be an array, not null")
 	}
 	if len(decoded.Findings) == 0 {
 		t.Fatal("the fixture has arbitrary values and should report findings")

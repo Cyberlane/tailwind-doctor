@@ -63,9 +63,9 @@ const (
 // Site is where a token was declared. It is empty for a default token, which has
 // no declaration in the user's project to point at.
 type Site struct {
-	File   string
-	Line   int
-	Column int
+	File   string `json:"file"`
+	Line   int    `json:"line"`
+	Column int    `json:"column"`
 }
 
 // Token is one entry in the inventory.

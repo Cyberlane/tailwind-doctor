@@ -23,6 +23,8 @@ can trust and nobody can debug.
 # off             — not reported at all
 no-arbitrary-value = "warn"
 responsive-bloat = "off"
+# New in this release and disabled by default for one minor release.
+unused-token = "warn"
 
 [paths]
 # Globs, relative to the analysed directory. ** matches any number of segments.
@@ -60,7 +62,9 @@ Every table and every key is optional.
 
 A rule's severity decides what it does when it matches:
 
-- **`error`** — reported, and lowers the score. The default for every rule.
+- **`error`** — reported, and lowers the score when confidence clears the
+  configured threshold. This is the established-rule default; newly introduced
+  rules remain off for one minor release.
 - **`warn`** — reported, but score-neutral. This is how a rule stays useful
   before a team trusts it enough to gate a build on.
 - **`off`** — not reported.
@@ -77,14 +81,15 @@ Nothing is ever hidden by confidence. A finding below the threshold is reported,
 tagged in every output format, and carries `"scored": false` in JSON — a visibly
 uncertain finding costs less trust than a silent miss.
 
-Two things report below `high` today, so `min-confidence = "medium"` is what
-scores them:
+The following evidence can report below `high`, so `min-confidence = "medium"`
+is what scores it:
 
 - `responsive-bloat`, because a five-variant threshold is a heuristic with no
   defect behind it.
-- `no-conflicting-utilities` on `text-`, `bg-`, and `border-`, where a shorthand
-  and a colour still land in the same utility group and a conflict may be a
-  false positive.
+- an unclassifiable utility conflict that the property taxonomy cannot separate
+  conservatively;
+- `unused-token` when configuration, plugin, extraction, or package-ownership
+  evidence is incomplete.
 
 See [scoring.md](scoring.md) for what the score does with them, and
 [rules.md](rules.md) for the per-rule detail.

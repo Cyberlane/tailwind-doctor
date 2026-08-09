@@ -52,6 +52,7 @@ type Exposure string
 const (
 	ExposureUtility   Exposure = "utility"
 	ExposureClassList Exposure = "class-list"
+	ExposureToken     Exposure = "token"
 )
 
 // Confidence records how sure the tool is that a finding is real. Only high
@@ -113,6 +114,11 @@ var ruleRegistry = []RuleDefinition{
 		ID: "responsive-bloat", Category: CategoryMaintainability, Exposure: ExposureClassList,
 		DefaultSeverity: SeverityError, DefaultConfidence: ConfidenceMedium,
 		Since: "0.1.0", DefaultOn: true,
+	},
+	{
+		ID: "unused-token", Category: CategoryConsistency, Exposure: ExposureToken,
+		DefaultSeverity: SeverityError, DefaultConfidence: ConfidenceHigh,
+		Since: "0.2.0", DefaultOn: false,
 	},
 }
 

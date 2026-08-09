@@ -94,3 +94,39 @@ func TestLookupIgnoresUnresolvableTokens(t *testing.T) {
 		t.Error("an unresolvable token must never be suggested")
 	}
 }
+
+func TestSpacingMultipleRequiresAnExactSameUnitInteger(t *testing.T) {
+	inventory := NewInventory()
+	inventory.Put(Token{Family: FamilySpacing, Name: "DEFAULT", Value: "0.25rem"})
+
+	testCases := []struct {
+		raw   string
+		name  string
+		found bool
+	}{
+		{raw: "1rem", name: "4", found: true},
+		{raw: ".5rem", name: "2", found: true},
+		{raw: "0rem", name: "0", found: true},
+		{raw: "0.3rem", found: false},
+		{raw: "4px", found: false},
+	}
+	for _, testCase := range testCases {
+		name, found := inventory.SpacingMultiple(testCase.raw)
+		if name != testCase.name || found != testCase.found {
+			t.Errorf("SpacingMultiple(%q) = %q, %v; want %q, %v", testCase.raw, name, found, testCase.name, testCase.found)
+		}
+	}
+}
+
+func TestIsSpacingMultiplierRejectsKeywords(t *testing.T) {
+	for _, name := range []string{"0", "4", "0.5", ".5"} {
+		if !IsSpacingMultiplier(name) {
+			t.Errorf("%q should be a spacing multiplier", name)
+		}
+	}
+	for _, name := range []string{"", ".", "auto", "full", "px", "1/2", "-2"} {
+		if IsSpacingMultiplier(name) {
+			t.Errorf("%q should not be a spacing multiplier", name)
+		}
+	}
+}

@@ -152,7 +152,9 @@ func WriteSARIF(writer io.Writer, report Report) error {
 	rules := make([]sarifRule, 0, len(ruleRegistry))
 	for _, rule := range ruleRegistry {
 		level := "error"
-		if rule.DefaultConfidence != ConfidenceHigh {
+		if !rule.DefaultOn {
+			level = "none"
+		} else if rule.DefaultConfidence != ConfidenceHigh {
 			level = "note"
 		}
 		rules = append(rules, sarifRule{

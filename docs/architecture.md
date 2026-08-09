@@ -28,7 +28,7 @@ There is deliberately no dependency here. No Go parser exists for JSX, Svelte, A
 `--json` and `--sarif` are mutually exclusive; passing both exits 2 rather than
 interleaving two documents on one stream.
 
-`--json` writes a single indented object at `schemaVersion` 1:
+`--json` writes a single indented object at `schemaVersion` 2:
 
 | Field | Meaning |
 |---|---|
@@ -37,10 +37,11 @@ interleaving two documents on one stream.
 | `score` | The headline score, 0–100 |
 | `scoreExcludingBaseline` | The score with no suppressions applied |
 | `scoreModel` | `version`, `transferFunction`, `halfScoreDensity`, `weights` |
-| `categories` | Per-category `score`, `exposure`, and finding counts. `score` is `null` for a category with no enabled scoring rule |
-| `scanned` | `files`, `classLists`, `utilities` — the score's denominators |
+| `categories` | Per-category `score`, ordered `exposures`, and finding counts. `score` is `null` for a category with no enabled scoring rule |
+| `scanned` | `files`, `classLists`, `utilities`, `tokens`, and token confidence counts — the score's denominators |
 | `configuredRules` | Every rule with the `severity` and `confidence` it ran at |
 | `diagnostics` | Configuration constructs the static adapters could not read. Always an array and never score-affecting |
+| `tokens` | Per-package inventory, usage, unused entries, plugin coverage, and confidence evidence. Always an array |
 | `findings` | Always an array, never `null` |
 | `suppressed` | How many findings the baseline absorbed |
 
@@ -74,11 +75,17 @@ the score.
 Detected prefix and separator settings control utility parsing for files in that
 package. Explicit `[tailwind]` settings in `twdoctor.toml` take precedence.
 
+Configured plugins are resolved against a curated, version-banded lexical
+registry. Unknown, out-of-range, missing-version, and intentionally partial
+surfaces lower unused-token confidence. No plugin module or `node_modules`
+source is loaded.
+
 ## Scoring
 
 Each rule declares the unit it is measured against, so its rate is weighted
 findings over the count of that unit: utilities for `no-arbitrary-value` and
-`no-conflicting-utilities`, class lists for `responsive-bloat`. Those rates sum
+`no-conflicting-utilities`, class lists for `responsive-bloat`, and distinct
+project declarations for `unused-token`. Those rates sum
 into a debt density `D`, which maps onto 0–100 by `100 × H / (H + D)` with
 `H = 1/5`.
 

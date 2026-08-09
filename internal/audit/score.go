@@ -7,20 +7,32 @@ import "math/big"
 // className contributes to no denominator, because counting it would dilute
 // measured debt in proportion to how much of a codebase cannot be read.
 type Scanned struct {
-	Files      int `json:"files"`
-	ClassLists int `json:"classLists"`
-	Utilities  int `json:"utilities"`
+	Files                  int `json:"files"`
+	ClassLists             int `json:"classLists"`
+	Utilities              int `json:"utilities"`
+	Tokens                 int `json:"tokens"`
+	HighConfidenceTokens   int `json:"highConfidenceTokens"`
+	MediumConfidenceTokens int `json:"mediumConfidenceTokens"`
 }
 
 // exposure returns the denominator for one exposure unit. An unrecognised unit
 // exposes nothing, which makes its rate zero rather than dividing by a number
 // that means something else.
-func (scanned Scanned) exposure(unit Exposure) int64 {
+func (scanned Scanned) exposure(unit Exposure, minimum Confidence) int64 {
 	switch unit {
 	case ExposureUtility:
 		return int64(scanned.Utilities)
 	case ExposureClassList:
 		return int64(scanned.ClassLists)
+	case ExposureToken:
+		switch minimum {
+		case ConfidenceLow:
+			return int64(scanned.Tokens)
+		case ConfidenceMedium:
+			return int64(scanned.HighConfidenceTokens + scanned.MediumConfidenceTokens)
+		default:
+			return int64(scanned.HighConfidenceTokens)
+		}
 	}
 	return 0
 }
@@ -80,7 +92,7 @@ func weightedDensity(findings []Finding, scanned Scanned, config Config, only *C
 		if count == 0 {
 			continue
 		}
-		exposure := scanned.exposure(rule.Exposure)
+		exposure := scanned.exposure(rule.Exposure, config.MinConfidence)
 		if exposure == 0 {
 			// A finding implies at least one unit of its own exposure, so this
 			// is unreachable; reading it as no debt is the safe direction.
@@ -117,26 +129,39 @@ func transfer(debt *big.Rat) int {
 // it means "not measured", and that one misreading costs more credibility than
 // the sub-scores earn.
 type CategoryScore struct {
-	Name             Category `json:"name"`
-	Score            *int     `json:"score"`
-	Exposure         int      `json:"exposure"`
-	ScoredFindings   int      `json:"scoredFindings"`
-	UnscoredFindings int      `json:"unscoredFindings"`
+	Name             Category        `json:"name"`
+	Score            *int            `json:"score"`
+	Exposures        []ExposureCount `json:"exposures"`
+	ScoredFindings   int             `json:"scoredFindings"`
+	UnscoredFindings int             `json:"unscoredFindings"`
+}
+
+// ExposureCount publishes every denominator an enabled category uses. A
+// category may contain rules measured against different units.
+type ExposureCount struct {
+	Unit  Exposure `json:"unit"`
+	Count int      `json:"count"`
 }
 
 func categoryScores(findings []Finding, scanned Scanned, config Config) []CategoryScore {
 	scores := make([]CategoryScore, 0, len(categoryOrder))
 	for _, category := range categoryOrder {
-		current := CategoryScore{Name: category}
+		current := CategoryScore{Name: category, Exposures: []ExposureCount{}}
 
 		measured := false
+		seenExposures := map[Exposure]bool{}
 		for _, rule := range ruleRegistry {
 			if rule.Category != category {
 				continue
 			}
 			if config.severityFor(rule.ID) == SeverityError {
 				measured = true
-				current.Exposure = int(scanned.exposure(rule.Exposure))
+				if !seenExposures[rule.Exposure] {
+					seenExposures[rule.Exposure] = true
+					current.Exposures = append(current.Exposures, ExposureCount{
+						Unit: rule.Exposure, Count: int(scanned.exposure(rule.Exposure, config.MinConfidence)),
+					})
+				}
 			}
 		}
 

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "tool": {
     "name": "tw-doctor",
     "version": "dev"
@@ -21,28 +21,43 @@
     {
       "name": "accessibility",
       "score": null,
-      "exposure": 0,
+      "exposures": [],
       "scoredFindings": 0,
       "unscoredFindings": 0
     },
     {
       "name": "correctness",
       "score": 100,
-      "exposure": 3,
+      "exposures": [
+        {
+          "unit": "utility",
+          "count": 3
+        }
+      ],
       "scoredFindings": 0,
       "unscoredFindings": 0
     },
     {
       "name": "consistency",
       "score": 23,
-      "exposure": 3,
+      "exposures": [
+        {
+          "unit": "utility",
+          "count": 3
+        }
+      ],
       "scoredFindings": 1,
       "unscoredFindings": 0
     },
     {
       "name": "maintainability",
       "score": 100,
-      "exposure": 1,
+      "exposures": [
+        {
+          "unit": "class-list",
+          "count": 1
+        }
+      ],
       "scoredFindings": 0,
       "unscoredFindings": 0
     }
@@ -50,7 +65,10 @@
   "scanned": {
     "files": 1,
     "classLists": 1,
-    "utilities": 3
+    "utilities": 3,
+    "tokens": 0,
+    "highConfidenceTokens": 0,
+    "mediumConfidenceTokens": 0
   },
   "configuredRules": [
     {
@@ -67,9 +85,15 @@
       "id": "responsive-bloat",
       "severity": "error",
       "confidence": "medium"
+    },
+    {
+      "id": "unused-token",
+      "severity": "off",
+      "confidence": "high"
     }
   ],
   "diagnostics": [],
+  "tokens": [],
   "findings": [
     {
       "rule": "no-arbitrary-value",

@@ -40,6 +40,7 @@ tagged as such in every output format.
 | `no-arbitrary-value` | utility |
 | `no-conflicting-utilities` | utility |
 | `responsive-bloat` | class list |
+| `unused-token` | distinct project token declaration |
 
 There is deliberately no single global denominator, for two reasons.
 
@@ -47,8 +48,7 @@ The rules genuinely disagree about their unit. An arbitrary value is a property
 of one utility; responsive bloat is a property of a whole class list. Any one
 global denominator misprices one of them from the first release.
 
-And a global denominator would not survive the next milestone. An unused custom
-token has a denominator of *tokens declared*; a contrast failure has one of
+An unused custom token has a denominator of *tokens declared*; a contrast failure has one of
 *resolvable colour pairs*. Neither means anything per utility scanned. Choosing
 a single denominator now would mean re-opening the score model later, and a
 change to the score model is a compatibility event for everyone gating CI on it.
@@ -62,6 +62,14 @@ Counting it would dilute measured debt in proportion to how much of a codebase
 cannot be analysed — that is, it would reward writing code this tool cannot
 read. The same argument is why an unresolved class list is never linted: see
 [extraction-accuracy.md](extraction-accuracy.md).
+
+Token exposure counts project declarations only. Tailwind defaults are not debt,
+and one declaration imported by multiple package themes counts once. The
+`unused-token` rule is disabled during its introductory minor release, so adding
+this denominator does not change score model v1 or existing scores by default.
+Only declarations whose coverage meets the configured `min-confidence` enter
+the denominator, so an unreadable class list cannot make a different package's
+measured token debt look healthier.
 
 ## Category Weights
 

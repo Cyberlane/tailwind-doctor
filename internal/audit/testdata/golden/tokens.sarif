@@ -84,26 +84,54 @@
       ],
       "results": [
         {
-          "ruleId": "no-arbitrary-value",
+          "ruleId": "unused-token",
           "level": "error",
           "message": {
-            "text": "Avoid arbitrary values; prefer a named design token."
+            "text": "Custom token --color-orphan is not used by any resolved class list."
           },
           "locations": [
             {
               "physicalLocation": {
                 "artifactLocation": {
-                  "uri": "page.html"
+                  "uri": "app.css"
                 },
                 "region": {
-                  "startLine": 1,
-                  "startColumn": 21
+                  "startLine": 7,
+                  "startColumn": 3
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "twDoctorRuleFileClass/v1": "f95a2e93b6ce25b50923cdc12ee2a3bf3848572a4e49336d3f811387b9486fc9"
+            "twDoctorRuleFileClass/v1": "7421edd0ad47cae49ccb3fd2dbd1e7cc78e701bfb4de3264c1aaa5e0047c0cf1"
+          },
+          "properties": {
+            "category": "consistency",
+            "confidence": "high",
+            "scored": true
+          }
+        },
+        {
+          "ruleId": "no-arbitrary-value",
+          "level": "error",
+          "message": {
+            "text": "Avoid arbitrary values; use mt-4, which matches --spacing."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app.css"
+                },
+                "region": {
+                  "startLine": 11,
+                  "startColumn": 23
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "twDoctorRuleFileClass/v1": "64ef80d5a626c32a8692c540910416543dd8902561cc9479ddc1e9aebbb6395b"
           },
           "properties": {
             "category": "consistency",
@@ -113,8 +141,8 @@
         }
       ],
       "properties": {
-        "score": 23,
-        "scoreExcludingBaseline": 11,
+        "score": 13,
+        "scoreExcludingBaseline": 13,
         "scoreModelVersion": 1,
         "categories": [
           {
@@ -138,14 +166,18 @@
           },
           {
             "name": "consistency",
-            "score": 23,
+            "score": 13,
             "exposures": [
               {
                 "unit": "utility",
                 "count": 3
+              },
+              {
+                "unit": "token",
+                "count": 3
               }
             ],
-            "scoredFindings": 1,
+            "scoredFindings": 2,
             "unscoredFindings": 0
           },
           {
@@ -165,8 +197,8 @@
           "files": 1,
           "classLists": 1,
           "utilities": 3,
-          "tokens": 0,
-          "highConfidenceTokens": 0,
+          "tokens": 3,
+          "highConfidenceTokens": 3,
           "mediumConfidenceTokens": 0
         }
       }

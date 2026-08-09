@@ -19,7 +19,7 @@ var updateFixtures = flag.Bool("update", false,
 	"rewrite the golden reports and the extraction accuracy baseline from the current output")
 
 func TestGoldenReports(t *testing.T) {
-	for _, project := range []string{"clean", "mixed", "baselined"} {
+	for _, project := range []string{"clean", "mixed", "baselined", "tokens"} {
 		t.Run(project, func(t *testing.T) {
 			report, err := Run(filepath.Join("testdata", "projects", project))
 			if err != nil {
@@ -71,18 +71,20 @@ func compareGolden(t *testing.T, name string, actual []byte) {
 // over in.
 func TestOutputIsByteIdenticalAcrossRuns(t *testing.T) {
 	render := func() []byte {
-		report, err := Run(filepath.Join("testdata", "projects", "mixed"))
-		if err != nil {
-			t.Fatalf("Run: %v", err)
-		}
 		var buffer bytes.Buffer
-		if err := WriteJSON(&buffer, report); err != nil {
-			t.Fatalf("WriteJSON: %v", err)
+		for _, project := range []string{"mixed", "tokens"} {
+			report, err := Run(filepath.Join("testdata", "projects", project))
+			if err != nil {
+				t.Fatalf("Run %s: %v", project, err)
+			}
+			if err := WriteJSON(&buffer, report); err != nil {
+				t.Fatalf("WriteJSON %s: %v", project, err)
+			}
+			if err := WriteSARIF(&buffer, report); err != nil {
+				t.Fatalf("WriteSARIF %s: %v", project, err)
+			}
+			WriteHuman(&buffer, report)
 		}
-		if err := WriteSARIF(&buffer, report); err != nil {
-			t.Fatalf("WriteSARIF: %v", err)
-		}
-		WriteHuman(&buffer, report)
 		return buffer.Bytes()
 	}
 

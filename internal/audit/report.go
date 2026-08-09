@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
+	"github.com/Cyberlane/tailwind-doctor/internal/tailwind/plugins"
+	"github.com/Cyberlane/tailwind-doctor/internal/tokens"
 )
 
 // MaximumScore is the score a project with no findings receives, and therefore
@@ -13,7 +17,7 @@ const MaximumScore = 100
 
 // SchemaVersion is the version of the JSON report. A consumer reads this before
 // anything else; the shape below only ever changes with it.
-const SchemaVersion = 1
+const SchemaVersion = 2
 
 // Version is the build's version string, reported in JSON and SARIF so a finding
 // can be traced back to the code that produced it.
@@ -63,6 +67,34 @@ type ReportDiagnostic struct {
 	Message string `json:"message"`
 }
 
+// TokenReport is one deterministic inventory entry and whether analysis found
+// a named utility that consumes it.
+type TokenReport struct {
+	Family       tokens.Family `json:"family"`
+	Name         string        `json:"name"`
+	Path         string        `json:"path"`
+	Value        string        `json:"value"`
+	Raw          string        `json:"raw"`
+	Origin       tokens.Origin `json:"origin"`
+	Declaration  tokens.Site   `json:"declaration"`
+	Unresolvable bool          `json:"unresolvable"`
+	Used         bool          `json:"used"`
+}
+
+// TokenPackageReport publishes the inventory and the evidence that controls
+// unused-token confidence for one independently scoped Tailwind package.
+type TokenPackageReport struct {
+	Package              string             `json:"package"`
+	TailwindVersion      tailwind.Version   `json:"tailwindVersion"`
+	Confidence           Confidence         `json:"confidence"`
+	ConfidenceReasons    []string           `json:"confidenceReasons"`
+	ResolvedClassLists   int                `json:"resolvedClassLists"`
+	UnresolvedClassLists int                `json:"unresolvedClassLists"`
+	Plugins              []plugins.Coverage `json:"plugins"`
+	Inventory            []TokenReport      `json:"inventory"`
+	Unused               []TokenReport      `json:"unused"`
+}
+
 type Report struct {
 	SchemaVersion int      `json:"schemaVersion"`
 	Tool          ToolInfo `json:"tool"`
@@ -70,13 +102,14 @@ type Report struct {
 	// ScoreExcludingBaseline is the score the project would have with no
 	// suppressions. A baseline that made debt invisible would be a lie with a
 	// file format.
-	ScoreExcludingBaseline int                `json:"scoreExcludingBaseline"`
-	ScoreModel             ScoreModel         `json:"scoreModel"`
-	Categories             []CategoryScore    `json:"categories"`
-	Scanned                Scanned            `json:"scanned"`
-	ConfiguredRules        []ConfiguredRule   `json:"configuredRules"`
-	Diagnostics            []ReportDiagnostic `json:"diagnostics"`
-	Findings               []Finding          `json:"findings"`
+	ScoreExcludingBaseline int                  `json:"scoreExcludingBaseline"`
+	ScoreModel             ScoreModel           `json:"scoreModel"`
+	Categories             []CategoryScore      `json:"categories"`
+	Scanned                Scanned              `json:"scanned"`
+	ConfiguredRules        []ConfiguredRule     `json:"configuredRules"`
+	Diagnostics            []ReportDiagnostic   `json:"diagnostics"`
+	Tokens                 []TokenPackageReport `json:"tokens"`
+	Findings               []Finding            `json:"findings"`
 	themes                 []resolvedTheme
 	// Suppressed counts findings that matched the baseline. Reporting the count
 	// keeps accepted debt visible rather than letting it vanish.
@@ -123,6 +156,10 @@ func WriteHuman(writer io.Writer, report Report) {
 	fmt.Fprintln(writer)
 	fmt.Fprintf(writer, "Scanned %d file(s), %d class list(s), %d utilities\n",
 		report.Scanned.Files, report.Scanned.ClassLists, report.Scanned.Utilities)
+	if len(report.Tokens) > 0 {
+		fmt.Fprintf(writer, "Inventoried %d project token(s) across %d Tailwind package(s)\n",
+			report.Scanned.Tokens, len(report.Tokens))
+	}
 
 	fmt.Fprintln(writer)
 	for _, category := range report.Categories {
@@ -139,6 +176,24 @@ func WriteHuman(writer io.Writer, report Report) {
 		for _, diagnostic := range report.Diagnostics {
 			fmt.Fprintf(writer, "- [%s] %s:%d:%d: %s\n",
 				diagnostic.Kind, diagnostic.File, diagnostic.Line, diagnostic.Column, diagnostic.Message)
+		}
+	}
+
+	if len(report.Tokens) > 0 {
+		fmt.Fprintln(writer, "\nToken coverage:")
+		for _, tokenPackage := range report.Tokens {
+			projectTokens := 0
+			for _, token := range tokenPackage.Inventory {
+				if token.Origin == tokens.OriginProject {
+					projectTokens++
+				}
+			}
+			fmt.Fprintf(writer, "- %s (Tailwind v%s): %d project token(s), %d unused, %d total inventory entries, %s confidence\n",
+				tokenPackage.Package, tokenPackage.TailwindVersion, projectTokens,
+				len(tokenPackage.Unused), len(tokenPackage.Inventory), tokenPackage.Confidence)
+			for _, reason := range tokenPackage.ConfidenceReasons {
+				fmt.Fprintf(writer, "  - %s\n", reason)
+			}
 		}
 	}
 

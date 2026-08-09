@@ -6,8 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
+	"github.com/Cyberlane/tailwind-doctor/internal/tokens"
 )
 
 var sourceExtensions = map[string]bool{
@@ -34,7 +36,12 @@ type Finding struct {
 
 type resolvedTheme struct {
 	packageDirectory string
+	version          tailwind.Version
 	theme            tailwind.Theme
+	resolvedLists    int
+	unresolvedLists  int
+	ambiguousLists   int
+	usedTokens       map[string]bool
 }
 
 // Run analyses a directory tree. Configuration and the baseline are read from
@@ -62,6 +69,7 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 		Tool:          ToolInfo{Name: "tw-doctor", Version: Version},
 		ScoreModel:    scoreModel(),
 		Diagnostics:   []ReportDiagnostic{},
+		Tokens:        []TokenPackageReport{},
 		Findings:      []Finding{},
 	}
 	layout, err := tailwind.Discover(os.DirFS(root))
@@ -76,6 +84,7 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 	// would have without its baseline can be computed.
 	suppressed := []Finding{}
 	ignores := newIgnoreRules(config.IgnorePaths)
+	unscopedClassLists := 0
 
 	err = filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -114,37 +123,59 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 			return err
 		}
 		report.Scanned.Files++
-		syntax := syntaxForFile(relative, layout, report.themes, config)
+		syntax, resolvedTheme := analysisContextForFile(relative, layout, report.themes, config)
 		for _, list := range Extract(path, string(content)) {
+			if resolvedTheme == nil && len(report.themes) > 0 {
+				unscopedClassLists++
+			}
 			// An unresolved site names an expression, not a set of utilities.
 			// Linting it would report classes the source never contained, and
 			// counting it would dilute the score's denominator.
 			if !list.Resolved {
+				if resolvedTheme != nil {
+					resolvedTheme.unresolvedLists++
+				}
 				continue
+			}
+			if resolvedTheme != nil {
+				resolvedTheme.resolvedLists++
 			}
 			report.Scanned.ClassLists++
 			report.Scanned.Utilities += len(splitUtilities(list))
-			for _, finding := range inspect(relative, list, syntax) {
-				finding.Severity = config.severityFor(finding.Rule)
-				if finding.Severity == SeverityOff {
-					continue
+			var inventory *tokens.Inventory
+			allowSuggestions := false
+			if resolvedTheme != nil {
+				inventory = resolvedTheme.theme.Inventory
+				allowSuggestions = !resolvedTheme.theme.Degraded
+			}
+			findings, usedTokens := inspectWithInventory(relative, list, syntax, inventory, allowSuggestions)
+			if resolvedTheme != nil {
+				for _, token := range usedTokens {
+					resolvedTheme.usedTokens[tokenIdentity(token)] = true
 				}
-				if finding.Rule == "no-arbitrary-value" && config.AllowedArbitrary[finding.Class] {
-					continue
-				}
-				if baseline.suppresses(finding) {
-					report.Suppressed++
-					finding.Scored = config.scores(finding)
-					suppressed = append(suppressed, finding)
-					continue
-				}
-				report.Findings = append(report.Findings, finding)
+			}
+			for _, finding := range findings {
+				recordFinding(&report, &suppressed, finding, config, baseline)
 			}
 		}
 		return nil
 	})
 	if err != nil {
 		return Report{}, err
+	}
+	if unscopedClassLists > 0 {
+		for index := range report.themes {
+			report.themes[index].ambiguousLists = unscopedClassLists
+		}
+	}
+
+	tokenAnalysis := analyzeTokens(report.themes)
+	report.Tokens = tokenAnalysis.packages
+	report.Scanned.Tokens = tokenAnalysis.projectTokens
+	report.Scanned.HighConfidenceTokens = tokenAnalysis.highConfidenceTokens
+	report.Scanned.MediumConfidenceTokens = tokenAnalysis.mediumConfidenceTokens
+	for _, finding := range tokenAnalysis.findings {
+		recordFinding(&report, &suppressed, finding, config, baseline)
 	}
 
 	sortFindings(report.Findings)
@@ -183,7 +214,10 @@ func loadThemes(fsys fs.FS, layout tailwind.Layout) ([]resolvedTheme, []ReportDi
 		if err != nil {
 			return nil, nil, fmt.Errorf("load Tailwind theme for %s: %w", pkg.Dir, err)
 		}
-		themes = append(themes, resolvedTheme{packageDirectory: pkg.Dir, theme: theme})
+		themes = append(themes, resolvedTheme{
+			packageDirectory: pkg.Dir, version: pkg.Version, theme: theme,
+			usedTokens: map[string]bool{},
+		})
 		diagnostics = append(diagnostics, theme.Diagnostics...)
 	}
 	tailwind.SortDiagnostics(diagnostics)
@@ -198,12 +232,19 @@ func loadThemes(fsys fs.FS, layout tailwind.Layout) ([]resolvedTheme, []ReportDi
 }
 
 func syntaxForFile(file string, layout tailwind.Layout, themes []resolvedTheme, config Config) tailwind.UtilitySyntax {
+	syntax, _ := analysisContextForFile(file, layout, themes, config)
+	return syntax
+}
+
+func analysisContextForFile(file string, layout tailwind.Layout, themes []resolvedTheme, config Config) (tailwind.UtilitySyntax, *resolvedTheme) {
 	syntax := config.Syntax
+	var matched *resolvedTheme
 	pkg, found := layout.PackageFor(file)
 	if found {
-		for _, resolved := range themes {
-			if resolved.packageDirectory == pkg.Dir {
-				syntax = resolved.theme.Syntax
+		for index := range themes {
+			if themes[index].packageDirectory == pkg.Dir {
+				matched = &themes[index]
+				syntax = matched.theme.Syntax
 				break
 			}
 		}
@@ -219,7 +260,24 @@ func syntaxForFile(file string, layout tailwind.Layout, themes []resolvedTheme, 
 	if separatorConfigured {
 		syntax.Separator = config.Syntax.Separator
 	}
-	return syntax
+	return syntax, matched
+}
+
+func recordFinding(report *Report, suppressed *[]Finding, finding Finding, config Config, baseline *Baseline) {
+	finding.Severity = config.severityFor(finding.Rule)
+	if finding.Severity == SeverityOff {
+		return
+	}
+	if finding.Rule == "no-arbitrary-value" && config.AllowedArbitrary[finding.Class] {
+		return
+	}
+	if baseline.suppresses(finding) {
+		report.Suppressed++
+		finding.Scored = config.scores(finding)
+		*suppressed = append(*suppressed, finding)
+		return
+	}
+	report.Findings = append(report.Findings, finding)
 }
 
 // utilityToken is one utility and where it sits in the source. Positions are
@@ -259,11 +317,6 @@ func splitUtilities(list ClassList) []utilityToken {
 	return tokens
 }
 
-// ambiguousConflictGroups are the groups where utilityGroup cannot separate a
-// shorthand from a colour: border-r sets a width and border-gray-200 a colour,
-// and both land in "border-". A conflict inside one of these may be a false
-// positive, so it is reported at medium confidence and stays out of the score
-// until the property taxonomy arrives with the token inventory.
 var ambiguousConflictGroups = map[string]bool{
 	"text-":   true,
 	"bg-":     true,
@@ -271,35 +324,84 @@ var ambiguousConflictGroups = map[string]bool{
 }
 
 func inspect(file string, list ClassList, syntax tailwind.UtilitySyntax) []Finding {
+	findings, _ := inspectWithInventory(file, list, syntax, nil, false)
+	return findings
+}
+
+func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySyntax, inventory *tokens.Inventory, allowSuggestions bool) ([]Finding, []tokens.Token) {
 	findings := make([]Finding, 0)
+	usedTokens := make([]tokens.Token, 0)
 	seen := make(map[string]string)
 	variants := 0
 
 	for _, token := range splitUtilities(list) {
 		parsed := tailwind.ParseUtility(token.text, syntax)
+		meaning := tailwind.ClassifyUtility(parsed.Base, inventory)
 
 		if parsed.HasArbitraryValue() {
+			message := "Avoid arbitrary values; prefer a named design token."
+			if allowSuggestions && inventory != nil && meaning.ArbitraryValue != "" {
+				matched, found := inventory.Lookup(meaning.Family, meaning.ArbitraryValue)
+				if !found && meaning.Family == tokens.FamilySpacing {
+					if multiplier, generated := inventory.SpacingMultiple(meaning.ArbitraryValue); generated {
+						matched = tokens.Token{Family: tokens.FamilySpacing, Name: multiplier, Path: "--spacing"}
+						found = true
+					}
+				}
+				if found {
+					message = fmt.Sprintf("Avoid arbitrary values; use %s, which matches %s.",
+						replaceArbitraryValue(token.text, matched.Name), tokenLabel(matched))
+				}
+			}
 			findings = append(findings, Finding{
 				Rule: "no-arbitrary-value", Category: CategoryConsistency,
 				Confidence: ConfidenceHigh,
 				File:       file, Class: token.text,
 				Line: token.line, Column: token.column,
-				Message: "Avoid arbitrary values; prefer a named design token.",
+				Message: message,
 			})
+		}
+
+		if inventory != nil && meaning.Family != "" && meaning.TokenName != "" {
+			if used, found := inventory.ByName(meaning.Family, meaning.TokenName); found {
+				usedTokens = append(usedTokens, used)
+			} else if meaning.Family == tokens.FamilySpacing && tokens.IsSpacingMultiplier(meaning.TokenName) {
+				if generator, generated := inventory.ByName(tokens.FamilySpacing, "DEFAULT"); generated {
+					usedTokens = append(usedTokens, generator)
+				}
+			}
+		}
+		if inventory != nil && meaning.Family == tokens.FamilyFontSize {
+			if _, modifier, found := strings.Cut(strings.TrimPrefix(parsed.Base, "text-"), "/"); found {
+				if used, exists := inventory.ByName(tokens.FamilyLineHeight, modifier); exists {
+					usedTokens = append(usedTokens, used)
+				}
+			}
+		}
+		if inventory != nil {
+			for _, variant := range parsed.Variants {
+				name := strings.TrimPrefix(strings.TrimPrefix(variant, "min-"), "max-")
+				if used, found := inventory.ByName(tokens.FamilyBreakpoint, name); found {
+					usedTokens = append(usedTokens, used)
+				}
+			}
 		}
 
 		if len(parsed.Variants) > 0 {
 			variants++
 		}
 
-		group := tailwind.UtilityGroup(parsed.Base)
+		group := meaning.Property
+		if group == "" {
+			group = tailwind.UtilityGroup(parsed.Base)
+		}
 		if group == "" {
 			continue
 		}
 		key := parsed.VariantKey() + "|" + group
 		if previous, ok := seen[key]; ok {
 			confidence := ConfidenceHigh
-			if ambiguousConflictGroups[group] {
+			if inventory == nil && ambiguousConflictGroups[group] {
 				confidence = ConfidenceMedium
 			}
 			findings = append(findings, Finding{
@@ -323,7 +425,27 @@ func inspect(file string, list ClassList, syntax tailwind.UtilitySyntax) []Findi
 			Message: "Five or more variant utilities make this class list difficult to maintain.",
 		})
 	}
-	return findings
+	return findings, usedTokens
+}
+
+func replaceArbitraryValue(utility, name string) string {
+	start := strings.IndexByte(utility, '[')
+	if start < 0 {
+		return utility
+	}
+	end := strings.IndexByte(utility[start:], ']')
+	if end < 0 {
+		return utility
+	}
+	end += start
+	return utility[:start] + name + utility[end+1:]
+}
+
+func tokenLabel(token tokens.Token) string {
+	if token.Path != "" {
+		return token.Path
+	}
+	return string(token.Family) + " token " + token.Name
 }
 
 // sortFindings gives the report a total order, so that identical input produces

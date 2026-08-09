@@ -25,11 +25,13 @@ Scanned 42 file(s), 310 class list(s), 1840 utilities
 
 ## What Exists Today
 
-Three high-confidence rules run over every `.astro`, `.html`, `.jsx`, `.tsx`, `.vue`, and `.svelte` file:
+Three established rules run over every `.astro`, `.html`, `.jsx`, `.tsx`, `.vue`, and `.svelte` file, with an opt-in token rule available for its introductory release:
 
 - Conflicting utilities in the same Tailwind variant, such as `p-4 p-2`.
 - Arbitrary values, such as `text-[#123456]`.
 - Overly dense responsive class lists with five or more variant utilities.
+- Unused custom theme tokens (`unused-token`, disabled by default for one minor
+  release under the rule-stability policy).
 
 Class lists are read out of `class` and `className` attributes, template literals, `clsx`/`cn`/`cva` leaves, Vue `:class`, Svelte `class:foo`, Astro `class:list`, and CSS `@apply`. A value that cannot be resolved statically is recorded as unresolved and never linted. The measured precision and recall are published in [docs/extraction-accuracy.md](docs/extraction-accuracy.md) and enforced in CI.
 
@@ -40,11 +42,18 @@ Scores are comparable across projects only when `scoreModel.version` and the ena
 The limitations matter as much as the features, so they are stated plainly:
 
 - **Accessibility is not measured yet.** The category reports `null`, not 100, because "not measured" and "clean" are different claims. Contrast checking arrives with the colour resolver.
-- **There is no theme-token inventory yet**, so `no-arbitrary-value` cannot tell you which token you should have used, and unused custom tokens are not detected.
-- **Two signals report at medium confidence and are score-neutral by default:** `responsive-bloat`, and `no-conflicting-utilities` on `text-`, `bg-`, and `border-`, where a shorthand and a colour still land in the same utility group. Both are reported and tagged rather than hidden; see [docs/configuration.md](docs/configuration.md).
+- **Token analysis fails closed.** Tailwind v3 and v4 themes are read statically,
+  exact arbitrary-value matches name their replacement utility, and token usage
+  includes CSS `@apply`. Incomplete configuration, plugin, extraction, or
+  monorepo-ownership evidence lowers unused-token confidence.
+- **Uncertain signals are score-neutral by default.** This includes
+  `responsive-bloat`, unclassifiable utility conflicts, and degraded
+  `unused-token` evidence. They are reported and tagged rather than hidden; see
+  [docs/configuration.md](docs/configuration.md).
 - **Adding a rule will change your score.** New rules ship disabled for one minor release before that happens; the policy is in [docs/rule-stability.md](docs/rule-stability.md).
 
-Contrast analysis, theme-token discovery, and unused-token detection are planned once the Tailwind configuration adapters are in place.
+Contrast analysis remains planned; theme-token discovery and unused-token
+detection are now implemented.
 
 Rule severities, path ignores, an arbitrary-value allowlist, and `[score] min-confidence` are configured in `twdoctor.toml`; existing debt is recorded in a baseline. Both are documented in [docs/configuration.md](docs/configuration.md).
 

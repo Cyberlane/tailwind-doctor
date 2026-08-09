@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --*: initial;
+  --spacing: 0.25rem;
+  --color-brand: #abcdef;
+  --color-orphan: #123456;
+}
+
+.button {
+  @apply bg-brand p-2 mt-[1rem];
+}

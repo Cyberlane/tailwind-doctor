@@ -9,15 +9,21 @@ import (
 )
 
 func TestScannedExposurePerUnit(t *testing.T) {
-	scanned := Scanned{Files: 2, ClassLists: 7, Utilities: 41}
+	scanned := Scanned{Files: 2, ClassLists: 7, Utilities: 41, Tokens: 9, HighConfidenceTokens: 6, MediumConfidenceTokens: 3}
 
-	if got := scanned.exposure(ExposureUtility); got != 41 {
+	if got := scanned.exposure(ExposureUtility, ConfidenceHigh); got != 41 {
 		t.Errorf("utility exposure = %d, want 41", got)
 	}
-	if got := scanned.exposure(ExposureClassList); got != 7 {
+	if got := scanned.exposure(ExposureClassList, ConfidenceHigh); got != 7 {
 		t.Errorf("class-list exposure = %d, want 7", got)
 	}
-	if got := scanned.exposure(Exposure("nonsense")); got != 0 {
+	if got := scanned.exposure(ExposureToken, ConfidenceHigh); got != 6 {
+		t.Errorf("high-confidence token exposure = %d, want 6", got)
+	}
+	if got := scanned.exposure(ExposureToken, ConfidenceMedium); got != 9 {
+		t.Errorf("medium-confidence token exposure = %d, want 9", got)
+	}
+	if got := scanned.exposure(Exposure("nonsense"), ConfidenceHigh); got != 0 {
 		t.Errorf("an unknown unit exposes nothing, got %d", got)
 	}
 }
@@ -184,6 +190,28 @@ func TestCategoryScoresAreOrderedDeterministically(t *testing.T) {
 	for index := range first {
 		if first[index].Name != categoryOrder[index] || first[index].Name != second[index].Name {
 			t.Fatalf("category order is not fixed: %#v then %#v", first, second)
+		}
+	}
+}
+
+func TestCategoryScoresPublishEveryEnabledExposure(t *testing.T) {
+	config := defaultConfig()
+	config.Severities["unused-token"] = SeverityError
+	scores := categoryScores(nil, Scanned{Utilities: 20, Tokens: 3, HighConfidenceTokens: 3}, config)
+
+	var consistency CategoryScore
+	for _, score := range scores {
+		if score.Name == CategoryConsistency {
+			consistency = score
+		}
+	}
+	want := []ExposureCount{{Unit: ExposureUtility, Count: 20}, {Unit: ExposureToken, Count: 3}}
+	if len(consistency.Exposures) != len(want) {
+		t.Fatalf("exposures = %+v", consistency.Exposures)
+	}
+	for index := range want {
+		if consistency.Exposures[index] != want[index] {
+			t.Errorf("exposure %d = %+v, want %+v", index, consistency.Exposures[index], want[index])
 		}
 	}
 }
