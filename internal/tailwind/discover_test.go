@@ -22,10 +22,12 @@ func TestDiscoverFindsOnePackagePerConfig(t *testing.T) {
 	if len(layout.Packages) != 2 {
 		t.Fatalf("got %d packages, want 2: %+v", len(layout.Packages), layout.Packages)
 	}
-	if layout.Packages[0].Dir != "packages/ui" || layout.Packages[0].Version != Version3 {
+	if layout.Packages[0].Dir != "packages/ui" || layout.Packages[0].Version != Version3 ||
+		layout.Packages[0].ManifestFile != "package.json" {
 		t.Errorf("package 0 = %+v", layout.Packages[0])
 	}
 	if layout.Packages[1].Dir != "packages/web" || layout.Packages[1].Version != Version4 ||
+		layout.Packages[1].ManifestFile != "packages/web/package.json" ||
 		len(layout.Packages[1].Entries) != 1 || layout.Packages[1].Entries[0] != "packages/web/src/app.css" {
 		t.Errorf("package 1 = %+v", layout.Packages[1])
 	}
@@ -133,7 +135,8 @@ func TestV4EntryWalksUpToNearestPackageManifest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
-	if len(layout.Packages) != 1 || layout.Packages[0].Dir != "packages/web" {
+	if len(layout.Packages) != 1 || layout.Packages[0].Dir != "packages/web" ||
+		layout.Packages[0].ManifestFile != "packages/web/package.json" {
 		t.Fatalf("packages = %+v", layout.Packages)
 	}
 }

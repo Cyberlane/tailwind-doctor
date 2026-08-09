@@ -17,6 +17,7 @@ type Package struct {
 	UnsupportedVersion string
 	ConfigFile         string
 	Entries            []string
+	ManifestFile       string
 	Evidence           []Evidence
 }
 
@@ -98,6 +99,9 @@ func Discover(fsys fs.FS) (Layout, error) {
 			Dir: dir, Version: detection.Version, UnsupportedVersion: detection.UnsupportedVersion,
 			Evidence: detection.Evidence,
 		}
+		if manifestFile, found := nearestManifestFile(fsys, dir); found {
+			pkg.ManifestFile = manifestFile
+		}
 		if len(candidate.configs) > 0 {
 			pkg.ConfigFile = preferredConfig(candidate.configs)
 		}
@@ -159,13 +163,20 @@ func hasV4EntrySignal(nodes []cssdecl.Node) bool {
 }
 
 func nearestManifestDir(fsys fs.FS, start string) string {
+	if manifestFile, found := nearestManifestFile(fsys, start); found {
+		return cleanDir(path.Dir(manifestFile))
+	}
+	return cleanDir(start)
+}
+
+func nearestManifestFile(fsys fs.FS, start string) (string, bool) {
 	dir := cleanDir(start)
 	for {
 		if info, err := fs.Stat(fsys, path.Join(dir, "package.json")); err == nil && !info.IsDir() {
-			return dir
+			return cleanPath(path.Join(dir, "package.json")), true
 		}
 		if dir == "." {
-			return cleanDir(start)
+			return "", false
 		}
 		dir = cleanDir(path.Dir(dir))
 	}

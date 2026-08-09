@@ -193,3 +193,20 @@ func TestVersion4ReadsConfigPluginsAndRootProperties(t *testing.T) {
 		}
 	}
 }
+
+func TestVersion4ReportsUnknownPluginCoverage(t *testing.T) {
+	files := fstest.MapFS{
+		"package.json": &fstest.MapFile{Data: []byte(`{"dependencies":{"tailwindcss":"4.1.0","@acme/tailwind":"1.2.3"}}`)},
+		"app.css":      &fstest.MapFile{Data: []byte(`@import "tailwindcss"; @plugin "@acme/tailwind";`)},
+	}
+	theme, err := adapterVersion4{}.Load(files, Package{
+		Dir: ".", Version: Version4, Entries: []string{"app.css"}, ManifestFile: "package.json",
+	})
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(theme.PluginCoverage) != 1 || theme.PluginCoverage[0].Complete ||
+		theme.PluginCoverage[0].Support != "unknown" {
+		t.Fatalf("plugin coverage = %+v", theme.PluginCoverage)
+	}
+}

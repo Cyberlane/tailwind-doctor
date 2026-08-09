@@ -72,6 +72,21 @@ default theme for that package, and lowers the confidence of token findings.
 The diagnostic does not turn an otherwise successful analysis into an
 operational error.
 
+## Plugin coverage
+
+Configured plugins are identified lexically from v3 `plugins` arrays and v4
+`@plugin` directives. Tailwind Doctor never imports a plugin or reads its code
+from `node_modules`. Instead, a small curated registry describes reviewed
+utility surfaces for `@tailwindcss/typography`, `@tailwindcss/forms`, and
+`@tailwindcss/aspect-ratio`. The package manifest supplies the declared version
+range used to select that coverage.
+
+The registry also recognizes current daisyUI and Flowbite major versions, but
+marks their broad utility surfaces as intentionally partial. An unknown plugin,
+a missing version, or a version outside the reviewed range is explicit
+incomplete coverage. Token findings use that evidence to lower confidence rather
+than pretending the analyzer saw utilities it cannot classify safely.
+
 ## Monorepos
 
 Every source file is scoped to the nearest Tailwind configuration in an

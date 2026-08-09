@@ -58,6 +58,29 @@ func TestVersion3ReadsSyntaxAndPlugins(t *testing.T) {
 	}
 }
 
+func TestVersion3ResolvesPluginCoverageFromManifest(t *testing.T) {
+	files := fstest.MapFS{
+		"package.json":       &fstest.MapFile{Data: []byte(`{"devDependencies":{"@tailwindcss/typography":"^0.5.20","daisyui":"^5.7.16"}}`)},
+		"tailwind.config.js": &fstest.MapFile{Data: []byte(`module.exports = { plugins: [require("@tailwindcss/typography"), require("daisyui/plugin")] }`)},
+	}
+	theme, err := adapterVersion3{}.Load(files, Package{
+		Dir: ".", Version: Version3, ConfigFile: "tailwind.config.js", ManifestFile: "package.json",
+	})
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(theme.PluginCoverage) != 2 {
+		t.Fatalf("plugin coverage = %+v", theme.PluginCoverage)
+	}
+	if !theme.PluginCoverage[0].Complete || theme.PluginCoverage[0].VersionRange != "^0.5.20" {
+		t.Errorf("typography coverage = %+v", theme.PluginCoverage[0])
+	}
+	if theme.PluginCoverage[1].Complete || theme.PluginCoverage[1].Support != "partial" ||
+		theme.PluginCoverage[1].VersionRange != "^5.7.16" {
+		t.Errorf("daisyUI coverage = %+v", theme.PluginCoverage[1])
+	}
+}
+
 func TestVersion3DegradesOnUnreadableTheme(t *testing.T) {
 	theme := loadVersion3(t, `const defaultTheme = require("tailwindcss/defaultTheme")
 module.exports = { theme: { extend: { fontFamily: { ...defaultTheme.fontFamily } } } }`)
