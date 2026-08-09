@@ -261,7 +261,16 @@ func looksLikeColor(value string) bool {
 	return strings.HasPrefix(value, "#") || strings.HasPrefix(value, "rgb(") ||
 		strings.HasPrefix(value, "rgba(") || strings.HasPrefix(value, "hsl(") ||
 		strings.HasPrefix(value, "hsla(") || strings.HasPrefix(value, "oklch(") ||
-		strings.HasPrefix(value, "oklab(") || strings.HasPrefix(value, "color(")
+		strings.HasPrefix(value, "oklab(") || strings.HasPrefix(value, "color(") ||
+		strings.HasPrefix(value, "color:") || isBasicNamedColor(value)
+}
+
+func isBasicNamedColor(value string) bool {
+	return contains([]string{
+		"aqua", "black", "blue", "fuchsia", "gray", "green", "grey", "lime",
+		"maroon", "navy", "olive", "orange", "purple", "red", "silver", "teal",
+		"transparent", "white", "yellow",
+	}, value)
 }
 
 func hasToken(inventory *tokens.Inventory, family tokens.Family, name string) bool {

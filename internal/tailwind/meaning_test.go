@@ -46,3 +46,10 @@ func TestClassifyUtilityPreservesArbitrarySuggestionShape(t *testing.T) {
 		t.Fatalf("meaning = %+v", meaning)
 	}
 }
+
+func TestClassifyUtilityRecognizesArbitraryNamedColor(t *testing.T) {
+	meaning := ClassifyUtility("text-[red]", tokens.NewInventory())
+	if meaning.Property != "color" || meaning.Family != tokens.FamilyColor || meaning.ArbitraryValue != "red" {
+		t.Errorf("meaning = %#v", meaning)
+	}
+}
