@@ -21,6 +21,7 @@ func TestDetect(t *testing.T) {
 		{name: "v3 package", files: fstest.MapFS{"package.json": &fstest.MapFile{Data: []byte(`{"dependencies":{"tailwindcss":"~3.4.1"}}`)}}, version: Version3, signal: "package-json"},
 		{name: "no signal", files: fstest.MapFS{"src/app.css": &fstest.MapFile{Data: []byte(".card { color: red }")}}, version: VersionUnknown},
 		{name: "unparseable range", files: fstest.MapFS{"package.json": &fstest.MapFile{Data: []byte(`{"dependencies":{"tailwindcss":"workspace:*"}}`)}, "tailwind.config.ts": &fstest.MapFile{Data: []byte("export default {}")}}, version: Version3, signal: "config-file"},
+		{name: "unsupported package wins", files: fstest.MapFS{"package.json": &fstest.MapFile{Data: []byte(`{"dependencies":{"tailwindcss":"^5.0.0"}}`)}, "tailwind.config.ts": &fstest.MapFile{Data: []byte("export default {}")}}, version: VersionUnknown, signal: "package-json"},
 	}
 
 	for _, testCase := range testCases {
@@ -34,6 +35,9 @@ func TestDetect(t *testing.T) {
 			}
 			if testCase.signal != "" && (len(detection.Evidence) == 0 || detection.Evidence[0].Signal != testCase.signal) {
 				t.Fatalf("evidence = %+v, want first signal %q", detection.Evidence, testCase.signal)
+			}
+			if testCase.name == "unsupported package wins" && detection.UnsupportedVersion != "5" {
+				t.Fatalf("unsupported version = %q, want 5", detection.UnsupportedVersion)
 			}
 		})
 	}

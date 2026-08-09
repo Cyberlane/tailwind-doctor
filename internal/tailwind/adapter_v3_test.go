@@ -75,6 +75,20 @@ module.exports = { theme: { extend: { fontFamily: { ...defaultTheme.fontFamily }
 	}
 }
 
+func TestVersion3DegradesWhenNoExportedObjectCanBeRead(t *testing.T) {
+	theme := loadVersion3(t, `defineConfig({ theme: {} })`)
+	if !theme.Degraded || len(theme.Diagnostics) != 1 {
+		t.Fatalf("theme = %+v", theme)
+	}
+	if theme.Diagnostics[0].Kind != DiagnosticUnreadableConfig ||
+		!strings.Contains(theme.Diagnostics[0].Message, "no exported object") {
+		t.Fatalf("diagnostic = %+v", theme.Diagnostics[0])
+	}
+	if _, found := theme.Inventory.ByName(tokens.FamilyColor, "red-500"); !found {
+		t.Error("parse degradation did not retain the default theme")
+	}
+}
+
 func TestVersion3DefeatOutsideThemeDoesNotDegrade(t *testing.T) {
 	theme := loadVersion3(t, `module.exports = { content: globs, theme: { extend: { colors: { brand: "#3b82f6" } } } }`)
 	if theme.Degraded {

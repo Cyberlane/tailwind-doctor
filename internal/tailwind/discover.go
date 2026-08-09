@@ -1,6 +1,7 @@
 package tailwind
 
 import (
+	"fmt"
 	"io/fs"
 	"path"
 	"sort"
@@ -11,11 +12,12 @@ import (
 
 // Package is one independently scoped Tailwind theme.
 type Package struct {
-	Dir        string
-	Version    Version
-	ConfigFile string
-	Entry      string
-	Evidence   []Evidence
+	Dir                string
+	Version            Version
+	UnsupportedVersion string
+	ConfigFile         string
+	Entries            []string
+	Evidence           []Evidence
 }
 
 // Layout is the deterministic package layout of a project.
@@ -59,10 +61,13 @@ func Discover(fsys fs.FS) (Layout, error) {
 		}
 		content, readErr := fs.ReadFile(fsys, file)
 		if readErr != nil {
-			return nil
+			return fmt.Errorf("read CSS candidate %s: %w", file, readErr)
 		}
 		sheet, parseErr := cssdecl.Parse(string(content))
-		if parseErr != nil || !hasV4EntrySignal(sheet.Nodes) {
+		if parseErr != nil && !looksLikeV4Entry(string(content)) {
+			return nil
+		}
+		if parseErr == nil && !hasV4EntrySignal(sheet.Nodes) {
 			return nil
 		}
 		dir := nearestManifestDir(fsys, path.Dir(file))
@@ -89,19 +94,27 @@ func Discover(fsys fs.FS) (Layout, error) {
 		if detectErr != nil {
 			return Layout{}, detectErr
 		}
-		pkg := Package{Dir: dir, Version: detection.Version, Evidence: detection.Evidence}
+		pkg := Package{
+			Dir: dir, Version: detection.Version, UnsupportedVersion: detection.UnsupportedVersion,
+			Evidence: detection.Evidence,
+		}
 		if len(candidate.configs) > 0 {
 			pkg.ConfigFile = preferredConfig(candidate.configs)
 		}
 		if len(candidate.entries) > 0 {
-			pkg.Entry = candidate.entries[0]
-			if pkg.Version == VersionUnknown {
+			pkg.Entries = append([]string(nil), candidate.entries...)
+			if pkg.Version == VersionUnknown && pkg.UnsupportedVersion == "" {
 				pkg.Version = Version4
 			}
 		}
 		packages = append(packages, pkg)
 	}
 	return Layout{Packages: packages}, nil
+}
+
+func looksLikeV4Entry(content string) bool {
+	return strings.Contains(content, "@theme") ||
+		(strings.Contains(content, "@import") && strings.Contains(content, "tailwindcss"))
 }
 
 func ensureCandidate(candidates map[string]*packageCandidate, dir string) *packageCandidate {

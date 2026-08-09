@@ -16,7 +16,11 @@ type adapterVersion3 struct{}
 func (adapterVersion3) Version() Version { return Version3 }
 
 func (adapterVersion3) Load(fsys fs.FS, pkg Package) (Theme, error) {
-	return loadAdapterTheme(fsys, pkg, pkg.ConfigFile, "3", loadVersion3Config)
+	sources := []string{}
+	if pkg.ConfigFile != "" {
+		sources = append(sources, pkg.ConfigFile)
+	}
+	return loadAdapterTheme(fsys, pkg, sources, "3", loadVersion3Config)
 }
 
 func loadVersion3Config(fsys fs.FS, file string, theme *Theme, active map[string]bool, depth int) error {
@@ -45,7 +49,13 @@ func loadVersion3Config(fsys fs.FS, file string, theme *Theme, active map[string
 	}
 	result, err := jsobject.Parse(string(content))
 	if err != nil {
-		return fmt.Errorf("parse Tailwind config %s: %w", file, err)
+		theme.Inventory = defaults.Theme("3")
+		theme.Degraded = true
+		theme.Diagnostics = append(theme.Diagnostics, Diagnostic{
+			Kind: DiagnosticUnreadableConfig, File: file,
+			Message: fmt.Sprintf("Cannot read Tailwind config statically: %v", err),
+		})
+		return nil
 	}
 
 	loadVersion3Presets(fsys, file, result.Root, theme, active, depth)

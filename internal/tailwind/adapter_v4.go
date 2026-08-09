@@ -15,7 +15,7 @@ type adapterVersion4 struct{}
 func (adapterVersion4) Version() Version { return Version4 }
 
 func (adapterVersion4) Load(fsys fs.FS, pkg Package) (Theme, error) {
-	return loadAdapterTheme(fsys, pkg, pkg.Entry, "4", loadVersion4File)
+	return loadAdapterTheme(fsys, pkg, pkg.Entries, "4", loadVersion4File)
 }
 
 func loadVersion4File(fsys fs.FS, file string, theme *Theme, active map[string]bool, depth int) error {
@@ -44,7 +44,12 @@ func loadVersion4File(fsys fs.FS, file string, theme *Theme, active map[string]b
 	}
 	sheet, err := cssdecl.Parse(string(content))
 	if err != nil {
-		return fmt.Errorf("parse Tailwind CSS entry %s: %w", file, err)
+		theme.Degraded = true
+		theme.Diagnostics = append(theme.Diagnostics, Diagnostic{
+			Kind: DiagnosticUnreadableConfig, File: file,
+			Message: fmt.Sprintf("Cannot read Tailwind CSS statically: %v", err),
+		})
+		return nil
 	}
 	return applyVersion4Nodes(fsys, file, sheet.Nodes, theme, active, depth)
 }

@@ -169,9 +169,13 @@ func loadThemes(fsys fs.FS, layout tailwind.Layout) ([]resolvedTheme, []ReportDi
 	for _, pkg := range layout.Packages {
 		adapter, found := tailwind.AdapterFor(pkg.Version)
 		if !found {
+			message := "Could not determine a supported Tailwind version for this package."
+			if pkg.UnsupportedVersion != "" {
+				message = fmt.Sprintf("Tailwind v%s is not supported; token-dependent rules are disabled for this package.", pkg.UnsupportedVersion)
+			}
 			diagnostics = append(diagnostics, tailwind.Diagnostic{
 				Kind: tailwind.DiagnosticUnknownVersion, File: pkg.Dir,
-				Message: "Could not determine a supported Tailwind version for this package.",
+				Message: message,
 			})
 			continue
 		}

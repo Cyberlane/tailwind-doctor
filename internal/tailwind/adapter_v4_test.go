@@ -10,7 +10,7 @@ import (
 
 func loadVersion4(t *testing.T, files fstest.MapFS, entry string) Theme {
 	t.Helper()
-	theme, err := adapterVersion4{}.Load(files, Package{Dir: ".", Version: Version4, Entry: entry})
+	theme, err := adapterVersion4{}.Load(files, Package{Dir: ".", Version: Version4, Entries: []string{entry}})
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
@@ -56,6 +56,47 @@ func TestVersion4ReadsThemeNamespaces(t *testing.T) {
 	}
 	if _, found := theme.Inventory.ByName(tokens.FamilyFontFamily, "weight-chunky"); found {
 		t.Error("font weight misclassified as family")
+	}
+}
+
+func TestVersion4LoadsEveryPackageEntryInOrder(t *testing.T) {
+	files := fstest.MapFS{
+		"a.css": &fstest.MapFile{Data: []byte(`@theme { --color-brand: red; --spacing-card: 1rem; }`)},
+		"b.css": &fstest.MapFile{Data: []byte(`@theme { --color-brand: blue; --radius-card: 0.5rem; }`)},
+	}
+	theme, err := adapterVersion4{}.Load(files, Package{
+		Dir: ".", Version: Version4, Entries: []string{"a.css", "b.css"},
+	})
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	brand, found := theme.Inventory.ByName(tokens.FamilyColor, "brand")
+	if !found || brand.Value != "blue" {
+		t.Fatalf("brand = %+v, found %v", brand, found)
+	}
+	for family, name := range map[tokens.Family]string{
+		tokens.FamilySpacing: "card",
+		tokens.FamilyRadius:  "card",
+	} {
+		if _, found := theme.Inventory.ByName(family, name); !found {
+			t.Errorf("%s/%s missing", family, name)
+		}
+	}
+}
+
+func TestVersion4DegradesOnMalformedTailwindCSS(t *testing.T) {
+	theme := loadVersion4(t, fstest.MapFS{
+		"app.css": &fstest.MapFile{Data: []byte(`@theme { --color-brand: red;`)},
+	}, "app.css")
+	if !theme.Degraded || len(theme.Diagnostics) != 1 {
+		t.Fatalf("theme = %+v", theme)
+	}
+	if theme.Diagnostics[0].Kind != DiagnosticUnreadableConfig ||
+		!strings.Contains(theme.Diagnostics[0].Message, "unterminated CSS block") {
+		t.Fatalf("diagnostic = %+v", theme.Diagnostics[0])
+	}
+	if _, found := theme.Inventory.ByName(tokens.FamilyColor, "red-500"); !found {
+		t.Error("parse degradation did not retain the default theme")
 	}
 }
 

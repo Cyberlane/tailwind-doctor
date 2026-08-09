@@ -6,8 +6,8 @@ code.
 | Tailwind version | Status | Theme source | Degraded behaviour |
 |---|---|---|---|
 | v3 (3.x) | Supported | `tailwind.config.{js,cjs,mjs,ts,mts,cts}` is read statically | If a construct cannot be read without executing it, the package uses the default theme and reports why |
-| v4 (4.x) | Supported | CSS `@theme` blocks and custom properties | Theme declarations that can be read statically form the inventory |
-| Anything else, or no version signal | No token inventory | None | Token-dependent rules do not run |
+| v4 (4.x) | Supported | CSS `@theme` blocks and custom properties across every package entry | Theme declarations that can be read statically form the inventory |
+| Anything else, or no version signal | No token inventory | None | Token-dependent rules do not run; an explicitly unsupported major is diagnosed |
 
 ## Version detection
 
@@ -27,7 +27,9 @@ Tailwind v3 signals are:
 - `@tailwind base;` in CSS.
 
 `package.json` is authoritative when it resolves a major version. Reports carry
-the complete evidence trail so the decision remains inspectable.
+the complete evidence trail so the decision remains inspectable. A declared
+unsupported major never falls through to a v3 config or v4 stylesheet and gets
+misidentified as a supported project.
 
 Mixed signals are normal. Tailwind v4 supports `@config
 "tailwind.config.js"`, so a genuine v4 project may contain a v3-style config,

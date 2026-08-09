@@ -187,6 +187,25 @@ module.exports = { theme: { extend: { fontFamily: { ...defaults.fontFamily } } }
 	}
 }
 
+func TestUnsupportedTailwindMajorDisablesThemeWithoutFailing(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "package.json", `{"dependencies":{"tailwindcss":"^5.0.0"}}`)
+	writeFile(t, root, "tailwind.config.js", `module.exports = { theme: {} }`)
+	writeFile(t, root, "page.html", `<div class="p-4"></div>`)
+
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if len(report.themes) != 0 {
+		t.Fatalf("unsupported version loaded themes: %+v", report.themes)
+	}
+	if len(report.Diagnostics) != 1 || report.Diagnostics[0].Kind != "unknown-version" ||
+		!strings.Contains(report.Diagnostics[0].Message, "v5") {
+		t.Fatalf("diagnostics = %+v", report.Diagnostics)
+	}
+}
+
 // A baseline must not make debt invisible. Both numbers are always reported.
 func TestReportKeepsTheUnsuppressedScoreVisible(t *testing.T) {
 	root := t.TempDir()

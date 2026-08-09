@@ -25,17 +25,19 @@ type Adapter interface {
 
 type themeLoader func(fsys fs.FS, file string, theme *Theme, active map[string]bool, depth int) error
 
-func loadAdapterTheme(fsys fs.FS, pkg Package, source, version string, loader themeLoader) (Theme, error) {
+func loadAdapterTheme(fsys fs.FS, pkg Package, sources []string, version string, loader themeLoader) (Theme, error) {
 	theme := Theme{
 		Inventory: defaults.Theme(version),
 		Syntax:    DefaultUtilitySyntax(),
 		Plugins:   []string{},
 	}
-	if source == "" {
+	if len(sources) == 0 {
 		return theme, fmt.Errorf("Tailwind v%s package %s has no theme source", version, pkg.Dir)
 	}
-	if err := loader(fsys, cleanPath(source), &theme, map[string]bool{}, 0); err != nil {
-		return Theme{}, err
+	for _, source := range sources {
+		if err := loader(fsys, cleanPath(source), &theme, map[string]bool{}, 0); err != nil {
+			return Theme{}, err
+		}
 	}
 	SortDiagnostics(theme.Diagnostics)
 	return theme, nil

@@ -29,8 +29,9 @@ type Evidence struct {
 
 // Detection is a version verdict and every signal that informed it.
 type Detection struct {
-	Version  Version
-	Evidence []Evidence
+	Version            Version
+	UnsupportedVersion string
+	Evidence           []Evidence
 }
 
 type packageManifest struct {
@@ -49,6 +50,7 @@ func Detect(fsys fs.FS, dir string) (Detection, error) {
 
 	evidence := []Evidence{}
 	packageVersion := VersionUnknown
+	unsupportedVersion := ""
 	manifestPath := path.Join(dir, "package.json")
 	if content, err := fs.ReadFile(fsys, manifestPath); err == nil {
 		var manifest packageManifest
@@ -57,12 +59,17 @@ func Detect(fsys fs.FS, dir string) (Detection, error) {
 				if version, resolved := supportedMajor(versionRange); resolved {
 					packageVersion = version
 					evidence = append(evidence, Evidence{Signal: "package-json", File: cleanPath(manifestPath), Detail: "tailwindcss " + versionRange})
+				} else if major, resolved := dependencyMajor(versionRange); resolved {
+					unsupportedVersion = major
+					evidence = append(evidence, Evidence{Signal: "package-json", File: cleanPath(manifestPath), Detail: "tailwindcss " + versionRange})
 				}
 			}
 			for _, dependency := range []string{"@tailwindcss/vite", "@tailwindcss/postcss"} {
 				if versionRange, found := dependencyRange(manifest, dependency); found {
 					evidence = append(evidence, Evidence{Signal: "package-json", File: cleanPath(manifestPath), Detail: dependency + " " + versionRange})
-					if packageVersion == VersionUnknown {
+					if major, resolved := dependencyMajor(versionRange); resolved && major != "4" {
+						unsupportedVersion = major
+					} else if packageVersion == VersionUnknown && unsupportedVersion == "" {
 						packageVersion = Version4
 					}
 				}
@@ -77,7 +84,7 @@ func Detect(fsys fs.FS, dir string) (Detection, error) {
 		if entry.IsDir() {
 			children, readErr := fs.ReadDir(fsys, entryPath)
 			if readErr != nil {
-				continue
+				return Detection{}, fmt.Errorf("list version evidence in %s: %w", entryPath, readErr)
 			}
 			for _, child := range children {
 				if !child.IsDir() && path.Ext(child.Name()) == ".css" {
@@ -98,7 +105,7 @@ func Detect(fsys fs.FS, dir string) (Detection, error) {
 	for _, file := range cssFiles {
 		content, readErr := fs.ReadFile(fsys, file)
 		if readErr != nil {
-			continue
+			return Detection{}, fmt.Errorf("read version evidence %s: %w", file, readErr)
 		}
 		sheet, parseErr := cssdecl.Parse(string(content))
 		if parseErr != nil {
@@ -109,7 +116,13 @@ func Detect(fsys fs.FS, dir string) (Detection, error) {
 
 	sortEvidence(evidence)
 	version := packageVersion
+	if unsupportedVersion != "" {
+		version = VersionUnknown
+	}
 	if version == VersionUnknown {
+		if unsupportedVersion != "" {
+			return Detection{Version: version, UnsupportedVersion: unsupportedVersion, Evidence: evidence}, nil
+		}
 		for _, item := range evidence {
 			if item.Signal == "css-import" || item.Signal == "css-theme" {
 				version = Version4
@@ -138,6 +151,20 @@ func dependencyRange(manifest packageManifest, name string) (string, bool) {
 }
 
 func supportedMajor(versionRange string) (Version, bool) {
+	major, found := dependencyMajor(versionRange)
+	if !found {
+		return VersionUnknown, false
+	}
+	switch major {
+	case "3":
+		return Version3, true
+	case "4":
+		return Version4, true
+	}
+	return VersionUnknown, false
+}
+
+func dependencyMajor(versionRange string) (string, bool) {
 	trimmed := strings.TrimSpace(versionRange)
 	trimmed = strings.TrimLeft(trimmed, "^~><=v ")
 	end := 0
@@ -145,15 +172,9 @@ func supportedMajor(versionRange string) (Version, bool) {
 		end++
 	}
 	if end == 0 {
-		return VersionUnknown, false
+		return "", false
 	}
-	switch trimmed[:end] {
-	case "3":
-		return Version3, true
-	case "4":
-		return Version4, true
-	}
-	return VersionUnknown, false
+	return trimmed[:end], true
 }
 
 func collectCSSEvidence(nodes []cssdecl.Node, file string, evidence *[]Evidence) {
