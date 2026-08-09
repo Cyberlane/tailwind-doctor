@@ -60,6 +60,12 @@
           ]
         }
       },
+      "invocations": [
+        {
+          "executionSuccessful": true,
+          "toolExecutionNotifications": []
+        }
+      ],
       "results": [],
       "properties": {
         "score": 100,

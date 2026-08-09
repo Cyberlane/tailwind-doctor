@@ -51,7 +51,9 @@ SARIF output is 2.1.0. Results carry `partialFingerprints` keyed on rule, file,
 and class list — the same key the baseline uses — so reformatting a file does not
 present old debt to code scanning as new. A finding the score does not count
 reports at level `note`, which keeps a code-scanning gate and the score in
-agreement about what matters.
+agreement about what matters. Configuration diagnostics travel as warning-level
+tool execution notifications, not results, because they describe analysis
+coverage rather than defects in the project.
 
 ## Design Tokens
 

@@ -39,6 +39,10 @@ func TestSARIFIsValidAndCarriesTheScore(t *testing.T) {
 					} `json:"rules"`
 				} `json:"driver"`
 			} `json:"tool"`
+			Invocations []struct {
+				ExecutionSuccessful        bool                `json:"executionSuccessful"`
+				ToolExecutionNotifications []sarifNotification `json:"toolExecutionNotifications"`
+			} `json:"invocations"`
 			Results []struct {
 				RuleID  string `json:"ruleId"`
 				Level   string `json:"level"`
@@ -81,6 +85,10 @@ func TestSARIFIsValidAndCarriesTheScore(t *testing.T) {
 		t.Fatalf("got %d runs, want 1", len(log.Runs))
 	}
 	run := log.Runs[0]
+	if len(run.Invocations) != 1 || !run.Invocations[0].ExecutionSuccessful ||
+		run.Invocations[0].ToolExecutionNotifications == nil {
+		t.Fatalf("invocations = %#v", run.Invocations)
+	}
 
 	if run.Tool.Driver.Name != "tw-doctor" || run.Tool.Driver.Version != Version {
 		t.Errorf("driver = %#v", run.Tool.Driver)
@@ -141,6 +149,40 @@ func TestSARIFIsValidAndCarriesTheScore(t *testing.T) {
 		run.Properties.ScoreExcludingBaseline != report.ScoreExcludingBaseline ||
 		run.Properties.ScoreModelVersion != ScoreModelVersion {
 		t.Errorf("run properties = %#v", run.Properties)
+	}
+}
+
+func TestSARIFPublishesConfigurationDiagnosticsAsNotifications(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "tailwind.config.js", `module.exports = { theme: { extend: { fontFamily: { ...defaults.fontFamily } } } }`)
+
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	var buffer bytes.Buffer
+	if err := WriteSARIF(&buffer, report); err != nil {
+		t.Fatalf("WriteSARIF: %v", err)
+	}
+	var log struct {
+		Runs []struct {
+			Invocations []struct {
+				Notifications []sarifNotification `json:"toolExecutionNotifications"`
+			} `json:"invocations"`
+		} `json:"runs"`
+	}
+	if err := json.Unmarshal(buffer.Bytes(), &log); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	notifications := log.Runs[0].Invocations[0].Notifications
+	if len(notifications) != 1 {
+		t.Fatalf("notifications = %#v", notifications)
+	}
+	notification := notifications[0]
+	if notification.Descriptor.ID != "unreadable-config" || notification.Level != "warning" ||
+		len(notification.Locations) != 1 ||
+		notification.Locations[0].PhysicalLocation.ArtifactLocation.URI != "tailwind.config.js" {
+		t.Fatalf("notification = %#v", notification)
 	}
 }
 

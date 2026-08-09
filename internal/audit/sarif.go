@@ -29,9 +29,26 @@ type sarifLog struct {
 }
 
 type sarifRun struct {
-	Tool       sarifTool     `json:"tool"`
-	Results    []sarifResult `json:"results"`
-	Properties sarifRunProps `json:"properties"`
+	Tool        sarifTool         `json:"tool"`
+	Invocations []sarifInvocation `json:"invocations"`
+	Results     []sarifResult     `json:"results"`
+	Properties  sarifRunProps     `json:"properties"`
+}
+
+type sarifInvocation struct {
+	ExecutionSuccessful        bool                `json:"executionSuccessful"`
+	ToolExecutionNotifications []sarifNotification `json:"toolExecutionNotifications"`
+}
+
+type sarifNotification struct {
+	Descriptor sarifDescriptor `json:"descriptor"`
+	Level      string          `json:"level"`
+	Message    sarifText       `json:"message"`
+	Locations  []sarifLocation `json:"locations"`
+}
+
+type sarifDescriptor struct {
+	ID string `json:"id"`
 }
 
 type sarifTool struct {
@@ -97,8 +114,8 @@ type sarifArtifact struct {
 }
 
 type sarifRegion struct {
-	StartLine   int `json:"startLine"`
-	StartColumn int `json:"startColumn"`
+	StartLine   int `json:"startLine,omitempty"`
+	StartColumn int `json:"startColumn,omitempty"`
 }
 
 type sarifRunProps struct {
@@ -169,6 +186,23 @@ func WriteSARIF(writer io.Writer, report Report) error {
 		})
 	}
 
+	notifications := make([]sarifNotification, 0, len(report.Diagnostics))
+	for _, diagnostic := range report.Diagnostics {
+		notifications = append(notifications, sarifNotification{
+			Descriptor: sarifDescriptor{ID: diagnostic.Kind},
+			Level:      "warning",
+			Message:    sarifText{Text: diagnostic.Message},
+			Locations: []sarifLocation{{
+				PhysicalLocation: sarifPhysicalLocation{
+					ArtifactLocation: sarifArtifact{URI: diagnostic.File},
+					Region: sarifRegion{
+						StartLine: diagnostic.Line, StartColumn: diagnostic.Column,
+					},
+				},
+			}},
+		})
+	}
+
 	log := sarifLog{
 		Schema:  sarifSchema,
 		Version: "2.1.0",
@@ -176,6 +210,9 @@ func WriteSARIF(writer io.Writer, report Report) error {
 			Tool: sarifTool{Driver: sarifDriver{
 				Name: "tw-doctor", Version: Version,
 				InformationURI: sarifInformationURI, Rules: rules,
+			}},
+			Invocations: []sarifInvocation{{
+				ExecutionSuccessful: true, ToolExecutionNotifications: notifications,
 			}},
 			Results: results,
 			Properties: sarifRunProps{
