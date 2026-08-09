@@ -78,3 +78,12 @@ two packages may define the same token name with different values.
 
 Tailwind is a trademark of Tailwind Labs. This project is not affiliated with
 or endorsed by Tailwind Labs.
+
+## Default theme values
+
+Tailwind's default theme values are compiled into this tool so that a project's
+`theme.extend` can be resolved against the same base Tailwind uses, and so that a
+configuration this tool cannot read still has a theme to fall back on. Those
+values are taken from Tailwind CSS, which is MIT licensed, Copyright (c) Tailwind
+Labs, Inc. The exact upstream version each table was taken from is recorded in a
+comment beside it.
