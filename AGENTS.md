@@ -52,6 +52,32 @@ go test ./internal/audit/ -run TestGoldenReports -update   # regenerate committe
 Run `gofmt -l .`, `go vet ./...` and `go test ./...` before proposing any change.
 Do not claim work is complete without running them and reading the output.
 
+## Structural similarity review
+
+- Before implementing behavior, search existing symbols, callers, helpers,
+  adapters, transports, decoders, queries, and contracts that may already provide
+  it.
+- At the start of source-changing work, compare `.mori-version` with the latest
+  official Mori GitHub release when network access is available. If a newer
+  release exists, complete a separate reviewed upgrade before continuing.
+- Before committing supported source, read
+  `.agents/skills/mori-review-similarity/SKILL.md`, verify that `mori version`
+  matches `.mori-version`, and run
+  `mori scan --changed-since HEAD --format json .`.
+- Inspect both source locations for every focused group, including literals,
+  nested functions or callbacks, types, control flow, side effects, error
+  handling, authorization, transactions, callers, and tests.
+- Reuse or extract shared behavior only after manual source review. Record why
+  intentional similarity remains separate.
+- Never describe a similarity score as semantic equivalence or a confirmed
+  defect.
+- Do not create or update a baseline, weaken thresholds or scope, enable noisy
+  statement blocks, or bypass the hook merely to make a commit pass.
+- Treat warnings, parse diagnostics, skipped fragments, zero-fragment files,
+  insufficient coverage, and truncation as incomplete evidence.
+- Do not use `git commit --no-verify` without explicit maintainer approval and a
+  recorded rationale.
+
 ## Code conventions
 
 - Go 1.26. Standard library first. Do not add a dependency without a stated reason

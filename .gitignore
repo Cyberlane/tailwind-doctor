@@ -3,3 +3,12 @@
 /dist/
 /node_modules/
 .DS_Store
+
+# Commit only the canonical project-local Mori review skill. The intermediate
+# exclusions keep any other project-local agent artifacts ignored.
+!/.agents/
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/mori-review-similarity/
+!/.agents/skills/mori-review-similarity/**
