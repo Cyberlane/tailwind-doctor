@@ -69,6 +69,9 @@ path = "debt.json"
 	if config.Syntax.Prefix != "tw-" || config.Syntax.Separator != "_" {
 		t.Errorf("syntax = %#v", config.Syntax)
 	}
+	if !config.prefixConfigured || !config.separatorConfigured {
+		t.Errorf("explicit syntax settings were not recorded: %#v", config)
+	}
 	if config.BaselinePath != "debt.json" {
 		t.Errorf("baseline path = %q", config.BaselinePath)
 	}

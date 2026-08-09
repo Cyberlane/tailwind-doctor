@@ -113,7 +113,8 @@ func TestJSONCarriesTheVersionedSchema(t *testing.T) {
 		ConfiguredRules []struct {
 			ID string `json:"id"`
 		} `json:"configuredRules"`
-		Findings []struct {
+		Diagnostics []ReportDiagnostic `json:"diagnostics"`
+		Findings    []struct {
 			Category   string `json:"category"`
 			Confidence string `json:"confidence"`
 			Scored     bool   `json:"scored"`
@@ -143,6 +144,9 @@ func TestJSONCarriesTheVersionedSchema(t *testing.T) {
 	if len(decoded.ConfiguredRules) != len(ruleRegistry) {
 		t.Errorf("configuredRules lists %d rules, want %d", len(decoded.ConfiguredRules), len(ruleRegistry))
 	}
+	if decoded.Diagnostics == nil {
+		t.Fatal("diagnostics must be an array, not null")
+	}
 	if len(decoded.Findings) == 0 {
 		t.Fatal("the fixture has arbitrary values and should report findings")
 	}
@@ -152,6 +156,33 @@ func TestJSONCarriesTheVersionedSchema(t *testing.T) {
 		}
 		if !finding.Scored {
 			t.Errorf("a high-confidence arbitrary value should be scored: %#v", finding)
+		}
+	}
+}
+
+func TestReportPublishesConfigurationDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "package.json", `{"dependencies":{"tailwindcss":"^3.4.0"}}`)
+	writeFile(t, root, "tailwind.config.js", `const defaults = require("tailwindcss/defaultTheme")
+module.exports = { theme: { extend: { fontFamily: { ...defaults.fontFamily } } } }`)
+
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if len(report.Diagnostics) != 1 || report.Diagnostics[0].Kind != "unreadable-config" {
+		t.Fatalf("diagnostics = %#v", report.Diagnostics)
+	}
+	if report.Score != MaximumScore || len(report.Findings) != 0 {
+		t.Fatalf("configuration diagnostic changed findings or score: score %d, findings %#v",
+			report.Score, report.Findings)
+	}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+	for _, want := range []string{"Configuration (1 diagnostic(s))", "[unreadable-config]", "tailwind.config.js"} {
+		if !strings.Contains(buffer.String(), want) {
+			t.Errorf("human output is missing %q:\n%s", want, buffer.String())
 		}
 	}
 }

@@ -69,6 +69,7 @@
       "confidence": "medium"
     }
   ],
+  "diagnostics": [],
   "findings": [
     {
       "rule": "no-conflicting-utilities",

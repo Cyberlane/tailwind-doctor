@@ -52,6 +52,17 @@ type ConfiguredRule struct {
 	Confidence Confidence `json:"confidence"`
 }
 
+// ReportDiagnostic records configuration Tailwind Doctor could not read. It is
+// separate from a finding because incomplete static configuration evidence must
+// never affect the design-system score.
+type ReportDiagnostic struct {
+	Kind    string `json:"kind"`
+	File    string `json:"file"`
+	Line    int    `json:"line"`
+	Column  int    `json:"column"`
+	Message string `json:"message"`
+}
+
 type Report struct {
 	SchemaVersion int      `json:"schemaVersion"`
 	Tool          ToolInfo `json:"tool"`
@@ -59,12 +70,14 @@ type Report struct {
 	// ScoreExcludingBaseline is the score the project would have with no
 	// suppressions. A baseline that made debt invisible would be a lie with a
 	// file format.
-	ScoreExcludingBaseline int              `json:"scoreExcludingBaseline"`
-	ScoreModel             ScoreModel       `json:"scoreModel"`
-	Categories             []CategoryScore  `json:"categories"`
-	Scanned                Scanned          `json:"scanned"`
-	ConfiguredRules        []ConfiguredRule `json:"configuredRules"`
-	Findings               []Finding        `json:"findings"`
+	ScoreExcludingBaseline int                `json:"scoreExcludingBaseline"`
+	ScoreModel             ScoreModel         `json:"scoreModel"`
+	Categories             []CategoryScore    `json:"categories"`
+	Scanned                Scanned            `json:"scanned"`
+	ConfiguredRules        []ConfiguredRule   `json:"configuredRules"`
+	Diagnostics            []ReportDiagnostic `json:"diagnostics"`
+	Findings               []Finding          `json:"findings"`
+	themes                 []resolvedTheme
 	// Suppressed counts findings that matched the baseline. Reporting the count
 	// keeps accepted debt visible rather than letting it vanish.
 	Suppressed int `json:"suppressed"`
@@ -119,6 +132,14 @@ func WriteHuman(writer io.Writer, report Report) {
 			continue
 		}
 		fmt.Fprintf(writer, "  %-16s %d\n", name, *category.Score)
+	}
+
+	if len(report.Diagnostics) > 0 {
+		fmt.Fprintf(writer, "\nConfiguration (%d diagnostic(s)):\n", len(report.Diagnostics))
+		for _, diagnostic := range report.Diagnostics {
+			fmt.Fprintf(writer, "- [%s] %s:%d:%d: %s\n",
+				diagnostic.Kind, diagnostic.File, diagnostic.Line, diagnostic.Column, diagnostic.Message)
+		}
 	}
 
 	if len(report.Findings) == 0 {

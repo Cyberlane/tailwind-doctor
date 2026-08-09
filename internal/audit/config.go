@@ -27,12 +27,14 @@ const (
 
 // Config is the resolved project configuration.
 type Config struct {
-	Severities       map[string]Severity
-	IgnorePaths      []string
-	RespectGitignore bool
-	AllowedArbitrary map[string]bool
-	Syntax           tailwind.UtilitySyntax
-	BaselinePath     string
+	Severities          map[string]Severity
+	IgnorePaths         []string
+	RespectGitignore    bool
+	AllowedArbitrary    map[string]bool
+	Syntax              tailwind.UtilitySyntax
+	BaselinePath        string
+	prefixConfigured    bool
+	separatorConfigured bool
 	// MinConfidence is the lowest confidence a finding may carry and still move
 	// the score. Findings below it are reported and tagged, never hidden.
 	MinConfidence Confidence
@@ -123,6 +125,8 @@ func LoadConfig(root string) (Config, error) {
 		return config, fmt.Errorf("%s: tailwind.%w", ConfigFileName, err)
 	} else if present {
 		config.Syntax.Prefix = prefix
+		config.Syntax.PrefixIsVariant = false
+		config.prefixConfigured = true
 	}
 	if separator, present, err := tailwind.stringValue("separator"); err != nil {
 		return config, fmt.Errorf("%s: tailwind.%w", ConfigFileName, err)
@@ -131,6 +135,7 @@ func LoadConfig(root string) (Config, error) {
 			return config, fmt.Errorf("%s: tailwind.separator must not be empty", ConfigFileName)
 		}
 		config.Syntax.Separator = separator
+		config.separatorConfigured = true
 	}
 
 	if minimum, present, err := document["score"].stringValue("min-confidence"); err != nil {

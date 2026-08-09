@@ -182,3 +182,37 @@ func TestRunCountsResolvedExposureOnly(t *testing.T) {
 		t.Errorf("utilities = %d, want 2", report.Scanned.Utilities)
 	}
 }
+
+func TestRunUsesTheNearestDetectedTailwindSyntax(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "package.json", `{"dependencies":{"tailwindcss":"^3.4.0"}}`)
+	writeFile(t, root, "tailwind.config.js", `module.exports = { prefix: "tw-", separator: "_" }`)
+	writeFile(t, root, "page.html", `<div class="hover_tw-p-4 hover_tw-p-2"></div>`)
+
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if len(report.Findings) != 1 || report.Findings[0].Rule != "no-conflicting-utilities" {
+		t.Fatalf("findings = %#v", report.Findings)
+	}
+	if len(report.themes) != 1 || report.themes[0].theme.Inventory == nil {
+		t.Fatalf("resolved themes = %#v", report.themes)
+	}
+}
+
+func TestExplicitSyntaxOverridesDetectedSyntax(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "package.json", `{"dependencies":{"tailwindcss":"^3.4.0"}}`)
+	writeFile(t, root, "tailwind.config.js", `module.exports = { prefix: "detected-", separator: "_" }`)
+	writeFile(t, root, ConfigFileName, "[tailwind]\nprefix = \"tw-\"\nseparator = \":\"\n")
+	writeFile(t, root, "page.html", `<div class="hover:tw-p-4 hover:tw-p-2"></div>`)
+
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if len(report.Findings) != 1 || report.Findings[0].Rule != "no-conflicting-utilities" {
+		t.Fatalf("findings = %#v", report.Findings)
+	}
+}

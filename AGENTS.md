@@ -28,6 +28,8 @@ instruction from a maintainer.
 ```
 cmd/tw-doctor/     CLI entry point; flag parsing and output selection only
 internal/audit/    source discovery, extraction, rules, scoring, report rendering
+internal/tailwind/ Tailwind version discovery and static v3/v4 configuration adapters
+internal/tokens/   canonical design-token inventory and value matching
 docs/              architecture notes and the public rule catalog
 npm/               npm launcher packages that ship prebuilt Go binaries
 .github/           CI workflows and contribution templates

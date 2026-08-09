@@ -2,6 +2,7 @@ package audit
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -31,6 +32,11 @@ type Finding struct {
 	Scored bool `json:"scored"`
 }
 
+type resolvedTheme struct {
+	packageDirectory string
+	theme            tailwind.Theme
+}
+
 // Run analyses a directory tree. Configuration and the baseline are read from
 // the root, so a caller needs nothing but a path.
 func Run(root string) (Report, error) {
@@ -55,14 +61,23 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 		SchemaVersion: SchemaVersion,
 		Tool:          ToolInfo{Name: "tw-doctor", Version: Version},
 		ScoreModel:    scoreModel(),
+		Diagnostics:   []ReportDiagnostic{},
 		Findings:      []Finding{},
+	}
+	layout, err := tailwind.Discover(os.DirFS(root))
+	if err != nil {
+		return Report{}, fmt.Errorf("discover Tailwind packages: %w", err)
+	}
+	report.themes, report.Diagnostics, err = loadThemes(os.DirFS(root), layout)
+	if err != nil {
+		return Report{}, err
 	}
 	// Suppressed findings are kept, unreported, only so the score the project
 	// would have without its baseline can be computed.
 	suppressed := []Finding{}
 	ignores := newIgnoreRules(config.IgnorePaths)
 
-	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+	err = filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
@@ -99,6 +114,7 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 			return err
 		}
 		report.Scanned.Files++
+		syntax := syntaxForFile(relative, layout, report.themes, config)
 		for _, list := range Extract(path, string(content)) {
 			// An unresolved site names an expression, not a set of utilities.
 			// Linting it would report classes the source never contained, and
@@ -108,7 +124,7 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 			}
 			report.Scanned.ClassLists++
 			report.Scanned.Utilities += len(splitUtilities(list))
-			for _, finding := range inspect(relative, list, config.Syntax) {
+			for _, finding := range inspect(relative, list, syntax) {
 				finding.Severity = config.severityFor(finding.Rule)
 				if finding.Severity == SeverityOff {
 					continue
@@ -145,6 +161,61 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 	report.Categories = categoryScores(report.Findings, report.Scanned, config)
 	report.ConfiguredRules = configuredRules(config)
 	return report, nil
+}
+
+func loadThemes(fsys fs.FS, layout tailwind.Layout) ([]resolvedTheme, []ReportDiagnostic, error) {
+	themes := make([]resolvedTheme, 0, len(layout.Packages))
+	diagnostics := make([]tailwind.Diagnostic, 0)
+	for _, pkg := range layout.Packages {
+		adapter, found := tailwind.AdapterFor(pkg.Version)
+		if !found {
+			diagnostics = append(diagnostics, tailwind.Diagnostic{
+				Kind: tailwind.DiagnosticUnknownVersion, File: pkg.Dir,
+				Message: "Could not determine a supported Tailwind version for this package.",
+			})
+			continue
+		}
+		theme, err := adapter.Load(fsys, pkg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("load Tailwind theme for %s: %w", pkg.Dir, err)
+		}
+		themes = append(themes, resolvedTheme{packageDirectory: pkg.Dir, theme: theme})
+		diagnostics = append(diagnostics, theme.Diagnostics...)
+	}
+	tailwind.SortDiagnostics(diagnostics)
+	reportDiagnostics := make([]ReportDiagnostic, 0, len(diagnostics))
+	for _, diagnostic := range diagnostics {
+		reportDiagnostics = append(reportDiagnostics, ReportDiagnostic{
+			Kind: string(diagnostic.Kind), File: diagnostic.File,
+			Line: diagnostic.Line, Column: diagnostic.Column, Message: diagnostic.Message,
+		})
+	}
+	return themes, reportDiagnostics, nil
+}
+
+func syntaxForFile(file string, layout tailwind.Layout, themes []resolvedTheme, config Config) tailwind.UtilitySyntax {
+	syntax := config.Syntax
+	pkg, found := layout.PackageFor(file)
+	if found {
+		for _, resolved := range themes {
+			if resolved.packageDirectory == pkg.Dir {
+				syntax = resolved.theme.Syntax
+				break
+			}
+		}
+	}
+
+	prefixConfigured := config.prefixConfigured || config.Syntax.Prefix != ""
+	if prefixConfigured {
+		syntax.Prefix = config.Syntax.Prefix
+		syntax.PrefixIsVariant = config.Syntax.PrefixIsVariant
+	}
+	separatorConfigured := config.separatorConfigured ||
+		(config.Syntax.Separator != "" && config.Syntax.Separator != tailwind.DefaultUtilitySyntax().Separator)
+	if separatorConfigured {
+		syntax.Separator = config.Syntax.Separator
+	}
+	return syntax
 }
 
 // utilityToken is one utility and where it sits in the source. Positions are
