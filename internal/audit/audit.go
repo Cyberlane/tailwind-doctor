@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+
+	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
 )
 
 var sourceExtensions = map[string]bool{
@@ -193,15 +195,15 @@ var ambiguousConflictGroups = map[string]bool{
 	"border-": true,
 }
 
-func inspect(file string, list ClassList, syntax UtilitySyntax) []Finding {
+func inspect(file string, list ClassList, syntax tailwind.UtilitySyntax) []Finding {
 	findings := make([]Finding, 0)
 	seen := make(map[string]string)
 	variants := 0
 
 	for _, token := range splitUtilities(list) {
-		parsed := parseUtility(token.text, syntax)
+		parsed := tailwind.ParseUtility(token.text, syntax)
 
-		if parsed.hasArbitraryValue() {
+		if parsed.HasArbitraryValue() {
 			findings = append(findings, Finding{
 				Rule: "no-arbitrary-value", Category: CategoryConsistency,
 				Confidence: ConfidenceHigh,
@@ -215,11 +217,11 @@ func inspect(file string, list ClassList, syntax UtilitySyntax) []Finding {
 			variants++
 		}
 
-		group := utilityGroup(parsed.Base)
+		group := tailwind.UtilityGroup(parsed.Base)
 		if group == "" {
 			continue
 		}
-		key := parsed.variantKey() + "|" + group
+		key := parsed.VariantKey() + "|" + group
 		if previous, ok := seen[key]; ok {
 			confidence := ConfidenceHigh
 			if ambiguousConflictGroups[group] {

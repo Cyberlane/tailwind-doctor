@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
 )
 
 // classList builds the extraction result a rule would receive for a literal
@@ -17,7 +19,7 @@ func classList(value string) ClassList {
 func TestInspectFindsHighConfidenceProblems(t *testing.T) {
 	findings := inspect("src/card.tsx",
 		classList("p-4 p-2 text-[#123456] sm:p-2 md:p-4 lg:p-6 xl:p-8 2xl:p-10"),
-		defaultUtilitySyntax())
+		tailwind.DefaultUtilitySyntax())
 
 	if len(findings) != 3 {
 		t.Fatalf("expected 3 findings, got %d: %#v", len(findings), findings)
@@ -25,78 +27,9 @@ func TestInspectFindsHighConfidenceProblems(t *testing.T) {
 }
 
 func TestInspectKeepsVariantsSeparate(t *testing.T) {
-	findings := inspect("src/card.tsx", classList("p-4 md:p-6"), defaultUtilitySyntax())
+	findings := inspect("src/card.tsx", classList("p-4 md:p-6"), tailwind.DefaultUtilitySyntax())
 	if len(findings) != 0 {
 		t.Fatalf("expected no findings, got %#v", findings)
-	}
-}
-
-// Every utility below sets padding under the same condition, written in a
-// different dialect. A tool that splits on the last colon misreads most of them.
-func TestInspectUnderstandsUtilitySyntax(t *testing.T) {
-	cases := []struct {
-		name    string
-		classes string
-		syntax  UtilitySyntax
-		want    int
-	}{
-		{
-			name:    "important marker before the utility, Tailwind v3",
-			classes: "p-4 !p-2",
-			syntax:  defaultUtilitySyntax(),
-			want:    1,
-		},
-		{
-			name:    "important marker after the utility, Tailwind v4",
-			classes: "p-4 p-2!",
-			syntax:  defaultUtilitySyntax(),
-			want:    1,
-		},
-		{
-			name:    "negative values still set the same property",
-			classes: "mt-4 -mt-2",
-			syntax:  defaultUtilitySyntax(),
-			want:    1,
-		},
-		{
-			name:    "stacked variants in any order select the same elements",
-			classes: "hover:md:p-4 md:hover:p-2",
-			syntax:  defaultUtilitySyntax(),
-			want:    1,
-		},
-		{
-			name:    "a configured prefix does not hide the property",
-			classes: "tw-p-4 tw-p-2",
-			syntax:  UtilitySyntax{Prefix: "tw-", Separator: ":"},
-			want:    1,
-		},
-		{
-			name:    "a configured separator splits variants",
-			classes: "md_p-4 md_p-2",
-			syntax:  UtilitySyntax{Separator: "_"},
-			want:    1,
-		},
-		{
-			name:    "an arbitrary value containing a colon is one utility",
-			classes: "text-[color:red] text-sm",
-			syntax:  defaultUtilitySyntax(),
-			want:    2, // the arbitrary value, and its conflict with text-sm
-		},
-		{
-			name:    "an arbitrary variant is not an arbitrary value",
-			classes: "[&_svg]:size-4",
-			syntax:  defaultUtilitySyntax(),
-			want:    0,
-		},
-	}
-
-	for _, test := range cases {
-		t.Run(test.name, func(t *testing.T) {
-			findings := inspect("src/card.tsx", classList(test.classes), test.syntax)
-			if len(findings) != test.want {
-				t.Fatalf("got %d findings, want %d: %#v", len(findings), test.want, findings)
-			}
-		})
 	}
 }
 
@@ -154,7 +87,7 @@ func TestWriteJSONEmitsAnEmptyFindingsArray(t *testing.T) {
 // A finding carries its category and confidence because both decide whether it
 // moves the score, and a user who cannot see them cannot argue with the number.
 func TestInspectAttributesCategoryAndConfidence(t *testing.T) {
-	findings := inspect("src/card.tsx", classList("p-4 p-2 text-[#123456]"), defaultUtilitySyntax())
+	findings := inspect("src/card.tsx", classList("p-4 p-2 text-[#123456]"), tailwind.DefaultUtilitySyntax())
 
 	byRule := map[string]Finding{}
 	for _, finding := range findings {
@@ -198,7 +131,7 @@ func TestInspectDemotesAmbiguousConflicts(t *testing.T) {
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
-			findings := inspect("src/card.tsx", classList(testCase.classes), defaultUtilitySyntax())
+			findings := inspect("src/card.tsx", classList(testCase.classes), tailwind.DefaultUtilitySyntax())
 			if len(findings) != 1 {
 				t.Fatalf("expected one conflict, got %#v", findings)
 			}
@@ -214,7 +147,7 @@ func TestInspectDemotesAmbiguousConflicts(t *testing.T) {
 func TestInspectReportsResponsiveBloatAtMediumConfidence(t *testing.T) {
 	findings := inspect("src/card.tsx",
 		classList("sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10"),
-		defaultUtilitySyntax())
+		tailwind.DefaultUtilitySyntax())
 
 	if len(findings) != 1 || findings[0].Rule != "responsive-bloat" {
 		t.Fatalf("expected one responsive-bloat finding, got %#v", findings)

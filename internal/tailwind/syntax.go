@@ -1,4 +1,4 @@
-package audit
+package tailwind
 
 import (
 	"sort"
@@ -14,7 +14,7 @@ import (
 // with a colon inside it, not a variant applied to "red]".
 
 // UtilitySyntax carries the project-level options that change how a utility is
-// spelled. The zero value is invalid; use defaultUtilitySyntax.
+// spelled. The zero value is invalid; use DefaultUtilitySyntax.
 type UtilitySyntax struct {
 	// Prefix is the Tailwind v3 `prefix` option, for example "tw-" giving
 	// "tw-p-4". Tailwind v4 spells its prefix as a leading variant instead.
@@ -23,7 +23,8 @@ type UtilitySyntax struct {
 	Separator string
 }
 
-func defaultUtilitySyntax() UtilitySyntax {
+// DefaultUtilitySyntax returns Tailwind's default utility syntax.
+func DefaultUtilitySyntax() UtilitySyntax {
 	return UtilitySyntax{Separator: ":"}
 }
 
@@ -34,7 +35,8 @@ func (syntax UtilitySyntax) separator() string {
 	return syntax.Separator
 }
 
-type parsedUtility struct {
+// ParsedUtility is a utility separated into the parts that affect its meaning.
+type ParsedUtility struct {
 	// Variants are the stacked conditions, in source order.
 	Variants []string
 	// Base is the utility with variants, prefix, important marker, and leading
@@ -47,11 +49,11 @@ type parsedUtility struct {
 	Important bool
 }
 
-// splitOnSeparator splits a utility into its variant segments, ignoring any
+// SplitOnSeparator splits a utility into its variant segments, ignoring any
 // separator that sits inside brackets, parentheses, or quotes. Arbitrary
 // variants and arbitrary values both contain characters that would otherwise
 // split a utility in the wrong place.
-func splitOnSeparator(raw, separator string) []string {
+func SplitOnSeparator(raw, separator string) []string {
 	segments := make([]string, 0, 2)
 	depth := 0
 	var quote byte
@@ -81,9 +83,10 @@ func splitOnSeparator(raw, separator string) []string {
 	return append(segments, raw[start:])
 }
 
-func parseUtility(raw string, syntax UtilitySyntax) parsedUtility {
-	segments := splitOnSeparator(raw, syntax.separator())
-	parsed := parsedUtility{Base: segments[len(segments)-1]}
+// ParseUtility parses a utility using project-level syntax options.
+func ParseUtility(raw string, syntax UtilitySyntax) ParsedUtility {
+	segments := SplitOnSeparator(raw, syntax.separator())
+	parsed := ParsedUtility{Base: segments[len(segments)-1]}
 	if len(segments) > 1 {
 		parsed.Variants = segments[:len(segments)-1]
 	}
@@ -108,10 +111,10 @@ func parseUtility(raw string, syntax UtilitySyntax) parsedUtility {
 	return parsed
 }
 
-// variantKey identifies the condition under which a utility applies. Variants
+// VariantKey identifies the condition under which a utility applies. Variants
 // are sorted because hover:md:p-4 and md:hover:p-4 select the same elements, so
 // two utilities carrying them conflict with each other.
-func (parsed parsedUtility) variantKey() string {
+func (parsed ParsedUtility) VariantKey() string {
 	if len(parsed.Variants) == 0 {
 		return ""
 	}
@@ -120,16 +123,16 @@ func (parsed parsedUtility) variantKey() string {
 	return strings.Join(sorted, "|")
 }
 
-// hasArbitraryValue reports a bracketed value such as text-[#123456]. An
+// HasArbitraryValue reports a bracketed value such as text-[#123456]. An
 // arbitrary variant — [&_svg]:size-4 — is not one: it selects where a utility
 // applies rather than hard-coding a value that should have been a token.
-func (parsed parsedUtility) hasArbitraryValue() bool {
+func (parsed ParsedUtility) HasArbitraryValue() bool {
 	return strings.Contains(parsed.Base, "[")
 }
 
-// utilityGroup names the property a utility sets, so that two utilities setting
+// UtilityGroup names the property a utility sets, so that two utilities setting
 // the same property under the same variants can be reported as conflicting.
-func utilityGroup(base string) string {
+func UtilityGroup(base string) string {
 	for _, prefix := range []string{
 		"px-", "py-", "pt-", "pr-", "pb-", "pl-", "p-",
 		"mx-", "my-", "mt-", "mr-", "mb-", "ml-", "m-",

@@ -6,6 +6,8 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
 )
 
 // ConfigFileName is the optional per-project configuration file, read from the
@@ -29,7 +31,7 @@ type Config struct {
 	IgnorePaths      []string
 	RespectGitignore bool
 	AllowedArbitrary map[string]bool
-	Syntax           UtilitySyntax
+	Syntax           tailwind.UtilitySyntax
 	BaselinePath     string
 	// MinConfidence is the lowest confidence a finding may carry and still move
 	// the score. Findings below it are reported and tagged, never hidden.
@@ -41,7 +43,7 @@ func defaultConfig() Config {
 		Severities:       map[string]Severity{},
 		RespectGitignore: true,
 		AllowedArbitrary: map[string]bool{},
-		Syntax:           defaultUtilitySyntax(),
+		Syntax:           tailwind.DefaultUtilitySyntax(),
 		BaselinePath:     BaselineFileName,
 		MinConfidence:    ConfidenceHigh,
 	}
