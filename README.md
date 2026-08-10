@@ -2,6 +2,8 @@
 
 Tailwind Doctor (`tw-doctor`) is a fast, read-only-by-default CLI that measures design-system debt in Tailwind class lists. It reports a project-wide **Design System Health Score** with file-level evidence.
 
+[Explore the documentation site](https://cyberlane.github.io/tailwind-doctor/) · [Rule catalog](docs/rules.md) · [Configuration](docs/configuration.md)
+
 > **Status: v0.3.0.** The project is still pre-1.0 and intentionally conservative.
 > Read [What Exists Today](#what-exists-today) and the documented coverage gaps
 > before using its score as a gate.
