@@ -78,11 +78,10 @@ one source location. Comparison is a multiset match on the exact string.
   statically knowable, because inventing classes for an unknowable site is the
   fabrication the project's rules forbid.
 
-Line and column are recorded for every record in the corpus. The extractor now
-reports both, and matching prefers an exact position before falling back to
-matching on value alone, so a fixture holding the same class list under two
-shapes credits each to the right one. Position is not yet *required* for a match;
-that gate turns on once findings carry positions end to end.
+Line and column are recorded for every record in the corpus. The extractor
+reports both, and a measurement counts a class list only when its value, line,
+and column all match. A right string attributed to the wrong source site is a
+miss, not a true positive, because findings carry positions end to end.
 
 ## The Target
 

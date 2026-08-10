@@ -224,18 +224,14 @@ func extractedClassLists(inputPath, content string) ([]ClassList, int) {
 	return values, unresolved
 }
 
-// take consumes the extracted class list answering a ground-truth record. When
-// exact is set only a position match counts, which is how every record that can
-// be matched precisely claims its own entry before any record is allowed to
-// match on value alone. A fixture can hold the same class list twice under two
-// shapes, and without that ordering the first record swallows the other's entry
-// and the per-shape breakdown credits the wrong shape.
-func take(extracted []ClassList, used []bool, entry record, exact bool) int {
+// take consumes the extracted class list answering a ground-truth record. Value,
+// line, and column must all match: findings carry positions end to end, so a
+// right string attributed to the wrong source site is no longer accepted as a
+// true positive.
+func take(extracted []ClassList, used []bool, entry record) int {
 	for index, candidate := range extracted {
-		if used[index] || candidate.Value != entry.value {
-			continue
-		}
-		if exact && (candidate.Line != entry.line || candidate.Column != entry.column) {
+		if used[index] || candidate.Value != entry.value ||
+			candidate.Line != entry.line || candidate.Column != entry.column {
 			continue
 		}
 		return index
@@ -369,15 +365,10 @@ func measure(fixtures []fixture, accepted []falsePositive) measurement {
 		}
 
 		matched := make([]bool, len(wanted))
-		for _, exact := range []bool{true, false} {
-			for position, entry := range wanted {
-				if matched[position] {
-					continue
-				}
-				if index := take(extracted, used, entry, exact); index >= 0 {
-					used[index] = true
-					matched[position] = true
-				}
+		for position, entry := range wanted {
+			if index := take(extracted, used, entry); index >= 0 {
+				used[index] = true
+				matched[position] = true
 			}
 		}
 
