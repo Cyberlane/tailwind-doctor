@@ -1,5 +1,6 @@
 Tailwind Doctor: 26/100
 Scanned 3 file(s), 6 class list(s), 18 utilities
+Resolved 6/7 candidate class list(s) (85%); 0 resolved list(s) were outside a Tailwind package
 Resolved 0 color pair(s); 1 candidate pair(s) remain unknown
 
 Accessibility coverage gaps:
@@ -14,5 +15,5 @@ Accessibility coverage gaps:
 - [no-arbitrary-value] src/card.tsx:2:55: Avoid arbitrary values; prefer a named design token.
 - [no-conflicting-utilities] src/page.html:1:17: p-4 conflicts with p-2 in the same variant.
 - [no-arbitrary-value] src/page.html:1:21: Avoid arbitrary values; prefer a named design token.
-- [responsive-bloat] src/page.html:2:17: Five or more variant utilities make this class list difficult to maintain. (medium confidence, not scored)
+- [variant-density] src/page.html:2:17: Variant utilities make up at least 60% of this class list; consider extracting a component or variant. (medium confidence, not scored)
 - [no-conflicting-utilities] styles.css:2:40: px-4 conflicts with px-2 in the same variant.

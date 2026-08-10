@@ -1,7 +1,9 @@
 Tailwind Doctor: 8/100
 Scanned 4 file(s), 21 class list(s), 47 utilities
+Resolved 21/21 candidate class list(s) (100%); 0 resolved list(s) were outside a Tailwind package
 Resolved 11 color pair(s); 11 candidate pair(s) remain unknown
 Inventoried 13 project token(s) across 1 Tailwind package(s)
+Detected 1 Tailwind package(s) from static evidence
 
 Accessibility coverage gaps:
 - missing-background: 2

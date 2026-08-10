@@ -113,7 +113,11 @@ func (s *scanner) advanceThrough(marker string) {
 }
 
 func (s *scanner) usesJavaScriptSyntax() bool {
-	return s.extension == ".jsx" || s.extension == ".tsx"
+	switch s.extension {
+	case ".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx":
+		return true
+	}
+	return false
 }
 
 func (s *scanner) run() {

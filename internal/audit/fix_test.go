@@ -1,6 +1,7 @@
 package audit
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -206,5 +207,21 @@ func TestApplyFixesRejectsStaleSourceWithoutWriting(t *testing.T) {
 	content, _ := os.ReadFile(filepath.Join(root, "page.html"))
 	if string(content) != `<div class="text-[#abcdef]"></div>` {
 		t.Fatalf("source changed to %q", content)
+	}
+}
+
+func TestApplyRewrittenFilesReportsPartialProgress(t *testing.T) {
+	files := []rewrittenFile{{path: "first", replacements: 2}, {path: "second", replacements: 3}}
+	result, err := applyRewrittenFiles(files, func(file rewrittenFile) error {
+		if file.path == "second" {
+			return errors.New("replace failed")
+		}
+		return nil
+	})
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if result.Files != 1 || result.Replacements != 2 {
+		t.Fatalf("result = %+v, want one file and two replacements", result)
 	}
 }

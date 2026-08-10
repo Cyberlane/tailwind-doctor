@@ -167,6 +167,7 @@ var version3Families = []struct {
 	{"borderRadius", tokens.FamilyRadius},
 	{"boxShadow", tokens.FamilyShadow},
 	{"screens", tokens.FamilyBreakpoint},
+	{"zIndex", tokens.FamilyZIndex},
 }
 
 func applyVersion3Theme(inventory *tokens.Inventory, file string, theme jsobject.Value) {

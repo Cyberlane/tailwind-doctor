@@ -1,9 +1,10 @@
 Tailwind Doctor: 100/100
 Scanned 1 file(s), 2 class list(s), 6 utilities
+Resolved 2/2 candidate class list(s) (100%); 0 resolved list(s) were outside a Tailwind package
 
   Accessibility    not measured
   Correctness      100
   Consistency      100
-  Maintainability  100
+  Maintainability  not measured
 
 No findings. Your class lists look healthy.

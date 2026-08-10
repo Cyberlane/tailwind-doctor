@@ -44,12 +44,12 @@ func (scanned Scanned) exposure(unit Exposure, minimum Confidence) int64 {
 // the transfer function. Changing any of them is a minor release with a
 // changelog entry; a consumer compares this before comparing two scores. See
 // docs/rule-stability.md.
-const ScoreModelVersion = 1
+const ScoreModelVersion = 2
 
 // halfScoreDensity is H: the weighted debt density at which a project scores 50.
 // Set from a principle rather than fitted to a repository — one utility in ten
 // being a consistency violation scores 50, and consistency carries weight 2, so
-// H is 0.10 x 2. Frozen in score model v1; see docs/scoring.md.
+// H is 0.10 x 2. Frozen in score model v2; see docs/scoring.md.
 var halfScoreDensity = big.NewRat(1, 5)
 
 // scores reports whether a finding moves the score. Severity is what the project
@@ -158,11 +158,14 @@ func categoryScores(findings []Finding, scanned Scanned, config Config) []Catego
 				continue
 			}
 			if config.severityFor(rule.ID) == SeverityError {
-				measured = true
+				exposure := int(scanned.exposure(rule.Exposure, config.MinConfidence))
+				if exposure > 0 {
+					measured = true
+				}
 				if !seenExposures[rule.Exposure] {
 					seenExposures[rule.Exposure] = true
 					current.Exposures = append(current.Exposures, ExposureCount{
-						Unit: rule.Exposure, Count: int(scanned.exposure(rule.Exposure, config.MinConfidence)),
+						Unit: rule.Exposure, Count: exposure,
 					})
 				}
 			}

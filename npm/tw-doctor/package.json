@@ -1,6 +1,6 @@
 {
   "name": "tw-doctor",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Deterministic design-system health analysis for Tailwind class lists.",
   "keywords": [
     "tailwind",
@@ -29,11 +29,11 @@
     "node": ">=18"
   },
   "optionalDependencies": {
-    "@tw-doctor/darwin-arm64": "0.1.1",
-    "@tw-doctor/darwin-x64": "0.1.1",
-    "@tw-doctor/linux-arm64": "0.1.1",
-    "@tw-doctor/linux-x64": "0.1.1",
-    "@tw-doctor/win32-x64": "0.1.1"
+    "@tw-doctor/darwin-arm64": "0.2.0",
+    "@tw-doctor/darwin-x64": "0.2.0",
+    "@tw-doctor/linux-arm64": "0.2.0",
+    "@tw-doctor/linux-x64": "0.2.0",
+    "@tw-doctor/win32-x64": "0.2.0"
   },
   "publishConfig": {
     "access": "public"

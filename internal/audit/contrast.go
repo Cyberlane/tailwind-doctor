@@ -93,7 +93,7 @@ func inspectContrast(file string, list ClassList, syntax tailwind.UtilitySyntax,
 
 	for _, token := range splitUtilities(list) {
 		parsed := tailwind.ParseUtility(token.text, syntax)
-		if !parsed.Recognized {
+		if !parsed.Recognized || !tailwind.IsKnownUtility(parsed.Base, inventory) {
 			continue
 		}
 		key := parsed.VariantKey()
@@ -197,6 +197,7 @@ func inspectContrast(file string, list ClassList, syntax tailwind.UtilitySyntax,
 				Message: message, File: file,
 				Class: foreground.token.text + " " + background.token.text,
 				Line:  foreground.token.line, Column: foreground.token.column,
+				EndLine: foreground.token.line, EndColumn: foreground.token.column + len(foreground.token.text),
 				Confidence: ConfidenceHigh,
 			})
 		}

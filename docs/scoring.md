@@ -12,7 +12,7 @@ D             = Σ_r rate_r
 D_c           = Σ_{r ∈ category c} rate_r
 
 Score         = round(100 × H / (H + D))
-sub_score(c)  = round(100 × H / (H + D_c))   when c has an enabled scoring rule
+sub_score(c)  = round(100 × H / (H + D_c))   when c has non-zero exposure
               = null                         otherwise
 
 H             = 1/5
@@ -39,7 +39,8 @@ tagged as such in every output format.
 |---|---|
 | `no-arbitrary-value` | utility |
 | `no-conflicting-utilities` | utility |
-| `responsive-bloat` | class list |
+| `no-overlapping-utilities` | utility |
+| `variant-density` | class list |
 | `unused-token` | distinct project token declaration |
 | `color-contrast` | statically resolvable colour pair |
 
@@ -54,7 +55,7 @@ An unused custom token has a denominator of *tokens declared*; a contrast failur
 a single denominator now would mean re-opening the score model later, and a
 change to the score model is a compatibility event for everyone gating CI on it.
 
-### Exposure counts resolved class lists only
+### Score model 2 counts analyzable Tailwind evidence only
 
 A `className` the tool cannot read statically contributes to no denominator. It
 is reported as unresolved and excluded from both sides of the fraction.
@@ -64,10 +65,17 @@ cannot be analysed — that is, it would reward writing code this tool cannot
 read. The same argument is why an unresolved class list is never linted: see
 [extraction-accuracy.md](extraction-accuracy.md).
 
+Likewise, an application class such as `card` or `prose-shell` is not a Tailwind
+utility and does not enter utility exposure. Score model 1 counted every token
+in a resolved class list, which allowed custom CSS names to dilute Tailwind debt.
+Score model 2 corrects that denominator and makes a category score `null` when
+its enabled rules have zero exposure. A zero-exposure category is unmeasured,
+not perfectly clean.
+
 Token exposure counts project declarations only. Tailwind defaults are not debt,
 and one declaration imported by multiple package themes counts once. The
 `unused-token` rule is disabled during its introductory minor release, so adding
-this denominator does not change score model v1 or existing scores by default.
+this denominator does not change default scores during that release.
 Only declarations whose coverage meets the configured `min-confidence` enter
 the denominator, so an unreadable class list cannot make a different package's
 measured token debt look healthier.
@@ -108,7 +116,7 @@ principle:
 
 Consistency carries weight 2, so `0.10 × 2 = 0.20 = 1/5`.
 
-`H` is frozen in score model v1. It was not fitted to any repository, and it
+`H` is frozen in score model v2. It was not fitted to any repository, and it
 will not be adjusted to make one repository feel right — that is how a metric
 ends up working only on the codebase it was tuned against. The single validation
 permitted later is a distribution check across the fixture corpus: that real
@@ -152,7 +160,7 @@ A project whose only debt is arbitrary values, as a share of utilities scanned:
 | 50% | 1.00 | 17 |
 
 A mixed project: 2000 utilities across 400 class lists, with 20 arbitrary
-values, 10 high-confidence conflicts, and 8 responsive-bloat findings.
+values, 10 high-confidence conflicts, and 8 opt-in `variant-density` findings.
 
 ```
 consistency      2 × 20/2000 = 0.020    sub-score  91
@@ -163,17 +171,19 @@ accessibility                  —        sub-score null  (no enabled rule)
 D = 0.035                               Score      85
 ```
 
-Responsive bloat reports at medium confidence, so those eight findings are
-visible and score-neutral. Maintainability therefore scores 100 while carrying
-eight findings, which is not a contradiction: the category is measured, and
-nothing in it currently counts.
+The opt-in density rule reports at medium confidence, so those eight findings
+are visible and score-neutral. Because it was explicitly enabled, maintainability
+is measured and scores 100 while carrying eight unscored findings. Without an
+enabled rule or any exposure, the category would be `null`.
 
 ## Edge Cases
 
 **Nothing scanned.** Every exposure is zero, so `D` is zero and the score is
 100, with `scanned.utilities: 0` in the report. A `--fail-under` gate on an
 empty repository passes. There is no debt to find in a codebase with no class
-lists, and inventing a penalty for that would be theatre.
+lists, and inventing a penalty for that would be theatre. Extraction coverage is
+also 100% when there are no candidate class lists; use a separate repository
+content check if an empty target should be an error.
 
 **A category with no enabled scoring rule reports `null`, not 100.** Before the
 accessibility rules exist, an accessibility sub-score of 100 would read as "this
@@ -199,8 +209,8 @@ about where. `100 × H / (H + D)` rounds to zero once `D` exceeds 39.8.
 
 The current rule set cannot get near that. Each rule's rate is bounded by one
 finding per unit of its own exposure, so `D` is bounded by the sum of the weights
-involved: 2 for `no-arbitrary-value`, 3 for `no-conflicting-utilities`, and 1 for
-`responsive-bloat` — a hard ceiling of 6, which scores 3. A codebase in which
+involved. The bound is updated whenever an opt-in rule becomes default-on; the
+test names the current ceiling explicitly. A codebase in which
 *every* utility is an arbitrary value, *every* utility conflicts, and *every*
 class list is responsively bloated still scores 3 and can still improve. The
 floor is more than six times further out than the worst input the rules can

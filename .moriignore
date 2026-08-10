@@ -1,6 +1,7 @@
 # Routine production review excludes tests and fixture projects. Run those as
 # separate deliberate scans when their structural similarity matters.
 **/*_test.go
+**/*.test.js
 internal/**/testdata/**
 npm/test/**
 testdata/corpus/**

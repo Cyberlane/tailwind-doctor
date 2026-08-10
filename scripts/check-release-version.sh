@@ -32,6 +32,17 @@ while IFS= read -r manifest; do
   fi
 done < <(find "$repository_root/npm" -name package.json -not -path '*/test/*' -print | sort)
 
+extension_manifest="$repository_root/editors/vscode/package.json"
+extension_version=$(node -p "require(process.argv[1]).version" "$extension_manifest")
+if [[ $extension_version != "$release_version" ]]; then
+  echo "$extension_manifest: version $extension_version does not match $release_tag" >&2
+  exit 1
+fi
+if ! grep -Fq "Version=\"$release_version\"" "$repository_root/editors/vscode/extension.vsixmanifest"; then
+  echo "VS Code manifest version does not match $release_tag" >&2
+  exit 1
+fi
+
 launcher="$repository_root/npm/tw-doctor/package.json"
 alias_manifest="$repository_root/npm/tailwind-doctor/package.json"
 node - "$launcher" "$alias_manifest" "$release_version" <<'NODE'

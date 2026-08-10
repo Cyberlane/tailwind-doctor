@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
@@ -85,8 +86,20 @@ func LoadConfig(root string) (Config, error) {
 	if err != nil {
 		return config, fmt.Errorf("%s: %w", ConfigFileName, err)
 	}
+	if err := validateConfigDocument(document); err != nil {
+		return config, fmt.Errorf("%s: %w", ConfigFileName, err)
+	}
 
-	for rule, raw := range document["rules"] {
+	ruleNames := make([]string, 0, len(document["rules"]))
+	for rule := range document["rules"] {
+		ruleNames = append(ruleNames, rule)
+	}
+	sort.Strings(ruleNames)
+	for _, rule := range ruleNames {
+		raw := document["rules"][rule]
+		if _, found := lookupRule(rule); !found {
+			return config, fmt.Errorf("%s: rules.%s is not a known rule", ConfigFileName, rule)
+		}
 		text, ok := raw.(string)
 		if !ok {
 			return config, fmt.Errorf("%s: rules.%s must be a string", ConfigFileName, rule)
@@ -106,6 +119,11 @@ func LoadConfig(root string) (Config, error) {
 		return config, fmt.Errorf("%s: paths.%w", ConfigFileName, err)
 	}
 	config.IgnorePaths = ignore
+	for _, pattern := range config.IgnorePaths {
+		if err := validatePathPattern(pattern); err != nil {
+			return config, fmt.Errorf("%s: paths.ignore contains %q: %w", ConfigFileName, pattern, err)
+		}
+	}
 	if respect, present, err := paths.boolValue("respect-gitignore"); err != nil {
 		return config, fmt.Errorf("%s: paths.%w", ConfigFileName, err)
 	} else if present {
@@ -152,10 +170,92 @@ func LoadConfig(root string) (Config, error) {
 	if baseline, present, err := document["baseline"].stringValue("path"); err != nil {
 		return config, fmt.Errorf("%s: baseline.%w", ConfigFileName, err)
 	} else if present {
+		if err := validateRelativeConfigPath(baseline); err != nil {
+			return config, fmt.Errorf("%s: baseline.path %q: %w", ConfigFileName, baseline, err)
+		}
 		config.BaselinePath = baseline
 	}
 
 	return config, nil
+}
+
+func validateConfigDocument(document map[string]tomlTable) error {
+	allowed := map[string]map[string]bool{
+		"":                 {},
+		"rules":            nil,
+		"paths":            {"ignore": true, "respect-gitignore": true},
+		"arbitrary-values": {"allow": true},
+		"tailwind":         {"prefix": true, "separator": true},
+		"score":            {"min-confidence": true},
+		"baseline":         {"path": true},
+	}
+	tables := make([]string, 0, len(document))
+	for table := range document {
+		tables = append(tables, table)
+	}
+	sort.Strings(tables)
+	for _, table := range tables {
+		keys, known := allowed[table]
+		if !known {
+			return fmt.Errorf("unknown table [%s]", table)
+		}
+		if table == "rules" {
+			continue
+		}
+		tableKeys := make([]string, 0, len(document[table]))
+		for key := range document[table] {
+			tableKeys = append(tableKeys, key)
+		}
+		sort.Strings(tableKeys)
+		for _, key := range tableKeys {
+			if !keys[key] {
+				qualified := key
+				if table != "" {
+					qualified = table + "." + key
+				}
+				return fmt.Errorf("unknown setting %s", qualified)
+			}
+		}
+	}
+	return nil
+}
+
+func validatePathPattern(pattern string) error {
+	if pattern == "" {
+		return fmt.Errorf("pattern must not be empty")
+	}
+	if strings.Contains(pattern, "\\") {
+		return fmt.Errorf("use slash-separated paths")
+	}
+	if path.IsAbs(pattern) {
+		return fmt.Errorf("pattern must be relative")
+	}
+	if pattern == ".." || strings.HasPrefix(pattern, "../") {
+		return fmt.Errorf("pattern must stay inside the analysis root")
+	}
+	for _, segment := range strings.Split(pattern, "/") {
+		if segment == "**" {
+			continue
+		}
+		if _, err := path.Match(segment, ""); err != nil {
+			return fmt.Errorf("invalid glob: %w", err)
+		}
+	}
+	return nil
+}
+
+func validateRelativeConfigPath(value string) error {
+	if value == "" {
+		return fmt.Errorf("path must not be empty")
+	}
+	if filepath.IsAbs(value) {
+		return fmt.Errorf("path must be relative to the analysis root")
+	}
+	clean := filepath.Clean(value)
+	if clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+		return fmt.Errorf("path must stay inside the analysis root")
+	}
+	return nil
 }
 
 // matchPath reports whether a slash-separated path matches a glob. A ** matches

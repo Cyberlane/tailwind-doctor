@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "tool": {
     "name": "tw-doctor",
     "version": "dev"
@@ -7,7 +7,7 @@
   "score": 8,
   "scoreExcludingBaseline": 8,
   "scoreModel": {
-    "version": 1,
+    "version": 2,
     "transferFunction": "100 * H / (H + D)",
     "halfScoreDensity": 0.2,
     "weights": {
@@ -78,6 +78,16 @@
       "confidence": "medium"
     },
     {
+      "id": "variant-density",
+      "severity": "off",
+      "confidence": "medium"
+    },
+    {
+      "id": "no-overlapping-utilities",
+      "severity": "off",
+      "confidence": "medium"
+    },
+    {
       "id": "unused-token",
       "severity": "off",
       "confidence": "high"
@@ -89,6 +99,33 @@
     }
   ],
   "diagnostics": [],
+  "packages": [
+    {
+      "directory": ".",
+      "version": "4",
+      "manifestFile": "package.json",
+      "entries": [
+        "app.css"
+      ],
+      "evidence": [
+        {
+          "signal": "package-json",
+          "file": "package.json",
+          "detail": "tailwindcss ^4.1.0"
+        },
+        {
+          "signal": "css-import",
+          "file": "app.css",
+          "detail": "\"tailwindcss\""
+        },
+        {
+          "signal": "css-theme",
+          "file": "app.css",
+          "detail": ""
+        }
+      ]
+    }
+  ],
   "tokens": [
     {
       "package": ".",
@@ -332,6 +369,12 @@
       }
     ]
   },
+  "coverage": {
+    "resolvedClassLists": 21,
+    "unresolvedClassLists": 0,
+    "unscopedClassLists": 0,
+    "resolutionPercent": 100
+  },
   "findings": [
     {
       "rule": "color-contrast",
@@ -341,6 +384,8 @@
       "class": "text-ink bg-near",
       "line": 1,
       "column": 11,
+      "endLine": 1,
+      "endColumn": 19,
       "severity": "error",
       "confidence": "high",
       "scored": true
@@ -353,6 +398,8 @@
       "class": "text-ink bg-panel",
       "line": 2,
       "column": 11,
+      "endLine": 2,
+      "endColumn": 19,
       "severity": "error",
       "confidence": "high",
       "scored": true
@@ -365,6 +412,8 @@
       "class": "text-black/50 bg-white",
       "line": 3,
       "column": 11,
+      "endLine": 3,
+      "endColumn": 24,
       "severity": "error",
       "confidence": "high",
       "scored": true
@@ -377,6 +426,8 @@
       "class": "text-[#777777] bg-[#888888]",
       "line": 4,
       "column": 11,
+      "endLine": 4,
+      "endColumn": 25,
       "severity": "error",
       "confidence": "high",
       "scored": true
@@ -389,6 +440,8 @@
       "class": "text-oklch-a bg-oklch-b",
       "line": 5,
       "column": 11,
+      "endLine": 5,
+      "endColumn": 23,
       "severity": "error",
       "confidence": "high",
       "scored": true
@@ -401,6 +454,8 @@
       "class": "dark:text-ink dark:bg-near",
       "line": 6,
       "column": 11,
+      "endLine": 6,
+      "endColumn": 24,
       "severity": "error",
       "confidence": "high",
       "scored": true

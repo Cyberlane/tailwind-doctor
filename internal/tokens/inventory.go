@@ -24,6 +24,7 @@ const (
 	FamilyShadow        Family = "shadow"
 	FamilyBreakpoint    Family = "breakpoint"
 	FamilyContainer     Family = "container"
+	FamilyZIndex        Family = "z-index"
 )
 
 // familyOrder fixes the order families appear in every report. Ranging over a map
@@ -41,6 +42,7 @@ var familyOrder = []Family{
 	FamilyShadow,
 	FamilyBreakpoint,
 	FamilyContainer,
+	FamilyZIndex,
 }
 
 // Families returns the families in report order. The slice is a copy, so a caller

@@ -21,9 +21,10 @@ type sourceEdit struct {
 }
 
 type rewrittenFile struct {
-	path    string
-	mode    os.FileMode
-	content []byte
+	path         string
+	mode         os.FileMode
+	content      []byte
+	replacements int
 }
 
 // Fix applies only replacements proven by the same static analysis that
@@ -59,7 +60,6 @@ func applyFixes(root string, findings []Finding) (FixResult, error) {
 	sort.Strings(files)
 
 	prepared := make([]rewrittenFile, 0, len(files))
-	result := FixResult{}
 	for _, file := range files {
 		path, err := sourcePath(root, file)
 		if err != nil {
@@ -108,18 +108,24 @@ func applyFixes(root string, findings []Finding) (FixResult, error) {
 		rewritten.Write(content[cursor:])
 		prepared = append(prepared, rewrittenFile{
 			path: path, mode: info.Mode().Perm(), content: []byte(rewritten.String()),
+			replacements: len(edits),
 		})
-		result.Replacements += len(edits)
 	}
 
 	// Validate every edit before the first write, then replace each source through
 	// a temporary file in the same directory. A failed validation therefore leaves
 	// the entire project untouched, and a successful rename is atomic per file.
-	for _, file := range prepared {
-		if err := replaceFile(file); err != nil {
-			return FixResult{}, err
+	return applyRewrittenFiles(prepared, replaceFile)
+}
+
+func applyRewrittenFiles(files []rewrittenFile, replace func(rewrittenFile) error) (FixResult, error) {
+	result := FixResult{}
+	for _, file := range files {
+		if err := replace(file); err != nil {
+			return result, err
 		}
 		result.Files++
+		result.Replacements += file.replacements
 	}
 	return result, nil
 }

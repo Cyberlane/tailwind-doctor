@@ -45,11 +45,28 @@ variant combinations, so only identical stacks such as `hover:md:p-4` and
 (`!p-4` or `p-4!`) and a leading minus (`-mt-2`) change how a utility applies but
 not which property it sets, so they do not exempt it.
 
+## `no-overlapping-utilities`
+
+Category `correctness`, measured per utility, reported at medium confidence.
+
+Reports utilities in the same ordered variant context whose property sets
+partially overlap, such as `px-4 pl-2`. This is separate from
+`no-conflicting-utilities`: the latter identifies two utilities that set the
+same property group, while partial overlap may be an intentional override and
+therefore stays score-neutral at the default confidence threshold.
+
+This rule is disabled by default for its introductory minor release. Enable it
+with `no-overlapping-utilities = "error"` or `"warn"` under `[rules]`.
+
 ## `no-arbitrary-value`
 
 Category `consistency`, measured per utility, reported at high confidence.
 
 Reports bracketed arbitrary values, such as `bg-[#fcfcfc]`. These often fragment a design system and should normally be replaced with a named token.
+
+Only classes in a recognized Tailwind utility namespace are inspected.
+Application classes do not become findings merely because their name contains
+brackets, and they do not enter the score denominator.
 
 An arbitrary *variant* is not an arbitrary value: `[&_svg]:size-4` selects where a utility applies rather than hard-coding a value that should have been a token, and is not reported.
 
@@ -80,10 +97,23 @@ stronger claim than the evidence supports.
 
 ## `responsive-bloat`
 
+Retired in 0.2.0. The identifier remains reserved and valid in configuration,
+but reports nothing. Counting any five variant utilities overstated sparse,
+well-factored class lists; `variant-density` replaces it with a proportional
+signal under a new public rule ID.
+
+## `variant-density`
+
 Category `maintainability`, measured per class list, reported at medium
 confidence and therefore score-neutral by default.
 
-Reports a class list with five or more variant utilities. It is a maintainability signal, not a claim that responsive styles are invalid.
+Reports a class list containing at least four variant utilities when they make
+up at least 60% of its recognized Tailwind utilities. It is a prompt to consider
+extracting a component or variant, not a claim that responsive or state styles
+are invalid.
+
+This rule is disabled by default for its introductory minor release. Enable it
+with `variant-density = "error"` or `"warn"` under `[rules]`.
 
 ## Severity And Confidence
 

@@ -1,5 +1,6 @@
 Tailwind Doctor: 23/100 (11 ignoring baseline)
 Scanned 1 file(s), 1 class list(s), 3 utilities
+Resolved 1/1 candidate class list(s) (100%); 0 resolved list(s) were outside a Tailwind package
 Resolved 0 color pair(s); 1 candidate pair(s) remain unknown
 
 Accessibility coverage gaps:
@@ -8,7 +9,7 @@ Accessibility coverage gaps:
   Accessibility    not measured
   Correctness      100
   Consistency      23
-  Maintainability  100
+  Maintainability  not measured
 
 1 finding(s):
 - [no-arbitrary-value] page.html:1:21: Avoid arbitrary values; prefer a named design token.

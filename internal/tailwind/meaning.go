@@ -17,6 +17,54 @@ type UtilityMeaning struct {
 	SuggestionSuffix string
 }
 
+// IsKnownUtility reports whether a base class is part of Tailwind's utility
+// namespace. Prefix recognition alone is insufficient: application classes
+// such as "card" must not dilute the score denominator or trigger rules.
+func IsKnownUtility(base string, inventory *tokens.Inventory) bool {
+	meaning := ClassifyUtility(base, inventory)
+	if meaning.Property != "" || meaning.Family != "" {
+		return true
+	}
+	if strings.HasPrefix(base, "[") && strings.Contains(base, ":") && strings.HasSuffix(base, "]") {
+		return true
+	}
+	for _, exact := range []string{
+		"block", "contents", "flex", "flow-root", "grid", "hidden", "inline",
+		"inline-block", "inline-flex", "inline-grid", "list-item", "table",
+		"static", "fixed", "absolute", "relative", "sticky", "visible", "invisible",
+		"isolate", "isolation-auto", "truncate", "antialiased", "subpixel-antialiased",
+		"container", "sr-only", "not-sr-only", "overflow-ellipsis", "overflow-clip",
+		"italic", "not-italic", "uppercase", "lowercase", "capitalize", "normal-case",
+		"underline", "overline", "line-through", "no-underline", "grow", "shrink",
+		"transform", "transform-cpu", "transform-gpu", "transform-none", "transition",
+		"resize", "resize-none", "resize-x", "resize-y", "blur", "grayscale", "invert",
+		"sepia", "drop-shadow", "filter", "backdrop-filter", "group", "peer",
+	} {
+		if base == exact {
+			return true
+		}
+	}
+	for _, prefix := range []string{
+		"accent-", "align-", "animate-", "appearance-", "aspect-", "backdrop-",
+		"basis-", "bg-", "bg-blend-", "blur-", "border-", "box-", "break-", "brightness-", "caption-",
+		"caret-", "clear-", "col-", "columns-", "container-", "content-", "contrast-",
+		"cursor-", "decoration-", "delay-", "divide-", "drop-shadow-", "duration-",
+		"ease-", "fill-", "flex-", "float-", "font-", "from-", "gap-", "grayscale-", "grid-",
+		"grow-", "hue-rotate-", "hyphens-", "indent-", "inset-", "invert-", "items-",
+		"justify-", "line-clamp-", "list-", "max-h-", "max-w-", "min-h-", "min-w-",
+		"mix-blend-", "object-", "opacity-", "order-", "origin-", "outline-", "overflow-", "overscroll-",
+		"place-", "pointer-events-", "resize-", "ring-", "rotate-", "row-", "saturate-",
+		"scale-", "scroll-", "select-", "self-", "sepia-", "shrink-", "size-", "skew-", "snap-",
+		"stroke-", "table-", "text-", "to-", "touch-", "transform-", "transition-",
+		"translate-", "underline-", "via-", "whitespace-", "will-change-", "z-",
+	} {
+		if strings.HasPrefix(base, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // ClassifyUtility separates property families that share a lexical prefix and
 // identifies token-backed values without executing Tailwind or project code.
 func ClassifyUtility(base string, inventory *tokens.Inventory) UtilityMeaning {
@@ -55,6 +103,9 @@ func ClassifyUtility(base string, inventory *tokens.Inventory) UtilityMeaning {
 			meaning.Family = tokens.FamilySpacing
 		}
 		return meaning
+	}
+	if strings.HasPrefix(base, "z-") {
+		return namedOrArbitrary(base, "z-", strings.TrimPrefix(base, "z-"), "z-index", tokens.FamilyZIndex)
 	}
 	if strings.HasPrefix(base, "text-") {
 		return classifyText(base, inventory)

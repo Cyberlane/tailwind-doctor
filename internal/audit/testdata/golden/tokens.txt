@@ -1,7 +1,9 @@
 Tailwind Doctor: 13/100
 Scanned 1 file(s), 1 class list(s), 3 utilities
+Resolved 1/1 candidate class list(s) (100%); 0 resolved list(s) were outside a Tailwind package
 Resolved 0 color pair(s); 1 candidate pair(s) remain unknown
 Inventoried 3 project token(s) across 1 Tailwind package(s)
+Detected 1 Tailwind package(s) from static evidence
 
 Accessibility coverage gaps:
 - missing-foreground: 1
@@ -9,7 +11,7 @@ Accessibility coverage gaps:
   Accessibility    not measured
   Correctness      100
   Consistency      13
-  Maintainability  100
+  Maintainability  not measured
 
 Token coverage:
 - . (Tailwind v4): 3 project token(s), 1 unused, 3 total inventory entries, high confidence

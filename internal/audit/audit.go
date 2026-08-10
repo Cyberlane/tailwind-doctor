@@ -14,19 +14,22 @@ import (
 )
 
 var sourceExtensions = map[string]bool{
-	".astro": true, ".html": true, ".jsx": true, ".tsx": true,
-	".vue": true, ".svelte": true, ".css": true,
+	".astro": true, ".cjs": true, ".css": true, ".cts": true, ".html": true,
+	".js": true, ".jsx": true, ".mdx": true, ".mjs": true, ".mts": true,
+	".ts": true, ".tsx": true, ".vue": true, ".svelte": true,
 }
 
 type Finding struct {
-	Rule     string   `json:"rule"`
-	Category Category `json:"category"`
-	Message  string   `json:"message"`
-	File     string   `json:"file"`
-	Class    string   `json:"class"`
-	Line     int      `json:"line"`
-	Column   int      `json:"column"`
-	Severity Severity `json:"severity"`
+	Rule      string   `json:"rule"`
+	Category  Category `json:"category"`
+	Message   string   `json:"message"`
+	File      string   `json:"file"`
+	Class     string   `json:"class"`
+	Line      int      `json:"line"`
+	Column    int      `json:"column"`
+	EndLine   int      `json:"endLine"`
+	EndColumn int      `json:"endColumn"`
+	Severity  Severity `json:"severity"`
 	// Confidence is decided by the rule, not by configuration. Only high
 	// confidence moves the score by default.
 	Confidence Confidence `json:"confidence"`
@@ -77,8 +80,10 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 		Tool:          ToolInfo{Name: "tw-doctor", Version: Version},
 		ScoreModel:    scoreModel(),
 		Diagnostics:   []ReportDiagnostic{},
+		Packages:      []TailwindPackageReport{},
 		Tokens:        []TokenPackageReport{},
 		Accessibility: AccessibilityReport{UnknownReasons: []AccessibilityUnknownReason{}},
+		Coverage:      CoverageReport{ResolutionPercent: 100},
 		Findings:      []Finding{},
 	}
 	contrastUnknownReasons := map[string]int{}
@@ -88,10 +93,17 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 	}
 	defer rootDirectory.Close()
 	rootFileSystem := rootDirectory.FS()
-	layout, err := tailwind.Discover(rootFileSystem)
+	ignores := newIgnoreRules(config.IgnorePaths)
+	if config.RespectGitignore {
+		if err := loadGitignoreFiles(root, ignores); err != nil {
+			return Report{}, err
+		}
+	}
+	layout, err := tailwind.DiscoverFiltered(rootFileSystem, ignores.ignores)
 	if err != nil {
 		return Report{}, fmt.Errorf("discover Tailwind packages: %w", err)
 	}
+	report.Packages = packageReports(layout)
 	report.themes, report.Diagnostics, err = loadThemes(rootFileSystem, layout)
 	if err != nil {
 		return Report{}, err
@@ -99,7 +111,6 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 	// Suppressed findings are kept, unreported, only so the score the project
 	// would have without its baseline can be computed.
 	suppressed := []Finding{}
-	ignores := newIgnoreRules(config.IgnorePaths)
 	unscopedClassLists := 0
 
 	err = filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
@@ -116,13 +127,6 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 			switch entry.Name() {
 			case ".git", "node_modules", "dist", "build", ".next", "vendor":
 				return filepath.SkipDir
-			}
-			if config.RespectGitignore {
-				// WalkDir visits a directory before its contents, so patterns are
-				// recorded in time to apply to everything they govern.
-				if content, err := os.ReadFile(filepath.Join(path, ".gitignore")); err == nil {
-					ignores.addGitignore(relative, string(content))
-				}
 			}
 			if relative != "." && ignores.ignores(relative, true) {
 				return filepath.SkipDir
@@ -147,8 +151,16 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 		report.Scanned.Files++
 		syntax, resolvedTheme := analysisContextForFile(relative, layout, report.themes, config)
 		for _, list := range Extract(path, string(content)) {
+			if list.Resolved {
+				report.Coverage.ResolvedClassLists++
+			} else {
+				report.Coverage.UnresolvedClassLists++
+			}
 			if resolvedTheme == nil && len(report.themes) > 0 {
 				unscopedClassLists++
+				if list.Resolved {
+					report.Coverage.UnscopedClassLists++
+				}
 			}
 			// An unresolved site names an expression, not a set of utilities.
 			// Linting it would report classes the source never contained, and
@@ -170,7 +182,8 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 				allowSuggestions = !resolvedTheme.theme.Degraded
 			}
 			for _, utility := range splitUtilities(list) {
-				if tailwind.ParseUtility(utility.text, syntax).Recognized {
+				parsed := tailwind.ParseUtility(utility.text, syntax)
+				if parsed.Recognized && tailwind.IsKnownUtility(parsed.Base, inventory) {
 					report.Scanned.Utilities++
 				}
 			}
@@ -196,6 +209,10 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 	})
 	if err != nil {
 		return Report{}, err
+	}
+	totalClassLists := report.Coverage.ResolvedClassLists + report.Coverage.UnresolvedClassLists
+	if totalClassLists > 0 {
+		report.Coverage.ResolutionPercent = report.Coverage.ResolvedClassLists * 100 / totalClassLists
 	}
 	if unscopedClassLists > 0 {
 		for index := range report.themes {
@@ -227,6 +244,58 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 	report.Categories = categoryScores(report.Findings, report.Scanned, config)
 	report.ConfiguredRules = configuredRules(config)
 	return report, nil
+}
+
+func packageReports(layout tailwind.Layout) []TailwindPackageReport {
+	packages := make([]TailwindPackageReport, 0, len(layout.Packages))
+	for _, pkg := range layout.Packages {
+		evidence := make([]TailwindEvidenceReport, 0, len(pkg.Evidence))
+		for _, item := range pkg.Evidence {
+			evidence = append(evidence, TailwindEvidenceReport{
+				Signal: item.Signal, File: item.File, Detail: item.Detail,
+			})
+		}
+		packages = append(packages, TailwindPackageReport{
+			Directory: pkg.Dir, Version: pkg.Version, UnsupportedVersion: pkg.UnsupportedVersion,
+			ManifestFile: pkg.ManifestFile, ConfigFile: pkg.ConfigFile,
+			Entries: append([]string{}, pkg.Entries...), Evidence: evidence,
+		})
+	}
+	return packages
+}
+
+func loadGitignoreFiles(root string, ignores *ignoreRules) error {
+	return filepath.WalkDir(root, func(file string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		relative, err := filepath.Rel(root, file)
+		if err != nil {
+			return err
+		}
+		relative = filepath.ToSlash(relative)
+		if entry.IsDir() {
+			switch entry.Name() {
+			case ".git", "node_modules", "dist", "build", ".next", "vendor":
+				if relative != "." {
+					return filepath.SkipDir
+				}
+			}
+			if relative != "." && ignores.ignores(relative, true) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if entry.Name() != ".gitignore" {
+			return nil
+		}
+		content, err := os.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("read %s: %w", relative, err)
+		}
+		ignores.addGitignore(filepath.ToSlash(filepath.Dir(relative)), string(content))
+		return nil
+	})
 }
 
 func loadThemes(fsys fs.FS, layout tailwind.Layout) ([]resolvedTheme, []ReportDiagnostic, error) {
@@ -299,6 +368,9 @@ func analysisContextForFile(file string, layout tailwind.Layout, themes []resolv
 }
 
 func recordFinding(report *Report, suppressed *[]Finding, finding Finding, config Config, baseline *Baseline) {
+	if finding.EndLine == 0 || finding.EndColumn == 0 {
+		finding.EndLine, finding.EndColumn = endPosition(finding.Line, finding.Column, finding.Class)
+	}
 	finding.Severity = config.severityFor(finding.Rule)
 	if finding.Severity == SeverityOff {
 		return
@@ -313,6 +385,14 @@ func recordFinding(report *Report, suppressed *[]Finding, finding Finding, confi
 		return
 	}
 	report.Findings = append(report.Findings, finding)
+}
+
+func endPosition(line, column int, text string) (int, int) {
+	position := positionTracker{line: line, column: column}
+	for index := 0; index < len(text); index++ {
+		position.advance(text[index])
+	}
+	return position.line, position.column
 }
 
 // utilityToken is one utility and where it sits in the source. Positions are
@@ -367,13 +447,16 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 	findings := make([]Finding, 0)
 	usedTokens := make([]tokens.Token, 0)
 	seen := make(map[string]string)
-	variants := 0
+	seenProperties := make([]observedProperties, 0)
+	variantUtilities := 0
+	knownUtilities := 0
 
 	for _, token := range splitUtilities(list) {
 		parsed := tailwind.ParseUtility(token.text, syntax)
-		if !parsed.Recognized {
+		if !parsed.Recognized || !tailwind.IsKnownUtility(parsed.Base, inventory) {
 			continue
 		}
+		knownUtilities++
 		meaning := tailwind.ClassifyUtility(parsed.Base, inventory)
 
 		if parsed.HasArbitraryValue() {
@@ -398,6 +481,7 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 				Confidence: ConfidenceHigh,
 				File:       file, Class: token.text,
 				Line: token.line, Column: token.column,
+				EndLine: token.line, EndColumn: token.column + len(token.text),
 				Message:     message,
 				replacement: replacement,
 				fixable:     list.Verbatim && replacement != "",
@@ -430,7 +514,7 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 		}
 
 		if len(parsed.Variants) > 0 {
-			variants++
+			variantUtilities++
 		}
 
 		group := meaning.Property
@@ -451,23 +535,112 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 				Confidence: confidence,
 				File:       file, Class: list.Value,
 				Line: token.line, Column: token.column,
+				EndLine: token.line, EndColumn: token.column + len(token.text),
 				Message: fmt.Sprintf("%s conflicts with %s in the same variant.", previous, token.text),
 			})
 			continue
 		}
 		seen[key] = token.text
+
+		properties := utilityProperties(parsed.Base)
+		if len(properties) > 0 {
+			variantKey := parsed.VariantKey()
+			for _, previous := range seenProperties {
+				if previous.variant != variantKey || previous.properties.equal(properties) ||
+					!previous.properties.overlaps(properties) {
+					continue
+				}
+				findings = append(findings, Finding{
+					Rule: "no-overlapping-utilities", Category: CategoryCorrectness,
+					Confidence: ConfidenceMedium,
+					File:       file, Class: list.Value, Line: token.line, Column: token.column,
+					EndLine: token.line, EndColumn: token.column + len(token.text),
+					Message: fmt.Sprintf("%s and %s set overlapping properties in the same variant.",
+						previous.utility, token.text),
+				})
+				break
+			}
+			seenProperties = append(seenProperties, observedProperties{
+				variant: variantKey, utility: token.text, properties: properties,
+			})
+		}
 	}
 
-	if variants >= 5 {
+	if knownUtilities > 0 && variantUtilities >= 4 && variantUtilities*100/knownUtilities >= 60 {
 		findings = append(findings, Finding{
-			Rule: "responsive-bloat", Category: CategoryMaintainability,
+			Rule: "variant-density", Category: CategoryMaintainability,
 			Confidence: ConfidenceMedium,
 			File:       file, Class: list.Value,
 			Line: list.Line, Column: list.Column,
-			Message: "Five or more variant utilities make this class list difficult to maintain.",
+			Message: "Variant utilities make up at least 60% of this class list; consider extracting a component or variant.",
 		})
 	}
 	return findings, usedTokens
+}
+
+type propertySet map[string]bool
+
+type observedProperties struct {
+	variant    string
+	utility    string
+	properties propertySet
+}
+
+func (properties propertySet) overlaps(other propertySet) bool {
+	for property := range properties {
+		if other[property] {
+			return true
+		}
+	}
+	return false
+}
+
+func (properties propertySet) equal(other propertySet) bool {
+	if len(properties) != len(other) {
+		return false
+	}
+	for property := range properties {
+		if !other[property] {
+			return false
+		}
+	}
+	return true
+}
+
+func utilityProperties(base string) propertySet {
+	for _, family := range []struct {
+		prefix string
+		name   string
+	}{
+		{prefix: "p", name: "padding"},
+		{prefix: "m", name: "margin"},
+	} {
+		if base == family.prefix || !strings.HasPrefix(base, family.prefix+"-") &&
+			!strings.HasPrefix(base, family.prefix+"x-") && !strings.HasPrefix(base, family.prefix+"y-") &&
+			!strings.HasPrefix(base, family.prefix+"t-") && !strings.HasPrefix(base, family.prefix+"r-") &&
+			!strings.HasPrefix(base, family.prefix+"b-") && !strings.HasPrefix(base, family.prefix+"l-") {
+			continue
+		}
+		direction := strings.TrimPrefix(strings.SplitN(base, "-", 2)[0], family.prefix)
+		switch direction {
+		case "":
+			return propertySet{family.name + "-top": true, family.name + "-right": true,
+				family.name + "-bottom": true, family.name + "-left": true}
+		case "x":
+			return propertySet{family.name + "-right": true, family.name + "-left": true}
+		case "y":
+			return propertySet{family.name + "-top": true, family.name + "-bottom": true}
+		case "t":
+			return propertySet{family.name + "-top": true}
+		case "r":
+			return propertySet{family.name + "-right": true}
+		case "b":
+			return propertySet{family.name + "-bottom": true}
+		case "l":
+			return propertySet{family.name + "-left": true}
+		}
+	}
+	return nil
 }
 
 func replaceArbitraryValue(utility, name string) string {

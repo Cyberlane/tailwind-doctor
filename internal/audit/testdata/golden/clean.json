@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "tool": {
     "name": "tw-doctor",
     "version": "dev"
@@ -7,7 +7,7 @@
   "score": 100,
   "scoreExcludingBaseline": 100,
   "scoreModel": {
-    "version": 1,
+    "version": 2,
     "transferFunction": "100 * H / (H + D)",
     "halfScoreDensity": 0.2,
     "weights": {
@@ -51,13 +51,8 @@
     },
     {
       "name": "maintainability",
-      "score": 100,
-      "exposures": [
-        {
-          "unit": "class-list",
-          "count": 2
-        }
-      ],
+      "score": null,
+      "exposures": [],
       "scoredFindings": 0,
       "unscoredFindings": 0
     }
@@ -84,7 +79,17 @@
     },
     {
       "id": "responsive-bloat",
-      "severity": "error",
+      "severity": "off",
+      "confidence": "medium"
+    },
+    {
+      "id": "variant-density",
+      "severity": "off",
+      "confidence": "medium"
+    },
+    {
+      "id": "no-overlapping-utilities",
+      "severity": "off",
       "confidence": "medium"
     },
     {
@@ -99,11 +104,18 @@
     }
   ],
   "diagnostics": [],
+  "packages": [],
   "tokens": [],
   "accessibility": {
     "resolvedColorPairs": 0,
     "unknownColorPairs": 0,
     "unknownReasons": []
+  },
+  "coverage": {
+    "resolvedClassLists": 2,
+    "unresolvedClassLists": 0,
+    "unscopedClassLists": 0,
+    "resolutionPercent": 100
   },
   "findings": [],
   "suppressed": 0

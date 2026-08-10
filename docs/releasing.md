@@ -27,6 +27,11 @@ Every platform package contains only its statically linked Go binary, README,
 license, and package metadata. The launcher has no install script and therefore
 does not download or execute code during installation.
 
+The GitHub release also contains `tailwind-doctor-vscode_VERSION.vsix`. It
+contains the dependency-free VS Code client, extension metadata, README, and
+license; the CLI remains a separate installation selected by
+`tailwindDoctor.path`.
+
 ## npm trust
 
 Each package trusts the `release.yml` workflow in
@@ -48,6 +53,7 @@ The following must all carry the same version before tagging:
 - every `npm/**/package.json` intended for publication;
 - the launcher's optional dependency versions;
 - the alias package's `tw-doctor` dependency;
+- the VS Code `package.json` and VSIX manifest;
 - release notes under `docs/release-notes/`.
 
 Validate the version and complete distribution locally:
@@ -59,13 +65,14 @@ scripts/test-release.sh
 
 `scripts/test-release.sh` cross-compiles all supported binaries, verifies
 archive checksums, packs the npm packages, installs the host package from local
-tarballs, and runs both command names.
+tarballs, runs both command names, and validates the VSIX archive and manifest.
 
 ## Release sequence
 
 1. Require a clean `main` at the commit that will be released.
 2. Run `gofmt -l .`, `go vet ./...`, `go test ./...`, `go test -race ./...`,
-   `npm test --prefix npm`, `scripts/test-release.sh`, the extraction-accuracy
+   `npm test --prefix npm`, `npm test --prefix editors/vscode`,
+   `scripts/test-release.sh`, the extraction-accuracy
    gate, Mori review, and the public-boundary/history audit.
 3. Push the signed commits and require green CI and CodeQL.
 4. Create and push an annotated GPG-signed `vMAJOR.MINOR.PATCH` tag.

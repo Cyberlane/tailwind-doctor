@@ -49,11 +49,43 @@
               },
               "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#responsive-bloat",
               "defaultConfiguration": {
-                "level": "note"
+                "level": "none"
               },
               "properties": {
                 "category": "maintainability",
                 "exposure": "class-list",
+                "confidence": "medium"
+              }
+            },
+            {
+              "id": "variant-density",
+              "name": "variant-density",
+              "shortDescription": {
+                "text": "variant-density (maintainability)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#variant-density",
+              "defaultConfiguration": {
+                "level": "none"
+              },
+              "properties": {
+                "category": "maintainability",
+                "exposure": "class-list",
+                "confidence": "medium"
+              }
+            },
+            {
+              "id": "no-overlapping-utilities",
+              "name": "no-overlapping-utilities",
+              "shortDescription": {
+                "text": "no-overlapping-utilities (correctness)"
+              },
+              "helpUri": "https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md#no-overlapping-utilities",
+              "defaultConfiguration": {
+                "level": "none"
+              },
+              "properties": {
+                "category": "correctness",
+                "exposure": "utility",
                 "confidence": "medium"
               }
             },
@@ -113,7 +145,9 @@
                 },
                 "region": {
                   "startLine": 2,
-                  "startColumn": 55
+                  "startColumn": 55,
+                  "endLine": 2,
+                  "endColumn": 89
                 }
               }
             }
@@ -141,7 +175,9 @@
                 },
                 "region": {
                   "startLine": 1,
-                  "startColumn": 17
+                  "startColumn": 17,
+                  "endLine": 1,
+                  "endColumn": 20
                 }
               }
             }
@@ -169,7 +205,9 @@
                 },
                 "region": {
                   "startLine": 1,
-                  "startColumn": 21
+                  "startColumn": 21,
+                  "endLine": 1,
+                  "endColumn": 35
                 }
               }
             }
@@ -184,10 +222,10 @@
           }
         },
         {
-          "ruleId": "responsive-bloat",
+          "ruleId": "variant-density",
           "level": "note",
           "message": {
-            "text": "Five or more variant utilities make this class list difficult to maintain."
+            "text": "Variant utilities make up at least 60% of this class list; consider extracting a component or variant."
           },
           "locations": [
             {
@@ -197,13 +235,15 @@
                 },
                 "region": {
                   "startLine": 2,
-                  "startColumn": 17
+                  "startColumn": 17,
+                  "endLine": 2,
+                  "endColumn": 54
                 }
               }
             }
           ],
           "partialFingerprints": {
-            "twDoctorRuleFileClass/v1": "8efb08c2331099d38f0f30d867074be7a4bb17b48377130b143687c683c9560b"
+            "twDoctorRuleFileClass/v1": "bd5f2ee23041e021f5e9b1c72870cf33d5d5f9ff75ea6300ae0062ff4eae6eca"
           },
           "properties": {
             "category": "maintainability",
@@ -225,7 +265,9 @@
                 },
                 "region": {
                   "startLine": 2,
-                  "startColumn": 40
+                  "startColumn": 40,
+                  "endLine": 2,
+                  "endColumn": 44
                 }
               }
             }
@@ -243,7 +285,7 @@
       "properties": {
         "score": 26,
         "scoreExcludingBaseline": 26,
-        "scoreModelVersion": 1,
+        "scoreModelVersion": 2,
         "categories": [
           {
             "name": "accessibility",
@@ -297,7 +339,14 @@
           "highConfidenceTokens": 0,
           "mediumConfidenceTokens": 0,
           "colorPairs": 0
-        }
+        },
+        "coverage": {
+          "resolvedClassLists": 6,
+          "unresolvedClassLists": 1,
+          "unscopedClassLists": 0,
+          "resolutionPercent": 85
+        },
+        "packages": []
       }
     }
   ]

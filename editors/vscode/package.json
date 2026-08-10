@@ -1,0 +1,64 @@
+{
+  "name": "tailwind-doctor",
+  "displayName": "Tailwind Doctor",
+  "description": "Deterministic Tailwind design-system diagnostics while you type.",
+  "version": "0.2.0",
+  "publisher": "cyberlane",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "keywords": [
+    "tailwind",
+    "design system",
+    "lint"
+  ],
+  "homepage": "https://github.com/Cyberlane/tailwind-doctor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Cyberlane/tailwind-doctor.git"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:astro",
+    "onLanguage:css",
+    "onLanguage:html",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:mdx",
+    "onLanguage:svelte",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:vue",
+    "onCommand:tailwindDoctor.restart"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "tailwindDoctor.restart",
+        "title": "Tailwind Doctor: Restart Language Server"
+      }
+    ],
+    "configuration": {
+      "title": "Tailwind Doctor",
+      "properties": {
+        "tailwindDoctor.path": {
+          "type": "string",
+          "default": "tw-doctor",
+          "description": "Path to the Tailwind Doctor executable."
+        },
+        "tailwindDoctor.trace.server": {
+          "type": "boolean",
+          "default": false,
+          "description": "Write language-server protocol messages to the Tailwind Doctor output channel."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node --check extension.js && node --test extension.test.js"
+  }
+}

@@ -18,7 +18,7 @@ const MaximumScore = 100
 
 // SchemaVersion is the version of the JSON report. A consumer reads this before
 // anything else; the shape below only ever changes with it.
-const SchemaVersion = 3
+const SchemaVersion = 4
 
 // Version is the build's version string, reported in JSON and SARIF so a finding
 // can be traced back to the code that produced it.
@@ -81,6 +81,24 @@ type ReportDiagnostic struct {
 	Message string `json:"message"`
 }
 
+type TailwindEvidenceReport struct {
+	Signal string `json:"signal"`
+	File   string `json:"file"`
+	Detail string `json:"detail"`
+}
+
+// TailwindPackageReport publishes the static evidence behind package scope and
+// version selection so consumers can audit which configuration governed a file.
+type TailwindPackageReport struct {
+	Directory          string                   `json:"directory"`
+	Version            tailwind.Version         `json:"version"`
+	UnsupportedVersion string                   `json:"unsupportedVersion,omitempty"`
+	ManifestFile       string                   `json:"manifestFile,omitempty"`
+	ConfigFile         string                   `json:"configFile,omitempty"`
+	Entries            []string                 `json:"entries"`
+	Evidence           []TailwindEvidenceReport `json:"evidence"`
+}
+
 // TokenReport is one deterministic inventory entry and whether analysis found
 // a named utility that consumes it.
 type TokenReport struct {
@@ -125,6 +143,16 @@ type AccessibilityReport struct {
 	UnknownReasons     []AccessibilityUnknownReason `json:"unknownReasons"`
 }
 
+// CoverageReport makes the static-analysis boundary explicit. A resolved class
+// list contributes utilities and findings; an unresolved list contributes only
+// to coverage, never to the score denominator.
+type CoverageReport struct {
+	ResolvedClassLists   int `json:"resolvedClassLists"`
+	UnresolvedClassLists int `json:"unresolvedClassLists"`
+	UnscopedClassLists   int `json:"unscopedClassLists"`
+	ResolutionPercent    int `json:"resolutionPercent"`
+}
+
 type Report struct {
 	SchemaVersion int      `json:"schemaVersion"`
 	Tool          ToolInfo `json:"tool"`
@@ -132,15 +160,17 @@ type Report struct {
 	// ScoreExcludingBaseline is the score the project would have with no
 	// suppressions. A baseline that made debt invisible would be a lie with a
 	// file format.
-	ScoreExcludingBaseline int                  `json:"scoreExcludingBaseline"`
-	ScoreModel             ScoreModel           `json:"scoreModel"`
-	Categories             []CategoryScore      `json:"categories"`
-	Scanned                Scanned              `json:"scanned"`
-	ConfiguredRules        []ConfiguredRule     `json:"configuredRules"`
-	Diagnostics            []ReportDiagnostic   `json:"diagnostics"`
-	Tokens                 []TokenPackageReport `json:"tokens"`
-	Accessibility          AccessibilityReport  `json:"accessibility"`
-	Findings               []Finding            `json:"findings"`
+	ScoreExcludingBaseline int                     `json:"scoreExcludingBaseline"`
+	ScoreModel             ScoreModel              `json:"scoreModel"`
+	Categories             []CategoryScore         `json:"categories"`
+	Scanned                Scanned                 `json:"scanned"`
+	ConfiguredRules        []ConfiguredRule        `json:"configuredRules"`
+	Diagnostics            []ReportDiagnostic      `json:"diagnostics"`
+	Packages               []TailwindPackageReport `json:"packages"`
+	Tokens                 []TokenPackageReport    `json:"tokens"`
+	Accessibility          AccessibilityReport     `json:"accessibility"`
+	Coverage               CoverageReport          `json:"coverage"`
+	Findings               []Finding               `json:"findings"`
 	themes                 []resolvedTheme
 	// Suppressed counts findings that matched the baseline. Reporting the count
 	// keeps accepted debt visible rather than letting it vanish.
@@ -187,6 +217,10 @@ func WriteHuman(writer io.Writer, report Report) {
 	fmt.Fprintln(writer)
 	fmt.Fprintf(writer, "Scanned %d file(s), %d class list(s), %d utilities\n",
 		report.Scanned.Files, report.Scanned.ClassLists, report.Scanned.Utilities)
+	fmt.Fprintf(writer, "Resolved %d/%d candidate class list(s) (%d%%); %d resolved list(s) were outside a Tailwind package\n",
+		report.Coverage.ResolvedClassLists,
+		report.Coverage.ResolvedClassLists+report.Coverage.UnresolvedClassLists,
+		report.Coverage.ResolutionPercent, report.Coverage.UnscopedClassLists)
 	if report.Accessibility.ResolvedColorPairs > 0 || report.Accessibility.UnknownColorPairs > 0 {
 		fmt.Fprintf(writer, "Resolved %d color pair(s); %d candidate pair(s) remain unknown\n",
 			report.Accessibility.ResolvedColorPairs, report.Accessibility.UnknownColorPairs)
@@ -194,6 +228,9 @@ func WriteHuman(writer io.Writer, report Report) {
 	if len(report.Tokens) > 0 {
 		fmt.Fprintf(writer, "Inventoried %d project token(s) across %d Tailwind package(s)\n",
 			report.Scanned.Tokens, len(report.Tokens))
+	}
+	if len(report.Packages) > 0 {
+		fmt.Fprintf(writer, "Detected %d Tailwind package(s) from static evidence\n", len(report.Packages))
 	}
 
 	if len(report.Accessibility.UnknownReasons) > 0 {

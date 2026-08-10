@@ -16,6 +16,15 @@ release_tag="v$release_version"
 "$repository_root/scripts/build-release.sh" "$release_tag" "$relative_output_directory"
 (cd "$output_directory/release" && shasum -a 256 -c SHA256SUMS)
 
+vsix="$output_directory/release/tailwind-doctor-vscode_${release_version}.vsix"
+unzip -t "$vsix" >/dev/null
+unzip -p "$vsix" extension/package.json | node -e '
+  const fs = require("fs");
+  const manifest = JSON.parse(fs.readFileSync(0, "utf8"));
+  if (manifest.version !== process.argv[1] || manifest.main !== "./extension.js") process.exit(1);
+' "$release_version"
+unzip -p "$vsix" extension.vsixmanifest | grep -Fq "Version=\"$release_version\""
+
 fake_bin="$temporary_root/fake-bin"
 mkdir -p "$fake_bin"
 cat >"$fake_bin/npm" <<'EOF'

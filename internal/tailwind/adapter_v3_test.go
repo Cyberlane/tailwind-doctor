@@ -48,6 +48,14 @@ func TestVersion3BareKeyReplacesDefaults(t *testing.T) {
 	}
 }
 
+func TestVersion3InventoriesZIndexTokens(t *testing.T) {
+	theme := loadVersion3(t, `module.exports = { theme: { extend: { zIndex: { modal: "1000" } } } }`)
+	token, found := theme.Inventory.ByName(tokens.FamilyZIndex, "modal")
+	if !found || token.Path != "zIndex.modal" || token.Value != "1000" {
+		t.Fatalf("z-index token = %+v, found %v", token, found)
+	}
+}
+
 func TestVersion3ReadsSyntaxAndPlugins(t *testing.T) {
 	theme := loadVersion3(t, `module.exports = { prefix: "tw-", separator: "_", plugins: [require("@tailwindcss/typography"), require("daisyui")] }`)
 	if theme.Syntax.Prefix != "tw-" || theme.Syntax.Separator != "_" {
