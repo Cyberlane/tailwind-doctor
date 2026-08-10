@@ -31,6 +31,8 @@ internal/audit/    source discovery, extraction, rules, scoring, report renderin
 internal/tailwind/ Tailwind version discovery and static v3/v4 configuration adapters
 internal/tokens/   canonical design-token inventory and value matching
 docs/              architecture notes and the public rule catalog
+editors/           editor clients, integration tests, and editor-specific docs
+lsp/               native Neovim LSP configuration
 npm/               npm launcher packages that ship prebuilt Go binaries
 .github/           CI workflows and contribution templates
 ```

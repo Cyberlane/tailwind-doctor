@@ -72,6 +72,7 @@ tarballs, runs both command names, and validates the VSIX archive and manifest.
 1. Require a clean `main` at the commit that will be released.
 2. Run `gofmt -l .`, `go vet ./...`, `go test ./...`, `go test -race ./...`,
    `npm test --prefix npm`, `npm test --prefix editors/vscode`,
+   `editors/neovim/test.sh`,
    `scripts/test-release.sh`, the extraction-accuracy
    gate, Mori review, and the public-boundary/history audit.
 3. Push the signed commits and require green CI and CodeQL.
