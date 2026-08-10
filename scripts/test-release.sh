@@ -16,6 +16,24 @@ release_tag="v$release_version"
 "$repository_root/scripts/build-release.sh" "$release_tag" "$relative_output_directory"
 (cd "$output_directory/release" && shasum -a 256 -c SHA256SUMS)
 
+fake_bin="$temporary_root/fake-bin"
+mkdir -p "$fake_bin"
+cat >"$fake_bin/npm" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+case ${1:-} in
+  pack | view) exit 0 ;;
+  publish)
+    echo "publish should be skipped when the registry version exists" >&2
+    exit 1
+    ;;
+  *) exit 2 ;;
+esac
+EOF
+chmod +x "$fake_bin/npm"
+PATH="$fake_bin:$PATH" "$repository_root/scripts/publish-npm.sh" "$relative_output_directory"
+
 case "$(uname -s):$(uname -m)" in
   Darwin:arm64) package_target=darwin-arm64 ;;
   Darwin:x86_64) package_target=darwin-x64 ;;

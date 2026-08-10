@@ -6,7 +6,11 @@ if [[ $# -ne 1 ]]; then
   exit 2
 fi
 
+repository_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 output_directory=$1
+if [[ $output_directory != /* ]]; then
+  output_directory="$repository_root/$output_directory"
+fi
 release_version=$(node -p "require(process.argv[1]).version" "$output_directory/npm/tw-doctor/package.json")
 
 packages=()
