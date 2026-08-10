@@ -11,6 +11,10 @@ repository_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 output_directory=${2:-"$repository_root/dist"}
 release_version=${release_tag#v}
 
+if [[ $output_directory != /* ]]; then
+  output_directory="$repository_root/$output_directory"
+fi
+
 "$repository_root/scripts/check-release-version.sh" "$release_tag"
 cd "$repository_root"
 

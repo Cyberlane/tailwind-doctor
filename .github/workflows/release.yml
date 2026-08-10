@@ -3,6 +3,12 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing signed release tag to recover
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -11,6 +17,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     environment: npm
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
     permissions:
       attestations: write
       contents: write
@@ -19,6 +27,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          ref: ${{ inputs.release_tag || github.ref_name }}
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26.x"
@@ -31,8 +40,8 @@ jobs:
       - name: Verify the signed release tag
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/verify-release-tag.sh "${GITHUB_REF_NAME}"
-      - run: scripts/check-release-version.sh "${GITHUB_REF_NAME}"
+        run: scripts/verify-release-tag.sh "$RELEASE_TAG"
+      - run: scripts/check-release-version.sh "$RELEASE_TAG"
       - run: gofmt -l . | tee /tmp/unformatted && test ! -s /tmp/unformatted
       - run: go vet ./...
       - run: go test ./...
@@ -43,7 +52,7 @@ jobs:
       - name: Check the public repository boundary
         run: scripts/check-public.sh
       - name: Build release archives and npm packages
-        run: scripts/build-release.sh "${GITHUB_REF_NAME}" dist
+        run: scripts/build-release.sh "$RELEASE_TAG" "$GITHUB_WORKSPACE/dist"
       - name: Verify release checksums
         run: cd dist/release && shasum -a 256 -c SHA256SUMS
       - name: Attest release archives
@@ -56,8 +65,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-
-          gh release create "${GITHUB_REF_NAME}" dist/release/*
+          gh release create "$RELEASE_TAG" dist/release/*
           --verify-tag
-          --title "Tailwind Doctor ${GITHUB_REF_NAME}"
+          --title "Tailwind Doctor $RELEASE_TAG"
           --notes-file docs/release-notes/v0.1.0.md
           --latest
