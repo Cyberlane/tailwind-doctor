@@ -1,17 +1,28 @@
 # tw-doctor
 
-Tailwind Doctor is a fast, read-only CLI that measures design-system debt in Tailwind class lists and reports a project-wide Design System Health Score with file-level evidence.
+Tailwind Doctor is a fast, read-only-by-default CLI that measures design-system
+debt in Tailwind class lists and reports a project-wide Design System Health
+Score with file-level evidence.
 
-## Not released yet
-
-Version `0.0.0` holds the package name and contains no binary. Running it prints a notice and exits with code `2`.
-
-The first real release will ship prebuilt Go binaries as platform-specific optional dependencies, so that `npx tw-doctor` downloads one binary rather than all of them. The `tailwind-doctor` package is a lockstep alias published at the same version.
-
-Until then, build from source with a Go 1.26 toolchain:
+## Run
 
 ```bash
-go run ./cmd/tw-doctor .
+npx tw-doctor .
+npx tw-doctor --json .
+npx tw-doctor --sarif .
+npx tw-doctor --fix .
+```
+
+The package installs one prebuilt Go binary for the current platform through an
+optional dependency. Supported targets are macOS arm64/x64, Linux arm64/x64,
+and Windows x64. No install script downloads or executes code.
+
+The `tailwind-doctor` npm package is a lockstep alias for this package.
+
+To build from source with a Go 1.26 toolchain:
+
+```bash
+go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.1.0
 ```
 
 ## Trademark

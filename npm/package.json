@@ -1,0 +1,11 @@
+{
+  "name": "tailwind-doctor-packages",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"runtime/debug"
 	"strings"
 
 	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
@@ -21,7 +22,20 @@ const SchemaVersion = 3
 
 // Version is the build's version string, reported in JSON and SARIF so a finding
 // can be traced back to the code that produced it.
-const Version = "dev"
+var Version = "dev"
+
+func init() {
+	// `go install module@version` records the module version in Go build info.
+	// Release archives override Version with -ldflags, while a checkout build
+	// remains "dev". This keeps every supported installation path traceable.
+	if Version != "dev" {
+		return
+	}
+	if build, available := debug.ReadBuildInfo(); available &&
+		build.Main.Version != "" && build.Main.Version != "(devel)" {
+		Version = strings.TrimPrefix(build.Main.Version, "v")
+	}
+}
 
 type ToolInfo struct {
 	Name    string `json:"name"`

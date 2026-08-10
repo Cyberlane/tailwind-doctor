@@ -4,15 +4,14 @@ An alias for [`tw-doctor`](https://www.npmjs.com/package/tw-doctor), the CLI tha
 
 `npx <name>` resolves a package named `<name>`, so a `bin` alias declared inside `tw-doctor` is not enough to make `npx tailwind-doctor` work. This package exists so both invocation names do. It is published in lockstep with `tw-doctor` at the same version.
 
-## Not released yet
-
-Version `0.0.0` holds the package name and contains no binary. Running it prints a notice and exits with code `2`.
-
-Until the first release, build from source with a Go 1.26 toolchain:
+## Run
 
 ```bash
-go run ./cmd/tw-doctor .
+npx tailwind-doctor .
 ```
+
+The package delegates to `tw-doctor`, which installs one prebuilt Go binary for
+the current platform without an install-time download script.
 
 ## Trademark
 

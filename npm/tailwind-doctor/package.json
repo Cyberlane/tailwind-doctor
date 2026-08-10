@@ -1,7 +1,7 @@
 {
   "name": "tailwind-doctor",
-  "version": "0.0.0",
-  "description": "Alias for the Tailwind Doctor CLI. This 0.0.0 publish reserves the name; the tool is not released yet.",
+  "version": "0.1.0",
+  "description": "Alias package for the Tailwind Doctor CLI.",
   "keywords": [
     "tailwind",
     "tailwindcss",
@@ -26,5 +26,11 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "tw-doctor": "0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

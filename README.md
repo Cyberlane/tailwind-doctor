@@ -1,11 +1,13 @@
 # Tailwind Doctor
 
-Tailwind Doctor (`tw-doctor`) is a fast, read-only CLI that measures design-system debt in Tailwind class lists. It reports a project-wide **Design System Health Score** with file-level evidence.
+Tailwind Doctor (`tw-doctor`) is a fast, read-only-by-default CLI that measures design-system debt in Tailwind class lists. It reports a project-wide **Design System Health Score** with file-level evidence.
 
-> **Status: early development.** The tool runs and its output is deterministic, but nothing here is stable yet. Read [What Exists Today](#what-exists-today) before relying on the number it prints.
+> **Status: v0.1.0.** The first public release is intentionally conservative.
+> Read [What Exists Today](#what-exists-today) and the documented coverage gaps
+> before using its score as a gate.
 
 ```bash
-go run ./cmd/tw-doctor .
+npx tw-doctor .
 ```
 
 ```text
@@ -65,6 +67,19 @@ Rule severities, path ignores, an arbitrary-value allowlist, and `[score] min-co
 
 ## CLI
 
+Install or run without a global install:
+
+```bash
+npx tw-doctor .
+npx tailwind-doctor .
+```
+
+Or install the Go binary directly:
+
+```bash
+go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.1.0
+```
+
 ```bash
 # Human-readable report
 tw-doctor .
@@ -76,6 +91,9 @@ tw-doctor --json .
 tw-doctor --sarif .
 
 tw-doctor --write-baseline .   # record current debt; later runs gate on new findings
+
+# Replace arbitrary values only when they exactly match a named token
+tw-doctor --fix .
 
 # Fail CI below a score threshold
 tw-doctor --fail-under 90 .
@@ -93,14 +111,18 @@ tw-doctor --fail-under 90 .
 
 ## npm Distribution
 
-The runtime is written in Go. Two npm packages under `npm/` will eventually make both commands work without a Go toolchain:
+The runtime is written in Go. Both npm command names install the same prebuilt
+binary:
 
 ```bash
 npx tw-doctor
 npx tailwind-doctor
 ```
 
-Both sit at `0.0.0`, which is a name reservation rather than a release: they contain no binary and exit with a notice saying so. Release builds will attach platform-specific Go binaries as optional dependencies; see [docs/releasing.md](docs/releasing.md). Until then, use `go run ./cmd/tw-doctor .`.
+The launcher selects one optional binary package for macOS arm64/x64, Linux
+arm64/x64, or Windows x64. There is no install-time download script. Release
+archives and checksums are also attached to the GitHub release; see
+[docs/releasing.md](docs/releasing.md).
 
 ## Development
 
@@ -109,11 +131,18 @@ go test ./...
 go vet ./...
 go run ./cmd/tw-doctor --json .
 tw-doctor --write-baseline .   # record current debt; later runs gate on new findings
+npm test --prefix npm
+scripts/test-release.sh
 ```
 
 ## Privacy
 
-Tailwind Doctor is local, deterministic, and read-only. It does not execute application code, upload source files, or require credentials.
+Tailwind Doctor is local, deterministic, and read-only unless `--fix` or
+`--write-baseline` is explicitly requested. It does not execute application
+code, upload source files, or require credentials. `--fix` changes only
+verbatim class utilities whose value exactly matches a statically resolved
+named token; runtime values, uncertain configuration, allowlisted findings,
+and baselined debt are left untouched.
 
 ## Contributing
 

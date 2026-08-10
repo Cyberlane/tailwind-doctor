@@ -125,4 +125,3 @@ findings or score exposure.
 
 - Framework-aware AST extraction for dynamic `className` expressions.
 - Wider CSS colour-space and conservative gamut-mapping support.
-- npm optional-dependency packages that deliver prebuilt Go binaries.

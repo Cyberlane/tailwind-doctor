@@ -1,0 +1,14 @@
+{
+  "name": "@tw-doctor/linux-x64",
+  "version": "0.1.0",
+  "description": "Tailwind Doctor binary for Linux on x64.",
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "files": ["bin"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cyberlane/tailwind-doctor.git"
+  },
+  "publishConfig": { "access": "public" }
+}

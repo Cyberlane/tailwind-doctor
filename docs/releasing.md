@@ -1,71 +1,83 @@
 # Releasing
 
-## npm packages
+Tailwind Doctor releases are built from a signed Semantic Version tag. The tag
+workflow reruns every test, verifies the tag through GitHub, builds the release
+from that exact commit, publishes npm packages with OIDC trusted publishing,
+attests the archives, and creates the GitHub release.
 
-Two packages ship, always at the same version:
+## Distribution
 
-- `tw-doctor` — the real launcher. From the first release it declares the
-  platform binary packages as `optionalDependencies` and exposes both the
-  `tw-doctor` and `tailwind-doctor` commands for a local install.
-- `tailwind-doctor` — an alias so `npx tailwind-doctor` works. `npx <name>`
-  resolves a *package* named `<name>`, so a `bin` alias inside `tw-doctor` is
-  not enough on its own.
+Two user-facing packages ship in lockstep:
 
-## Platform binary packages
+- `tw-doctor` exposes both `tw-doctor` and `tailwind-doctor` commands and selects
+  the current platform binary through `optionalDependencies`.
+- `tailwind-doctor` is a thin alias package so `npx tailwind-doctor` resolves by
+  package name.
 
-Prebuilt binaries ship as one package per platform, declared by the launcher as
-`optionalDependencies` and selected by npm through their `os` and `cpu` fields,
-so an install downloads one binary rather than all of them.
+The platform packages are scoped so an unclaimed target name cannot be
+registered by another publisher:
 
-These packages are **scoped**: `@tw-doctor/darwin-arm64`, `@tw-doctor/linux-x64`,
-and so on. The scope is what makes the scheme safe. Under an unscoped naming
-convention such as `tw-doctor-linux-arm64`, anyone can register a platform name
-before this project does; adding that platform later would then resolve an
-`optionalDependency` to a package under someone else's control, whose install
-scripts run on every user's machine. A scope is a namespace this project owns
-outright, so no such package can exist without being published here.
+- `@tw-doctor/darwin-arm64`
+- `@tw-doctor/darwin-x64`
+- `@tw-doctor/linux-arm64`
+- `@tw-doctor/linux-x64`
+- `@tw-doctor/win32-x64`
 
-The two user-facing names, `tw-doctor` and `tailwind-doctor`, stay unscoped —
-`npx <name>` has to find them by bare name.
+Every platform package contains only its statically linked Go binary, README,
+license, and package metadata. The launcher has no install script and therefore
+does not download or execute code during installation.
 
-Scoped packages default to restricted access, so every publish needs
-`--access public` explicitly. A private-by-accident platform package breaks
-installs for everyone except the publisher.
+## npm trust
 
-## Publish order
+Each package trusts the `release.yml` workflow in
+`Cyberlane/tailwind-doctor`, restricted to the `npm` GitHub environment and the
+`npm publish` action. The workflow requests `id-token: write`; npm exchanges the
+short-lived GitHub OIDC token and records package provenance automatically.
+There is no long-lived npm token in the repository or Actions secrets.
 
-Publish `tw-doctor` first once `tailwind-doctor` depends on it, so the
-dependency resolves. Platform packages must exist before the launcher that lists
-them, so the full order at release time is: platform packages, then `tw-doctor`,
-then `tailwind-doctor`.
+Platform packages publish first, followed by `tw-doctor` and then
+`tailwind-doctor`, so every dependency exists before a consumer can resolve it.
+The publish script checks whether an immutable package version already exists
+before acting, which makes a failed workflow safely resumable without trying to
+overwrite a published version.
 
-Verify the tarball contents before publishing:
+## Version preparation
+
+The following must all carry the same version before tagging:
+
+- every `npm/**/package.json` intended for publication;
+- the launcher's optional dependency versions;
+- the alias package's `tw-doctor` dependency;
+- release notes under `docs/release-notes/`.
+
+Validate the version and complete distribution locally:
 
 ```bash
-cd npm/tw-doctor       && npm pack --dry-run
-cd npm/tailwind-doctor && npm pack --dry-run
+scripts/check-release-version.sh v0.1.0
+scripts/test-release.sh
 ```
 
-Then, from each directory:
+`scripts/test-release.sh` cross-compiles all supported binaries, verifies
+archive checksums, packs the npm packages, installs the host package from local
+tarballs, and runs both command names.
 
-```bash
-npm publish --access public
-```
+## Release sequence
 
-### The 0.0.0 placeholders
-
-Both names are published at `0.0.0`, reserving them before the tool is ready to
-distribute. The placeholders contain no binary and no install-time download;
-running either one prints a notice explaining that no release exists yet and
-exits with code `2`, the CLI's operational-error code.
-
-`tailwind-doctor@0.0.0` deliberately does *not* depend on `tw-doctor@0.0.0`, so
-the two can be published in either order and neither placeholder drags a second
-non-functional package into an install. The dependency is added when the real
-launcher ships.
+1. Require a clean `main` at the commit that will be released.
+2. Run `gofmt -l .`, `go vet ./...`, `go test ./...`, `go test -race ./...`,
+   `npm test --prefix npm`, `scripts/test-release.sh`, the extraction-accuracy
+   gate, Mori review, and the public-boundary/history audit.
+3. Push the signed commits and require green CI and CodeQL.
+4. Create and push an annotated GPG-signed `vMAJOR.MINOR.PATCH` tag.
+5. Let `.github/workflows/release.yml` publish npm packages and the GitHub
+   release from the signed tag.
+6. Download every release asset into a fresh directory, verify `SHA256SUMS` and
+   GitHub attestations, install both npm names in clean projects, and compare
+   their reported version with the tag.
 
 ## Versioning
 
-Semantic Versioning from the first tag. Before 1.0, rule additions and scoring
+Semantic Versioning starts at `v0.1.0`. Before 1.0, rule additions and scoring
 changes are minor bumps, and any change that moves a user's score is called out
-prominently in the release notes.
+prominently in release notes. Newly introduced rules remain disabled for one
+minor release under the rule-stability policy.
