@@ -62,6 +62,18 @@ jobs:
           package-manager-cache: false
       - run: npm test --prefix npm
       - run: npm test --prefix editors/vscode
+      - name: Install Neovim 0.11
+        env:
+          NVIM_SHA256: b2f91117be5b5ea39edd7297156dc2a4a8df4add6c95a90809a8df19e7ab6f52
+          NVIM_VERSION: v0.11.5
+        run: |
+          curl --fail --location --retry 3 \
+            --output /tmp/nvim.tar.gz \
+            "https://github.com/neovim/neovim/releases/download/$NVIM_VERSION/nvim-linux-x86_64.tar.gz"
+          echo "$NVIM_SHA256  /tmp/nvim.tar.gz" | sha256sum --check
+          tar --extract --gzip --file /tmp/nvim.tar.gz --directory /tmp
+          echo "/tmp/nvim-linux-x86_64/bin" >> "$GITHUB_PATH"
+      - run: editors/neovim/test.sh
       - run: scripts/test-release.sh
 
   native-smoke:

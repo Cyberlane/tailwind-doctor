@@ -1,8 +1,9 @@
 # Editor Integration
 
-Tailwind Doctor includes a Language Server Protocol endpoint and a dependency-free
-VS Code client. Diagnostics come from the same analyzer and configuration as the
-CLI; the editor integration does not maintain a second rule implementation.
+Tailwind Doctor includes a Language Server Protocol endpoint, a dependency-free
+VS Code client, and a native Neovim configuration. Diagnostics come from the same
+analyzer and configuration as the CLI; editor integrations do not maintain a
+second rule implementation.
 
 ## VS Code
 
@@ -22,6 +23,32 @@ the session. Closing a document clears its diagnostics.
 Saving `twdoctor.toml`, the baseline, `package.json`, a Tailwind config, or a CSS
 file reloads static project context and republishes all open-document diagnostics
 in URI order.
+
+## Neovim
+
+Neovim 0.11 and newer can use the repository's native `vim.lsp` configuration.
+Install the `tw-doctor` CLI on `PATH`, install this repository as a plugin, and
+enable the configuration:
+
+```lua
+{
+  "Cyberlane/tailwind-doctor",
+  config = function()
+    vim.lsp.enable("tailwind_doctor")
+  end,
+}
+```
+
+The example is a lazy.nvim plugin specification. Neovim's native package
+mechanism is also supported; see [`editors/neovim`](../editors/neovim) for both
+installation paths and binary-path overrides.
+
+The configuration uses the same source filetypes and 120 ms change debounce as
+the VS Code client. It selects the closest `twdoctor.toml`, `package.json`, or
+Git root as the workspace. Run `:checkhealth vim.lsp` to verify attachment.
+Restart the client after saving project-context files so the server rebuilds its
+cached static configuration. On Neovim 0.11, call
+`vim.lsp.enable("tailwind_doctor", false)` and then enable it again.
 
 ## Other editors
 

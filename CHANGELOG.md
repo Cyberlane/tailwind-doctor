@@ -4,6 +4,13 @@ All notable changes to Tailwind Doctor are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-10
+
+### Added
+
+- Add a native, dependency-free Neovim 0.11+ LSP configuration with matching
+  source filetypes, project-root discovery, and change debounce.
+
 ## [0.2.0] - 2026-08-10
 
 ### Added
@@ -82,7 +89,8 @@ All notable changes to Tailwind Doctor are documented here.
 - `unused-token` and `color-contrast` are disabled by default for their
   introductory release and therefore do not change the default score.
 
-[Unreleased]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Cyberlane/tailwind-doctor/releases/tag/v0.1.0

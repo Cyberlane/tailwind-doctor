@@ -2,7 +2,7 @@
 
 Tailwind Doctor (`tw-doctor`) is a fast, read-only-by-default CLI that measures design-system debt in Tailwind class lists. It reports a project-wide **Design System Health Score** with file-level evidence.
 
-> **Status: v0.2.0.** The project is still pre-1.0 and intentionally conservative.
+> **Status: v0.3.0.** The project is still pre-1.0 and intentionally conservative.
 > Read [What Exists Today](#what-exists-today) and the documented coverage gaps
 > before using its score as a gate.
 
@@ -81,7 +81,7 @@ npx tailwind-doctor .
 Or install the Go binary directly:
 
 ```bash
-go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.2.0
+go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.3.0
 ```
 
 ```bash
@@ -110,9 +110,11 @@ tw-doctor --require-coverage 95 .
 
 `tw-doctor lsp` analyzes unsaved buffers over the Language Server Protocol. The
 VS Code extension in [`editors/vscode`](editors/vscode) launches one local server
-per workspace folder and displays the same rule IDs, confidence, and source
-ranges as the CLI. A ready-to-install VSIX is attached to each GitHub release.
-See [docs/editor-integration.md](docs/editor-integration.md).
+per workspace folder, and the native Neovim configuration in
+[`lsp/tailwind_doctor.lua`](lsp/tailwind_doctor.lua) supports Neovim 0.11 and
+newer. Both display the same rule IDs, confidence, and source ranges as the CLI.
+A ready-to-install VSIX is attached to each GitHub release. See
+[docs/editor-integration.md](docs/editor-integration.md).
 
 ## Exit Codes
 
