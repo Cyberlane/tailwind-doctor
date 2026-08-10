@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08111f">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <meta name="description" content="Tailwind Doctor measures design-system debt in Tailwind class lists with deterministic, file-level evidence.">
+    <meta property="og:title" content="Tailwind Doctor — Design-system health, diagnosed">
+    <meta property="og:description" content="A local, deterministic CLI for finding drift in Tailwind class lists.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cyberlane.github.io/tailwind-doctor/">
+    <title>Tailwind Doctor — Design-system health, diagnosed</title>
+    <link rel="canonical" href="https://cyberlane.github.io/tailwind-doctor/">
+    <link rel="icon" href="assets/tailwind-doctor-mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header" data-header>
+      <div class="shell header-inner">
+        <a class="brand" href="#top" aria-label="Tailwind Doctor home">
+          <img src="assets/tailwind-doctor-mark.svg" width="40" height="40" alt="">
+          <span>Tailwind Doctor</span>
+          <span class="version">v0.3.0</span>
+        </a>
+
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
+          <span class="sr-only">Toggle navigation</span>
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav id="site-nav" class="site-nav" aria-label="Primary navigation" data-nav>
+          <a href="#why">Why it helps</a>
+          <a href="#quickstart">Quickstart</a>
+          <a href="#rules">Rules</a>
+          <a href="#docs">Docs</a>
+          <a class="github-link" href="https://github.com/Cyberlane/tailwind-doctor">View on GitHub <span aria-hidden="true">↗</span></a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-grid" aria-hidden="true"></div>
+        <div class="orb orb-one" aria-hidden="true"></div>
+        <div class="orb orb-two" aria-hidden="true"></div>
+
+        <div class="shell hero-layout">
+          <div class="hero-copy reveal">
+            <p class="eyebrow"><span></span> Local · read-only · deterministic</p>
+            <h1>See where your design system <em>drifts.</em></h1>
+            <p class="hero-lede">Tailwind Doctor turns scattered class-list debt into one clear health score—then shows the exact file evidence behind it.</p>
+
+            <div class="hero-actions">
+              <div class="command-pill" data-command>
+                <code><span>npx</span> tw-doctor .</code>
+                <button type="button" data-copy aria-label="Copy npx tw-doctor command">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"/><path d="M5 16H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span data-copy-label>Copy</span>
+                </button>
+              </div>
+              <a class="text-link" href="#quickstart">Get started <span aria-hidden="true">↓</span></a>
+            </div>
+
+            <ul class="hero-notes">
+              <li><span aria-hidden="true">✓</span> No application code executed</li>
+              <li><span aria-hidden="true">✓</span> No source leaves your machine</li>
+              <li><span aria-hidden="true">✓</span> Works with Tailwind v3 and v4</li>
+            </ul>
+          </div>
+
+          <section class="report-card reveal reveal-delay" aria-labelledby="example-report-title">
+            <div class="report-topbar">
+              <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+              <span id="example-report-title">tw-doctor / report</span>
+              <span class="report-status"><i></i> complete</span>
+            </div>
+
+            <div class="report-body">
+              <div class="score-block">
+                <div class="score-ring score-91">
+                  <div><strong>91</strong><span>/ 100</span></div>
+                </div>
+                <div>
+                  <p>Design System</p>
+                  <h2>Healthy</h2>
+                  <span class="delta">3 findings need review</span>
+                </div>
+              </div>
+
+              <div class="category-list">
+                <div><span>Correctness</span><div class="meter"><i class="value-96"></i></div><strong>96</strong></div>
+                <div><span>Consistency</span><div class="meter"><i class="value-95"></i></div><strong>95</strong></div>
+                <div><span>Accessibility</span><div class="meter muted"><i class="value-none"></i></div><strong>—</strong></div>
+              </div>
+
+              <div class="finding">
+                <span class="finding-icon">!</span>
+                <div>
+                  <code>no-conflicting-utilities</code>
+                  <p><strong>src/card.tsx:12:22</strong></p>
+                  <p><mark>p-4</mark> conflicts with <mark>p-2</mark> in the same variant.</p>
+                </div>
+              </div>
+
+              <div class="scan-meta">
+                <span><strong>42</strong> files</span>
+                <span><strong>310</strong> class lists</span>
+                <span><strong>1,840</strong> utilities</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="shell stat-strip reveal">
+          <div><strong>14</strong><span>source formats</span></div>
+          <div><strong>3</strong><span>report formats</span></div>
+          <div><strong>0</strong><span>runtime dependencies</span></div>
+          <div><strong>100%</strong><span>local analysis</span></div>
+        </div>
+      </section>
+
+      <section class="section" id="why">
+        <div class="shell">
+          <div class="section-heading reveal">
+            <p class="eyebrow"><span></span> Understand the drift</p>
+            <h2>A score that comes with receipts.</h2>
+            <p>Health scores are only useful when teams can inspect and debate them. Every Tailwind Doctor finding includes a stable rule ID, confidence, and source location.</p>
+          </div>
+
+          <div class="feature-grid">
+            <article class="feature-card feature-large reveal">
+              <div class="card-label">Project-wide signal</div>
+              <h3>Measure debt proportionally—not by repository size.</h3>
+              <p>The size-normalized score lets a small site and a large monorepo tell the same story when their debt density is similar.</p>
+              <div class="comparison-chart" role="img" aria-label="Marketing site score 88; product monorepo score 87">
+                <div class="project-bars">
+                  <span>Marketing site</span>
+                  <div><i class="bar-88"></i></div>
+                  <strong>88</strong>
+                </div>
+                <div class="project-bars">
+                  <span>Product monorepo</span>
+                  <div><i class="bar-87"></i></div>
+                  <strong>87</strong>
+                </div>
+              </div>
+              <a href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/scoring.md">How scoring works <span aria-hidden="true">↗</span></a>
+            </article>
+
+            <article class="feature-card reveal reveal-delay-one">
+              <div class="icon-frame cyan" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+              </div>
+              <h3>Conservative by design</h3>
+              <p>Dynamic or uncertain values are recorded as unresolved. The analyzer never invents classes just to produce a finding.</p>
+            </article>
+
+            <article class="feature-card reveal reveal-delay-two">
+              <div class="icon-frame violet" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3 4 7v5c0 5 3.4 8.6 8 9 4.6-.4 8-4 8-9V7l-8-4Z"/><path d="M9 12h6M12 9v6"/></svg>
+              </div>
+              <h3>Safe for private code</h3>
+              <p>No telemetry, network calls, credentials, config execution, or install-time binary downloads.</p>
+            </article>
+
+            <article class="feature-card feature-wide reveal">
+              <div>
+                <div class="card-label">One engine, everywhere</div>
+                <h3>Terminal, CI, and editor diagnostics stay aligned.</h3>
+                <p>Human output, versioned JSON, SARIF, VS Code, and Neovim all share the same rule IDs and source ranges.</p>
+              </div>
+              <div class="format-pills">
+                <span>CLI</span><span>JSON</span><span>SARIF</span><span>VS Code</span><span>Neovim</span><span>LSP</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-tinted" id="quickstart">
+        <div class="shell">
+          <div class="section-heading split-heading reveal">
+            <div>
+              <p class="eyebrow"><span></span> Quickstart</p>
+              <h2>From zero to a useful baseline.</h2>
+            </div>
+            <p>No account, daemon, or project plugin. Point the CLI at a Tailwind project and inspect the report.</p>
+          </div>
+
+          <ol class="steps">
+            <li class="step reveal">
+              <span class="step-number">01</span>
+              <div>
+                <h3>Run the doctor</h3>
+                <p>Use either npm package name. Both launch the same native binary.</p>
+                <div class="code-block"><code><span class="prompt">$</span> npx tw-doctor .</code><button type="button" data-copy-text="npx tw-doctor ." aria-label="Copy command">Copy</button></div>
+              </div>
+            </li>
+            <li class="step reveal reveal-delay-one">
+              <span class="step-number">02</span>
+              <div>
+                <h3>Review the evidence</h3>
+                <p>Start with high-confidence correctness and consistency findings; configure or allowlist deliberate exceptions.</p>
+                <div class="code-block"><code><span class="prompt">$</span> tw-doctor --json . &gt; report.json</code><button type="button" data-copy-text="tw-doctor --json . > report.json" aria-label="Copy command">Copy</button></div>
+              </div>
+            </li>
+            <li class="step reveal reveal-delay-two">
+              <span class="step-number">03</span>
+              <div>
+                <h3>Gate only new debt</h3>
+                <p>Record the current state, then add score and extraction-coverage thresholds when your team is ready.</p>
+                <div class="code-block"><code><span class="prompt">$</span> tw-doctor --write-baseline .</code><button type="button" data-copy-text="tw-doctor --write-baseline ." aria-label="Copy command">Copy</button></div>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section" id="rules">
+        <div class="shell">
+          <div class="section-heading reveal">
+            <p class="eyebrow"><span></span> Diagnostic rules</p>
+            <h2>Catch the debt that hides in plain sight.</h2>
+            <p>Established rules affect the default score. New or heuristic rules start disabled or score-neutral so teams can evaluate them first.</p>
+          </div>
+
+          <div class="rule-grid">
+            <article class="rule-card reveal">
+              <span class="rule-category correctness">Correctness</span>
+              <h3>Conflicting utilities</h3>
+              <code>p-4 p-2</code>
+              <p>Flags utilities targeting the same property in the same ordered variant context.</p>
+              <span class="confidence high">High confidence · default on</span>
+            </article>
+            <article class="rule-card reveal reveal-delay-one">
+              <span class="rule-category consistency">Consistency</span>
+              <h3>Arbitrary values</h3>
+              <code>bg-[#fcfcfc]</code>
+              <p>Surfaces hard-coded values and suggests an exact named token when the static theme proves one.</p>
+              <span class="confidence high">High confidence · default on</span>
+            </article>
+            <article class="rule-card reveal reveal-delay-two">
+              <span class="rule-category accessibility">Accessibility</span>
+              <h3>Color contrast</h3>
+              <code>text-zinc-400 bg-white</code>
+              <p>Checks decisively resolvable text pairs against WCAG 2.2 without guessing the DOM or cascade.</p>
+              <span class="confidence preview">Introductory · opt in</span>
+            </article>
+            <article class="rule-card reveal">
+              <span class="rule-category correctness">Correctness</span>
+              <h3>Overlapping utilities</h3>
+              <code>px-4 pl-2</code>
+              <p>Points out partial property overlap that may be an intentional override or accidental duplication.</p>
+              <span class="confidence preview">Medium confidence · opt in</span>
+            </article>
+            <article class="rule-card reveal reveal-delay-one">
+              <span class="rule-category consistency">Consistency</span>
+              <h3>Unused tokens</h3>
+              <code>--color-brand-muted</code>
+              <p>Finds custom theme declarations that no statically resolved class list consumes.</p>
+              <span class="confidence preview">Introductory · opt in</span>
+            </article>
+            <article class="rule-card reveal reveal-delay-two">
+              <span class="rule-category maintainability">Maintainability</span>
+              <h3>Variant density</h3>
+              <code>sm: · md: · hover: · dark:</code>
+              <p>Highlights class lists dominated by variants as a prompt to consider a component or recipe.</p>
+              <span class="confidence preview">Medium confidence · opt in</span>
+            </article>
+          </div>
+
+          <div class="center-link reveal"><a class="button secondary" href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md">Explore the complete rule catalog <span aria-hidden="true">↗</span></a></div>
+        </div>
+      </section>
+
+      <section class="section docs-section" id="docs">
+        <div class="shell">
+          <div class="section-heading split-heading reveal">
+            <div>
+              <p class="eyebrow"><span></span> Documentation</p>
+              <h2>Go as deep as you need.</h2>
+            </div>
+            <p>The implementation is intentionally explainable. Read the contracts behind configuration, scoring, coverage, and rule stability.</p>
+          </div>
+
+          <div class="docs-grid">
+            <a class="doc-card reveal" href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/configuration.md">
+              <span class="doc-number">01</span><div><h3>Configuration</h3><p>Rule severities, ignores, allowlists, confidence, and baselines.</p></div><span class="arrow">↗</span>
+            </a>
+            <a class="doc-card reveal reveal-delay-one" href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/scoring.md">
+              <span class="doc-number">02</span><div><h3>Scoring model</h3><p>The exact formula, denominators, weights, and edge cases.</p></div><span class="arrow">↗</span>
+            </a>
+            <a class="doc-card reveal" href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/extraction-accuracy.md">
+              <span class="doc-number">03</span><div><h3>Extraction accuracy</h3><p>Measured precision and recall, fixtures, gaps, and CI gates.</p></div><span class="arrow">↗</span>
+            </a>
+            <a class="doc-card reveal reveal-delay-one" href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/tailwind-support.md">
+              <span class="doc-number">04</span><div><h3>Tailwind support</h3><p>Static v3/v4 discovery, token families, plugins, and monorepos.</p></div><span class="arrow">↗</span>
+            </a>
+            <a class="doc-card reveal" href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/editor-integration.md">
+              <span class="doc-number">05</span><div><h3>Editor integration</h3><p>Set up the VS Code extension, Neovim, or another LSP client.</p></div><span class="arrow">↗</span>
+            </a>
+            <a class="doc-card reveal reveal-delay-one" href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/architecture.md">
+              <span class="doc-number">06</span><div><h3>Architecture</h3><p>How extraction, static adapters, rules, reports, and LSP fit together.</p></div><span class="arrow">↗</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-section">
+        <div class="shell cta-card reveal">
+          <div class="cta-pulse" aria-hidden="true">
+            <svg viewBox="0 0 420 100" preserveAspectRatio="none"><path d="M0 52h78l18-32 30 64 30-46 20 14h72l18-24 22 48 20-24h112"/></svg>
+          </div>
+          <div>
+            <p class="eyebrow"><span></span> Take a pulse</p>
+            <h2>Your design system already has a health story.</h2>
+            <p>Run one local command to make it visible.</p>
+          </div>
+          <div class="cta-actions">
+            <div class="command-pill compact" data-command>
+              <code><span>npx</span> tw-doctor .</code>
+              <button type="button" data-copy aria-label="Copy npx tw-doctor command"><span data-copy-label>Copy</span></button>
+            </div>
+            <a href="https://github.com/Cyberlane/tailwind-doctor/releases/latest">Download a release <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="#top"><img src="assets/tailwind-doctor-mark.svg" width="36" height="36" alt=""><span>Tailwind Doctor</span></a>
+          <p>Deterministic design-system health for Tailwind projects.</p>
+        </div>
+        <div class="footer-links">
+          <div><strong>Project</strong><a href="https://github.com/Cyberlane/tailwind-doctor">GitHub</a><a href="https://github.com/Cyberlane/tailwind-doctor/releases/latest">Releases</a><a href="https://github.com/Cyberlane/tailwind-doctor/blob/main/CONTRIBUTING.md">Contributing</a></div>
+          <div><strong>Reference</strong><a href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/rules.md">Rules</a><a href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/configuration.md">Configuration</a><a href="https://github.com/Cyberlane/tailwind-doctor/blob/main/docs/scoring.md">Scoring</a></div>
+        </div>
+      </div>
+      <div class="shell footer-bottom">
+        <span>MIT licensed · Built by Cyberlane</span>
+        <span>“Tailwind” is a trademark of Tailwind Labs. Not affiliated with or endorsed by Tailwind Labs.</span>
+      </div>
+    </footer>
+  </body>
+</html>

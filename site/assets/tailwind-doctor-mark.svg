@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">Tailwind Doctor</title>
+  <desc id="description">A design-system health pulse inside a rounded square.</desc>
+  <defs>
+    <linearGradient id="background" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#18d9d0"/>
+      <stop offset="1" stop-color="#7c5cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="#0b1221"/>
+  <path d="M8 33h12l5-13 9 27 7-19 4 5h11" fill="none" stroke="url(#background)" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+  <circle cx="54" cy="33" r="3" fill="#d8ff72"/>
+</svg>

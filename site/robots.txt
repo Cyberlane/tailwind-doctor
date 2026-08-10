@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cyberlane.github.io/tailwind-doctor/sitemap.xml
