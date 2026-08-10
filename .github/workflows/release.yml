@@ -40,7 +40,7 @@ jobs:
       - name: Verify the signed release tag
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/verify-release-tag.sh "$RELEASE_TAG"
+        run: GITHUB_SHA=$(git rev-parse HEAD) scripts/verify-release-tag.sh "$RELEASE_TAG"
       - run: scripts/check-release-version.sh "$RELEASE_TAG"
       - run: gofmt -l . | tee /tmp/unformatted && test ! -s /tmp/unformatted
       - run: go vet ./...
