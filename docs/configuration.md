@@ -176,3 +176,22 @@ interprets it.
 Delete an entry to start failing on it again. Regenerating the whole file with
 `--write-baseline` also works, but reviewing that diff is harder — it re-accepts
 anything added since, which is exactly what the baseline exists to prevent.
+
+## Conservative source fixes
+
+`tw-doctor --fix .` replaces an arbitrary value only when all of the following
+are true:
+
+- the `no-arbitrary-value` rule is enabled and the finding is neither
+  allowlisted nor baselined;
+- the class is a verbatim span of source rather than a value reconstructed
+  around a runtime interpolation;
+- a non-degraded static Tailwind inventory proves an exact named-token match;
+- the source still contains the exact class at the reported byte position when
+  the edit is prepared.
+
+Units are never converted, runtime expressions are never evaluated,
+symbolic-link source files are not followed, and all candidate edits are
+validated before the first file is replaced. The report and `--fail-under` gate
+are computed again after the fixes, so JSON and SARIF describe the resulting
+source.

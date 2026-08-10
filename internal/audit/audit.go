@@ -33,6 +33,13 @@ type Finding struct {
 	// Scored records whether this finding moved the score, so a reader never has
 	// to re-derive the severity and confidence rules to explain the number.
 	Scored bool `json:"scored"`
+
+	// replacement is populated only when static token evidence proves an exact,
+	// source-level substitution. It is deliberately not part of the report
+	// contract: --fix consumes it internally, while users see the same stable
+	// finding schema whether or not a run permits writes.
+	replacement string
+	fixable     bool
 }
 
 type resolvedTheme struct {
@@ -75,11 +82,17 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 		Findings:      []Finding{},
 	}
 	contrastUnknownReasons := map[string]int{}
-	layout, err := tailwind.Discover(os.DirFS(root))
+	rootDirectory, err := os.OpenRoot(root)
+	if err != nil {
+		return Report{}, fmt.Errorf("open analysis root: %w", err)
+	}
+	defer rootDirectory.Close()
+	rootFileSystem := rootDirectory.FS()
+	layout, err := tailwind.Discover(rootFileSystem)
 	if err != nil {
 		return Report{}, fmt.Errorf("discover Tailwind packages: %w", err)
 	}
-	report.themes, report.Diagnostics, err = loadThemes(os.DirFS(root), layout)
+	report.themes, report.Diagnostics, err = loadThemes(rootFileSystem, layout)
 	if err != nil {
 		return Report{}, err
 	}
@@ -114,6 +127,12 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 			if relative != "." && ignores.ignores(relative, true) {
 				return filepath.SkipDir
 			}
+			return nil
+		}
+		// WalkDir does not follow directory symlinks, but ReadFile would follow a
+		// source-file symlink. Skipping both keeps analysis inside the requested
+		// tree and ensures --fix can never modify a target outside it.
+		if entry.Type()&os.ModeSymlink != 0 {
 			return nil
 		}
 
@@ -352,6 +371,7 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 
 		if parsed.HasArbitraryValue() {
 			message := "Avoid arbitrary values; prefer a named design token."
+			replacement := ""
 			if allowSuggestions && inventory != nil && meaning.ArbitraryValue != "" {
 				matched, found := inventory.Lookup(meaning.Family, meaning.ArbitraryValue)
 				if !found && meaning.Family == tokens.FamilySpacing {
@@ -361,8 +381,9 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 					}
 				}
 				if found {
+					replacement = replaceArbitraryValue(token.text, matched.Name)
 					message = fmt.Sprintf("Avoid arbitrary values; use %s, which matches %s.",
-						replaceArbitraryValue(token.text, matched.Name), tokenLabel(matched))
+						replacement, tokenLabel(matched))
 				}
 			}
 			findings = append(findings, Finding{
@@ -370,7 +391,9 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 				Confidence: ConfidenceHigh,
 				File:       file, Class: token.text,
 				Line: token.line, Column: token.column,
-				Message: message,
+				Message:     message,
+				replacement: replacement,
+				fixable:     list.Verbatim && replacement != "",
 			})
 		}
 

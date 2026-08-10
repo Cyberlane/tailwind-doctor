@@ -21,6 +21,13 @@ Accuracy is measured rather than assumed: `testdata/corpus` holds fixtures from 
 
 Configuration is read from an optional `twdoctor.toml` and accepted debt from an optional `twdoctor-baseline.json`; both are described in [configuration.md](configuration.md). The TOML reader is a documented subset written for this purpose.
 
+An explicit `--fix` run reuses this same extraction and token inventory. It
+edits only a verbatim utility whose arbitrary value has an exact, same-unit
+named-token match. All candidate edits are validated against the source before
+the first file is replaced, and each changed file is written through a
+same-directory temporary file. Runtime expressions and degraded configuration
+never produce edits.
+
 There is deliberately no dependency here. No Go parser exists for JSX, Svelte, Astro, or Vue single-file components, and a tree-sitter grammar would require cgo, which would end the single static binary this project ships.
 
 ## Output Formats

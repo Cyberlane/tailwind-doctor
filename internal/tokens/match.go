@@ -8,9 +8,9 @@ import (
 
 // Normalization exists so that text-[#123456] can be recognised as a value the
 // project already has a name for. It is deliberately narrow. Every transformation
-// below is one that cannot change which colour or length a value denotes, because
-// Milestone 5 turns an exact match into an autofix that rewrites source: a wrong
-// match is a wrong edit, not merely a wrong message.
+// below is one that cannot change which colour or length a value denotes. Exact
+// matches may become source fixes, so a wrong match is a wrong edit rather than
+// merely a wrong message.
 //
 // Notably absent: unit conversion. 16px and 1rem are equal only under a root font
 // size nobody declared, so they stay different values.

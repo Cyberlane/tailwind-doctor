@@ -31,6 +31,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 	version := flags.Bool("version", false, "print the version")
 	writeBaseline := flags.Bool("write-baseline", false,
 		"record every current finding in "+audit.BaselineFileName+" so later runs gate on new debt only")
+	fix := flags.Bool("fix", false, "replace arbitrary values that exactly match a named design token")
 
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -50,6 +51,14 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "tw-doctor: --json and --sarif cannot be combined; choose one")
 		return exitOperationalError
 	}
+	if *fix && *writeBaseline {
+		fmt.Fprintln(stderr, "tw-doctor: --fix and --write-baseline cannot be combined; choose one write operation")
+		return exitOperationalError
+	}
+	if flags.NArg() > 1 {
+		fmt.Fprintln(stderr, "tw-doctor: expected at most one path")
+		return exitOperationalError
+	}
 
 	// Validate before scanning: an unusable threshold should be reported
 	// immediately rather than after a full audit.
@@ -67,6 +76,14 @@ func run(args []string, stdout, stderr io.Writer) int {
 
 	if *writeBaseline {
 		return writeBaselineFile(root, stdout, stderr)
+	}
+	if *fix {
+		fixed, err := audit.Fix(root)
+		if err != nil {
+			fmt.Fprintln(stderr, "tw-doctor:", err)
+			return exitOperationalError
+		}
+		fmt.Fprintf(stderr, "tw-doctor: fixed %d arbitrary value(s) in %d file(s)\n", fixed.Replacements, fixed.Files)
 	}
 
 	report, err := audit.Run(root)

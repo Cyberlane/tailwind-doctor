@@ -135,6 +135,46 @@ func TestRunRefusesTwoOutputFormats(t *testing.T) {
 	}
 }
 
+func TestRunFixesBeforeReportingAndGating(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "package.json"), []byte(`{"dependencies":{"tailwindcss":"^4.1.0"}}`), 0o644); err != nil {
+		t.Fatalf("write package: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "app.css"), []byte(`@import "tailwindcss"; @theme { --color-brand: #abcdef; }`), 0o644); err != nil {
+		t.Fatalf("write theme: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "card.tsx"), []byte(`<div className="text-[#abcdef]" />`), 0o644); err != nil {
+		t.Fatalf("write source: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--fix", "--json", "--fail-under", "100", root}, &stdout, &stderr); code != exitSuccess {
+		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "fixed 1 arbitrary value(s) in 1 file(s)") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+	if strings.Contains(stdout.String(), "text-[#abcdef]") || !strings.Contains(stdout.String(), `"score": 100`) {
+		t.Fatalf("stdout is not the post-fix JSON report:\n%s", stdout.String())
+	}
+}
+
+func TestRunRejectsAmbiguousWriteOperationsAndExtraPaths(t *testing.T) {
+	root := t.TempDir()
+	for _, args := range [][]string{
+		{"--fix", "--write-baseline", root},
+		{root, root},
+	} {
+		var stdout, stderr bytes.Buffer
+		if code := run(args, &stdout, &stderr); code != exitOperationalError {
+			t.Fatalf("run(%q) = %d, want %d", args, code, exitOperationalError)
+		}
+		if stdout.Len() != 0 || stderr.Len() == 0 {
+			t.Fatalf("run(%q): stdout=%q stderr=%q", args, stdout.String(), stderr.String())
+		}
+	}
+}
+
 func TestRunWritesSARIF(t *testing.T) {
 	root := writeProject(t, debtSource)
 

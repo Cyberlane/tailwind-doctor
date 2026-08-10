@@ -56,6 +56,10 @@ message names the replacement utility. Tailwind v4's `--spacing` base is treated
 as a generator for exact same-unit integer multiples. Units are never converted:
 `16px` does not become `1rem` without a declared root font size.
 
+With `--fix`, that exact replacement is applied when the utility is a verbatim
+span of source. Suggestions derived from interpolated values, degraded themes,
+allowlisted classes, disabled rules, or baseline entries are never changed.
+
 ## `unused-token`
 
 Category `consistency`, measured per distinct project token declaration.
