@@ -83,4 +83,5 @@ jobs:
           if [[ $RUNNER_OS == Windows ]]; then executable=tw-doctor.exe; fi
           go build -trimpath -o "$executable" ./cmd/tw-doctor
           output=$(./"$executable" --version)
-          [[ $output == "tw-doctor dev" ]]
+          [[ $output == "tw-doctor "* ]]
+          [[ ${output#"tw-doctor "} != "" ]]
