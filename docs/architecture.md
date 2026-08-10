@@ -4,7 +4,7 @@ Tailwind Doctor is a local static-analysis CLI. The first release keeps the depe
 
 ```text
 Tailwind config -> static adapters -> token inventory
-source files    -> class extractor -> deterministic rules -> report -> terminal / JSON / CI
+source or editor buffer -> class extractor -> deterministic rules -> report -> terminal / JSON / SARIF / LSP
 ```
 
 `internal/audit` owns source discovery, extraction, scoring, and report rendering. The CLI only parses flags, selects an output format, and maps the result onto the documented exit codes.
@@ -35,7 +35,7 @@ There is deliberately no dependency here. No Go parser exists for JSX, Svelte, A
 `--json` and `--sarif` are mutually exclusive; passing both exits 2 rather than
 interleaving two documents on one stream.
 
-`--json` writes a single indented object at `schemaVersion` 3:
+`--json` writes a single indented object at `schemaVersion` 4:
 
 | Field | Meaning |
 |---|---|
@@ -48,28 +48,44 @@ interleaving two documents on one stream.
 | `scanned` | `files`, `classLists`, `utilities`, `tokens`, token confidence counts, and `colorPairs` — the score's denominators |
 | `configuredRules` | Every rule with the `severity` and `confidence` it ran at |
 | `diagnostics` | Configuration constructs the static adapters could not read. Always an array and never score-affecting |
+| `packages` | Sorted Tailwind package scopes and every static version signal that selected them |
 | `tokens` | Per-package inventory, usage, unused entries, plugin coverage, and confidence evidence. Always an array |
 | `accessibility` | Resolved and unknown colour-pair counts plus sorted coverage-gap reasons |
+| `coverage` | Resolved, unresolved, and unscoped class-list counts plus resolution percentage |
 | `findings` | Always an array, never `null` |
 | `suppressed` | How many findings the baseline absorbed |
 
 Each finding carries `rule`, `category`, `message`, `file`, `class`, `line`,
-`column`, `severity`, `confidence`, and `scored`.
+`column`, `endLine`, `endColumn`, `severity`, `confidence`, and `scored`.
 
 SARIF output is 2.1.0. Results carry `partialFingerprints` keyed on rule, file,
-and class list — the same key the baseline uses — so reformatting a file does not
+and class evidence — the same identity the baseline uses — so reformatting a file does not
 present old debt to code scanning as new. A finding the score does not count
 reports at level `note`, which keeps a code-scanning gate and the score in
 agreement about what matters. Configuration diagnostics travel as warning-level
 tool execution notifications, not results, because they describe analysis
-coverage rather than defects in the project.
+coverage rather than defects in the project. SARIF run properties include the
+same score model, exposure counts, and extraction coverage as JSON.
+
+## Incremental editor analysis
+
+`audit.SourceAnalyzer` loads immutable workspace configuration, ignores,
+package layout, theme inventories, and baseline once, then analyzes one supplied
+buffer at a time. The LSP server caches open buffers and re-runs only the changed
+document. Unsaved text never has to be written to disk, and editor diagnostics
+therefore preserve the same read-only boundary as a normal audit.
+
+`internal/lsp` implements the small JSON-RPC/LSP surface directly with the Go
+standard library. Protocol output is confined to stdout and operational logging
+to stderr. The VS Code client uses the editor and Node APIs already present in
+VS Code, so the packaged extension has no runtime npm dependencies.
 
 ## Design Tokens
 
 Tailwind configuration is read statically and never evaluated. Discovery scopes
 each source file to its nearest Tailwind package, then a version-specific adapter
 builds a canonical inventory for colours, spacing, typography, radii, shadows,
-breakpoints, and containers. The inventory starts from the defaults for the
+breakpoints, containers, and Tailwind v3 z-index tokens. The inventory starts from the defaults for the
 detected Tailwind line and applies readable project declarations in source order.
 
 The v3 adapter reads the supported JavaScript object subset from
@@ -91,8 +107,9 @@ source is loaded.
 ## Scoring
 
 Each rule declares the unit it is measured against, so its rate is weighted
-findings over the count of that unit: utilities for `no-arbitrary-value` and
-`no-conflicting-utilities`, class lists for `responsive-bloat`, distinct
+findings over the count of that unit: utilities for `no-arbitrary-value`,
+`no-conflicting-utilities`, and the opt-in overlap rule; class lists for the
+opt-in `variant-density`; distinct
 project declarations for `unused-token`, and statically resolvable colour pairs
 for `color-contrast`. Those rates sum
 into a debt density `D`, which maps onto 0–100 by `100 × H / (H + D)` with
@@ -102,7 +119,9 @@ The arithmetic runs in `math/big` rationals with no floating point, because
 `math.Exp` and `math.Pow` are implemented per architecture and byte-identical
 output is a product boundary rather than a nicety.
 
-Exposure counts resolved class lists only, and only high-confidence findings move
+Score model 2 counts only recognized Tailwind utilities within resolved class
+lists. Application CSS names and unresolved expressions cannot dilute the
+denominator. Only high-confidence findings move
 the score by default. The formula, the weights, and the reasoning behind `H` are
 argued in [scoring.md](scoring.md); the compatibility rules around changing any
 of it are in [rule-stability.md](rule-stability.md).
@@ -123,5 +142,7 @@ findings or score exposure.
 
 ## Future Analysis
 
-- Framework-aware AST extraction for dynamic `className` expressions.
+- Framework-aware AST extraction for additional dynamic `className` expressions.
 - Wider CSS colour-space and conservative gamut-mapping support.
+- Code actions once fixes can be expressed with the same transactional guarantees
+  as the CLI.

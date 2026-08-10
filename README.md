@@ -2,7 +2,7 @@
 
 Tailwind Doctor (`tw-doctor`) is a fast, read-only-by-default CLI that measures design-system debt in Tailwind class lists. It reports a project-wide **Design System Health Score** with file-level evidence.
 
-> **Status: v0.1.1.** The first public release line is intentionally conservative.
+> **Status: v0.2.0.** The project is still pre-1.0 and intentionally conservative.
 > Read [What Exists Today](#what-exists-today) and the documented coverage gaps
 > before using its score as a gate.
 
@@ -13,25 +13,29 @@ npx tw-doctor .
 ```text
 Tailwind Doctor: 91/100
 Scanned 42 file(s), 310 class list(s), 1840 utilities
+Resolved 310/322 candidate class list(s) (96%); 0 resolved list(s) were outside a Tailwind package
 
   Accessibility    not measured
   Correctness      96
   Consistency      95
-  Maintainability  100
+  Maintainability  not measured
 
 3 finding(s):
 - [no-conflicting-utilities] src/card.tsx:12:22: p-4 conflicts with p-2 in the same variant.
 - [no-arbitrary-value] src/card.tsx:12:31: Avoid arbitrary values; prefer a named design token.
-- [responsive-bloat] src/nav.tsx:8:14: Five or more variant utilities make this class list difficult to maintain. (medium confidence, not scored)
 ```
 
 ## What Exists Today
 
-Three established rules run over every `.astro`, `.html`, `.jsx`, `.tsx`, `.vue`, and `.svelte` file, with opt-in token and accessibility rules available for their introductory releases:
+Established rules run over `.astro`, `.cjs`, `.css`, `.cts`, `.html`, `.js`,
+`.jsx`, `.mdx`, `.mjs`, `.mts`, `.ts`, `.tsx`, `.vue`, and `.svelte` files, with additional rules available as
+opt-ins during their introductory releases:
 
 - Conflicting utilities in the same Tailwind variant, such as `p-4 p-2`.
 - Arbitrary values, such as `text-[#123456]`.
-- Overly dense responsive class lists with five or more variant utilities.
+- Partially overlapping utilities such as `px-4 pl-2`
+  (`no-overlapping-utilities`, opt-in and medium confidence).
+- Variant-heavy class lists (`variant-density`, opt-in and medium confidence).
 - Unused custom theme tokens (`unused-token`, disabled by default for one minor
   release under the rule-stability policy).
 - WCAG 2.2 text contrast for statically resolvable foreground/background pairs
@@ -55,7 +59,7 @@ The limitations matter as much as the features, so they are stated plainly:
   includes CSS `@apply`. Incomplete configuration, plugin, extraction, or
   monorepo-ownership evidence lowers unused-token confidence.
 - **Uncertain signals are score-neutral by default.** This includes
-  `responsive-bloat`, unclassifiable utility conflicts, and degraded
+  `variant-density`, overlapping utility scopes, unclassifiable utility conflicts, and degraded
   `unused-token` evidence. They are reported and tagged rather than hidden; see
   [docs/configuration.md](docs/configuration.md).
 - **Adding a rule will change your score.** New rules ship disabled for one minor release before that happens; the policy is in [docs/rule-stability.md](docs/rule-stability.md).
@@ -77,7 +81,7 @@ npx tailwind-doctor .
 Or install the Go binary directly:
 
 ```bash
-go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.1.1
+go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.2.0
 ```
 
 ```bash
@@ -97,17 +101,30 @@ tw-doctor --fix .
 
 # Fail CI below a score threshold
 tw-doctor --fail-under 90 .
+
+# Fail CI when too much dynamic class construction is unresolved
+tw-doctor --require-coverage 95 .
 ```
+
+## Editor Integration
+
+`tw-doctor lsp` analyzes unsaved buffers over the Language Server Protocol. The
+VS Code extension in [`editors/vscode`](editors/vscode) launches one local server
+per workspace folder and displays the same rule IDs, confidence, and source
+ranges as the CLI. A ready-to-install VSIX is attached to each GitHub release.
+See [docs/editor-integration.md](docs/editor-integration.md).
 
 ## Exit Codes
 
 | Code | Meaning |
 | ---- | ------- |
-| `0`  | The run succeeded and the score met the `--fail-under` threshold. |
-| `1`  | The run succeeded but the score was below `--fail-under`. The report is still written to stdout. |
+| `0`  | The run succeeded and all requested gates passed. |
+| `1`  | The run succeeded but the score or extraction coverage missed its threshold. The report is still written to stdout. |
 | `2`  | Operational error: an unreadable path, an invalid flag, or a failure writing the report. |
 
-`--fail-under` accepts a value from `0` to `100`. Anything outside that range is rejected with exit code `2` before any files are scanned. The threshold is always applied, so a templated `--fail-under $THRESHOLD` that resolves to `0` is an explicit always-passing gate rather than a silently disabled check. Omitting the flag is equivalent to `--fail-under 0`.
+`--fail-under` and `--require-coverage` accept values from `0` to `100`.
+Anything outside that range is rejected with exit code `2` before files are
+scanned. Zero is an explicit always-passing gate.
 
 ## npm Distribution
 

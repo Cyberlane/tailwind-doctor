@@ -39,6 +39,13 @@ var skippedDirectoryNames = map[string]bool{
 // Discover finds direct v3 configs and v4 CSS entries, then establishes one
 // package root for each independent theme.
 func Discover(fsys fs.FS) (Layout, error) {
+	return DiscoverFiltered(fsys, nil)
+}
+
+// DiscoverFiltered applies the same ignore boundary as source analysis. A
+// configuration file excluded from the audit must not silently determine the
+// syntax or token inventory used for included sources.
+func DiscoverFiltered(fsys fs.FS, ignored func(file string, directory bool) bool) (Layout, error) {
 	candidates := map[string]*packageCandidate{}
 	err := fs.WalkDir(fsys, ".", func(file string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -48,7 +55,24 @@ func Discover(fsys fs.FS) (Layout, error) {
 			if file != "." && skippedDirectoryNames[entry.Name()] {
 				return fs.SkipDir
 			}
+			if file != "." && ignored != nil && ignored(cleanPath(file), true) {
+				return fs.SkipDir
+			}
 			return nil
+		}
+		if ignored != nil && ignored(cleanPath(file), false) {
+			return nil
+		}
+
+		if entry.Name() == "package.json" {
+			dir := cleanDir(path.Dir(file))
+			detection, detectErr := Detect(fsys, dir)
+			if detectErr != nil {
+				return detectErr
+			}
+			if detection.Version != VersionUnknown || detection.UnsupportedVersion != "" {
+				ensureCandidate(candidates, dir)
+			}
 		}
 
 		if isTailwindConfig(entry.Name()) {

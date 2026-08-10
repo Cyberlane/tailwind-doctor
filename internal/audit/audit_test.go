@@ -68,6 +68,9 @@ func TestFindingsCarryTheirPosition(t *testing.T) {
 	if finding.Line != 2 || finding.Column != 20 {
 		t.Fatalf("finding at %d:%d, want 2:20", finding.Line, finding.Column)
 	}
+	if finding.EndLine != 2 || finding.EndColumn <= finding.Column {
+		t.Fatalf("finding ends at %d:%d, want a non-empty range on line 2", finding.EndLine, finding.EndColumn)
+	}
 }
 
 // A clean project must serialize findings as [] rather than null, so consumers
@@ -152,19 +155,29 @@ func TestInspectSeparatesAmbiguousPropertyFamilies(t *testing.T) {
 
 // Responsive bloat is a maintainability heuristic, not a defect. It is reported
 // but must not move a number people publish in a README.
-func TestInspectReportsResponsiveBloatAtMediumConfidence(t *testing.T) {
+func TestInspectReportsVariantDensityAtMediumConfidence(t *testing.T) {
 	findings := inspect("src/card.tsx",
 		classList("sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10"),
 		tailwind.DefaultUtilitySyntax())
 
-	if len(findings) != 1 || findings[0].Rule != "responsive-bloat" {
-		t.Fatalf("expected one responsive-bloat finding, got %#v", findings)
+	if len(findings) != 1 || findings[0].Rule != "variant-density" {
+		t.Fatalf("expected one variant-density finding, got %#v", findings)
 	}
 	if findings[0].Category != CategoryMaintainability {
 		t.Errorf("category = %q, want maintainability", findings[0].Category)
 	}
 	if findings[0].Confidence != ConfidenceMedium {
 		t.Errorf("confidence = %q, want medium", findings[0].Confidence)
+	}
+}
+
+func TestInspectReportsOverlappingUtilitiesSeparately(t *testing.T) {
+	findings := inspect("src/card.tsx", classList("px-4 pl-2"), tailwind.DefaultUtilitySyntax())
+	if len(findings) != 1 || findings[0].Rule != "no-overlapping-utilities" {
+		t.Fatalf("expected one overlap finding, got %#v", findings)
+	}
+	if findings[0].Confidence != ConfidenceMedium {
+		t.Fatalf("confidence = %q, want medium", findings[0].Confidence)
 	}
 }
 
@@ -188,6 +201,53 @@ func TestRunCountsResolvedExposureOnly(t *testing.T) {
 	}
 	if report.Scanned.Utilities != 2 {
 		t.Errorf("utilities = %d, want 2", report.Scanned.Utilities)
+	}
+	if report.Coverage.ResolvedClassLists != 1 || report.Coverage.UnresolvedClassLists != 1 ||
+		report.Coverage.ResolutionPercent != 50 {
+		t.Errorf("coverage = %+v, want one resolved, one unresolved, and 50%%", report.Coverage)
+	}
+}
+
+func TestRunDoesNotCountApplicationClassesAsUtilities(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "page.html", `<div class="card prose-shell p-4"></div>`)
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if report.Scanned.Utilities != 1 {
+		t.Fatalf("utilities = %d, want only p-4", report.Scanned.Utilities)
+	}
+}
+
+func TestRunScansJavaScriptTypeScriptAndMDX(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "component.js", `export const Component = () => <div className="p-4 p-2" />`)
+	writeFile(t, root, "helper.ts", `import clsx from "clsx"; export const value = clsx("m-4 m-2")`)
+	writeFile(t, root, "page.mdx", `<div className="pt-4 pt-2">content</div>`)
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if report.Scanned.Files != 3 || len(report.Findings) != 3 {
+		t.Fatalf("scanned = %+v, findings = %#v", report.Scanned, report.Findings)
+	}
+}
+
+func TestRunAnalyzesManifestOnlyTailwindPackage(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "package.json", `{"dependencies":{"tailwindcss":"^3.4.0"}}`)
+	writeFile(t, root, "page.html", `<div class="p-4 p-2"></div>`)
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if len(report.Tokens) != 1 || len(report.Findings) != 1 {
+		t.Fatalf("tokens = %#v, findings = %#v", report.Tokens, report.Findings)
+	}
+	if len(report.Packages) != 1 || len(report.Packages[0].Evidence) == 0 ||
+		report.Packages[0].Evidence[0].Signal != "package-json" {
+		t.Fatalf("package evidence = %#v", report.Packages)
 	}
 }
 

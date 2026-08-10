@@ -258,6 +258,7 @@ func TestReportKeepsTheUnsuppressedScoreVisible(t *testing.T) {
 
 func TestHumanReportShowsSubScoresAndUnscoredFindings(t *testing.T) {
 	root := t.TempDir()
+	writeFile(t, root, ConfigFileName, "[rules]\nvariant-density = \"error\"\n")
 	writeFile(t, root, "page.html", `<div class="sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10"></div>`)
 
 	report, err := Run(root)
@@ -272,7 +273,7 @@ func TestHumanReportShowsSubScoresAndUnscoredFindings(t *testing.T) {
 		"Consistency",
 		"Accessibility",
 		"not measured",
-		"responsive-bloat",
+		"variant-density",
 		"not scored",
 	} {
 		if !strings.Contains(output, want) {

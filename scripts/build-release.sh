@@ -76,6 +76,17 @@ for package in tw-doctor tailwind-doctor; do
     "$repository_root/LICENSE" "$output_directory/npm/$package/"
 done
 
+extension_root="$output_directory/vscode"
+mkdir -p "$extension_root/extension"
+cp "$repository_root/editors/vscode/[Content_Types].xml" "$extension_root/[Content_Types].xml"
+cp "$repository_root/editors/vscode/extension.vsixmanifest" "$extension_root/extension.vsixmanifest"
+cp "$repository_root/editors/vscode/package.json" "$repository_root/editors/vscode/extension.js" \
+  "$repository_root/editors/vscode/README.md" "$extension_root/extension/"
+cp "$repository_root/LICENSE" "$extension_root/extension/LICENSE"
+(cd "$extension_root" && zip -q -X -r \
+  "$output_directory/release/tailwind-doctor-vscode_${release_version}.vsix" \
+  "[Content_Types].xml" extension.vsixmanifest extension)
+
 (cd "$output_directory/release" && shasum -a 256 ./* | LC_ALL=C sort -k2 > SHA256SUMS)
 
 echo "Built release packages in $output_directory."

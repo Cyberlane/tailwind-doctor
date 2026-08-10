@@ -2,6 +2,7 @@ package tailwind
 
 import (
 	"slices"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -49,6 +50,38 @@ func TestDiscoverKeepsEveryVersion4EntrySorted(t *testing.T) {
 	want := []string{"src/a.css", "src/z.css"}
 	if !slices.Equal(layout.Packages[0].Entries, want) {
 		t.Fatalf("entries = %v, want %v", layout.Packages[0].Entries, want)
+	}
+}
+
+func TestDiscoverFindsManifestOnlyPackage(t *testing.T) {
+	files := fstest.MapFS{
+		"package.json":      &fstest.MapFile{Data: []byte(`{"dependencies":{"tailwindcss":"^3.4.0"}}`)},
+		"src/component.tsx": &fstest.MapFile{Data: []byte(`<div className="p-4" />`)},
+	}
+	layout, err := Discover(files)
+	if err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+	if len(layout.Packages) != 1 || layout.Packages[0].Version != Version3 ||
+		layout.Packages[0].ManifestFile != "package.json" {
+		t.Fatalf("packages = %+v", layout.Packages)
+	}
+}
+
+func TestDiscoverFilteredExcludesConfigurationEvidence(t *testing.T) {
+	files := fstest.MapFS{
+		"ignored/package.json":        &fstest.MapFile{Data: []byte(`{"dependencies":{"tailwindcss":"4.1.0"}}`)},
+		"ignored/src/app.css":         &fstest.MapFile{Data: []byte(`@import "tailwindcss";`)},
+		"included/tailwind.config.js": &fstest.MapFile{Data: []byte(`module.exports = {}`)},
+	}
+	layout, err := DiscoverFiltered(files, func(file string, _ bool) bool {
+		return file == "ignored" || strings.HasPrefix(file, "ignored/")
+	})
+	if err != nil {
+		t.Fatalf("DiscoverFiltered: %v", err)
+	}
+	if len(layout.Packages) != 1 || layout.Packages[0].Dir != "included" {
+		t.Fatalf("packages = %+v", layout.Packages)
 	}
 }
 

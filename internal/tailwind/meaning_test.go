@@ -53,3 +53,16 @@ func TestClassifyUtilityRecognizesArbitraryNamedColor(t *testing.T) {
 		t.Errorf("meaning = %#v", meaning)
 	}
 }
+
+func TestIsKnownUtilitySeparatesTailwindFromApplicationClasses(t *testing.T) {
+	for _, utility := range []string{"p-4", "grid-cols-3", "text-sm", "z-[100]"} {
+		if !IsKnownUtility(utility, nil) {
+			t.Errorf("%q should be recognized", utility)
+		}
+	}
+	for _, class := range []string{"card", "prose-shell", "product-grid"} {
+		if IsKnownUtility(class, nil) {
+			t.Errorf("application class %q should not be recognized", class)
+		}
+	}
+}

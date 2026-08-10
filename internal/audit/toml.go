@@ -21,6 +21,7 @@ func parseTOML(content string) (map[string]tomlTable, error) {
 	document := map[string]tomlTable{}
 	table := ""
 	document[table] = tomlTable{}
+	seenTables := map[string]bool{"": true}
 
 	lines := strings.Split(content, "\n")
 	for number := 0; number < len(lines); number++ {
@@ -37,9 +38,11 @@ func parseTOML(content string) (map[string]tomlTable, error) {
 			if table == "" {
 				return nil, fmt.Errorf("line %d: empty table name", number+1)
 			}
-			if _, exists := document[table]; !exists {
-				document[table] = tomlTable{}
+			if seenTables[table] {
+				return nil, fmt.Errorf("line %d: duplicate table %q", number+1, table)
 			}
+			seenTables[table] = true
+			document[table] = tomlTable{}
 			continue
 		}
 
@@ -64,7 +67,11 @@ func parseTOML(content string) (map[string]tomlTable, error) {
 		if err != nil {
 			return nil, fmt.Errorf("line %d: %s: %w", number+1, key, err)
 		}
-		document[table][unquoteTOMLKey(key)] = value
+		key = unquoteTOMLKey(key)
+		if _, exists := document[table][key]; exists {
+			return nil, fmt.Errorf("line %d: duplicate key %q", number+1, key)
+		}
+		document[table][key] = value
 	}
 	return document, nil
 }
@@ -169,37 +176,27 @@ func parseTOMLString(text string) (string, error) {
 }
 
 func (table tomlTable) stringValue(key string) (string, bool, error) {
-	raw, present := table[key]
-	if !present {
-		return "", false, nil
-	}
-	text, ok := raw.(string)
-	if !ok {
-		return "", false, fmt.Errorf("%s must be a string", key)
-	}
-	return text, true, nil
+	return typedTableValue[string](table, key, "a string")
 }
 
 func (table tomlTable) boolValue(key string) (bool, bool, error) {
-	raw, present := table[key]
-	if !present {
-		return false, false, nil
-	}
-	value, ok := raw.(bool)
-	if !ok {
-		return false, false, fmt.Errorf("%s must be true or false", key)
-	}
-	return value, true, nil
+	return typedTableValue[bool](table, key, "true or false")
 }
 
 func (table tomlTable) listValue(key string) ([]string, error) {
+	values, _, err := typedTableValue[[]string](table, key, "an array of strings")
+	return values, err
+}
+
+func typedTableValue[Value any](table tomlTable, key, expected string) (Value, bool, error) {
+	var zero Value
 	raw, present := table[key]
 	if !present {
-		return nil, nil
+		return zero, false, nil
 	}
-	values, ok := raw.([]string)
+	value, ok := raw.(Value)
 	if !ok {
-		return nil, fmt.Errorf("%s must be an array of strings", key)
+		return zero, false, fmt.Errorf("%s must be %s", key, expected)
 	}
-	return values, nil
+	return value, true, nil
 }

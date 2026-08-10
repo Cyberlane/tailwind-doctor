@@ -8,6 +8,7 @@ import (
 
 func TestSARIFIsValidAndCarriesTheScore(t *testing.T) {
 	root := t.TempDir()
+	writeFile(t, root, ConfigFileName, "[rules]\nvariant-density = \"error\"\n")
 	writeFile(t, root, "page.html",
 		`<div class="p-4 p-2 text-[#123456] sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10"></div>`)
 
@@ -57,6 +58,8 @@ func TestSARIFIsValidAndCarriesTheScore(t *testing.T) {
 						Region struct {
 							StartLine   int `json:"startLine"`
 							StartColumn int `json:"startColumn"`
+							EndLine     int `json:"endLine"`
+							EndColumn   int `json:"endColumn"`
 						} `json:"region"`
 					} `json:"physicalLocation"`
 				} `json:"locations"`
@@ -121,6 +124,11 @@ func TestSARIFIsValidAndCarriesTheScore(t *testing.T) {
 		if result.Message.Text == "" {
 			t.Errorf("result %q has no message", result.RuleID)
 		}
+		region := result.Locations[0].PhysicalLocation.Region
+		if region.EndLine < region.StartLine ||
+			(region.EndLine == region.StartLine && region.EndColumn <= region.StartColumn) {
+			t.Errorf("result %q has invalid range %+v", result.RuleID, region)
+		}
 		switch result.Level {
 		case "error":
 			if !result.Properties.Scored {
@@ -142,7 +150,7 @@ func TestSARIFIsValidAndCarriesTheScore(t *testing.T) {
 		}
 	}
 	if !sawNote {
-		t.Error("the fixture includes responsive-bloat, which must report as a note")
+		t.Error("the fixture enables variant-density at medium confidence, which must report as a note")
 	}
 	if len(fingerprints) != len(run.Results) {
 		t.Errorf("%d distinct fingerprints for %d results", len(fingerprints), len(run.Results))

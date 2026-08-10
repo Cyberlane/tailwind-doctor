@@ -47,6 +47,7 @@ jobs:
       - run: go test ./...
       - run: go test -race ./...
       - run: npm test --prefix npm
+      - run: npm test --prefix editors/vscode
       - name: Test release archives and npm launchers
         run: scripts/test-release.sh
       - name: Check the public repository boundary

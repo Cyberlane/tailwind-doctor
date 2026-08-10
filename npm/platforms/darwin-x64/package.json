@@ -1,6 +1,6 @@
 {
   "name": "@tw-doctor/darwin-x64",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Tailwind Doctor binary for macOS on Intel.",
   "os": ["darwin"],
   "cpu": ["x64"],

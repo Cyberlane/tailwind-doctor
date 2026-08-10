@@ -1,8 +1,11 @@
 package audit
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -23,15 +26,16 @@ const BaselineFileName = "twdoctor-baseline.json"
 
 // BaselineVersion is the format version. A reader that does not recognise a
 // version refuses the file rather than guessing at its meaning.
-const BaselineVersion = 1
+const BaselineVersion = 2
 
 // SuppressedFinding identifies debt that has been accepted. Reason is for the
 // humans reading the file; nothing in the tool interprets it.
 type SuppressedFinding struct {
-	Rule   string `json:"rule"`
-	File   string `json:"file"`
-	Class  string `json:"class"`
-	Reason string `json:"reason,omitempty"`
+	Fingerprint string `json:"fingerprint,omitempty"`
+	Rule        string `json:"rule"`
+	File        string `json:"file"`
+	Class       string `json:"class"`
+	Reason      string `json:"reason,omitempty"`
 }
 
 type Baseline struct {
@@ -43,16 +47,28 @@ type Baseline struct {
 }
 
 func (suppressed SuppressedFinding) key() string {
+	if suppressed.Fingerprint != "" {
+		return "fingerprint\x00" + suppressed.Fingerprint
+	}
 	return suppressed.Rule + "\x00" + suppressed.File + "\x00" + suppressed.Class
+}
+
+func findingFingerprint(rule, file, class string) string {
+	digest := sha256.Sum256([]byte(rule + "\x00" + file + "\x00" + class))
+	return fmt.Sprintf("sha256:%x", digest)
 }
 
 func (baseline *Baseline) suppresses(finding Finding) bool {
 	if baseline == nil || baseline.index == nil {
 		return false
 	}
-	return baseline.index[SuppressedFinding{
-		Rule: finding.Rule, File: finding.File, Class: finding.Class,
-	}.key()]
+	fingerprint := findingFingerprint(finding.Rule, finding.File, finding.Class)
+	if baseline.index[SuppressedFinding{Fingerprint: fingerprint}.key()] {
+		return true
+	}
+	// Version 1 entries had no explicit fingerprint. Keeping this lookup lets a
+	// project upgrade the binary before regenerating its baseline.
+	return baseline.index[SuppressedFinding{Rule: finding.Rule, File: finding.File, Class: finding.Class}.key()]
 }
 
 // LoadBaseline reads the suppression file from root. A missing file is not an
@@ -70,16 +86,32 @@ func LoadBaseline(root, name string) (*Baseline, error) {
 	}
 
 	var baseline Baseline
-	if err := json.Unmarshal(content, &baseline); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(content))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&baseline); err != nil {
 		return nil, fmt.Errorf("%s: %w", name, err)
 	}
-	if baseline.Version != BaselineVersion {
-		return nil, fmt.Errorf("%s: version %d is not supported; this build reads version %d",
+	if err := ensureJSONEnd(decoder); err != nil {
+		return nil, fmt.Errorf("%s: %w", name, err)
+	}
+	if baseline.Version != 1 && baseline.Version != BaselineVersion {
+		return nil, fmt.Errorf("%s: version %d is not supported; this build reads versions 1 and %d",
 			name, baseline.Version, BaselineVersion)
 	}
 
 	baseline.index = make(map[string]bool, len(baseline.Suppressed))
 	for _, entry := range baseline.Suppressed {
+		if baseline.Version == BaselineVersion && entry.Fingerprint == "" {
+			return nil, fmt.Errorf("%s: version %d entry for %s is missing fingerprint",
+				name, BaselineVersion, entry.File)
+		}
+		if baseline.Version == BaselineVersion {
+			expected := findingFingerprint(entry.Rule, entry.File, entry.Class)
+			if entry.Fingerprint != expected {
+				return nil, fmt.Errorf("%s: fingerprint for %s does not match its rule, file, and class evidence",
+					name, entry.File)
+			}
+		}
 		baseline.index[entry.key()] = true
 	}
 	return &baseline, nil
@@ -91,7 +123,10 @@ func NewBaseline(report Report) Baseline {
 	entries := make([]SuppressedFinding, 0, len(report.Findings))
 	seen := map[string]bool{}
 	for _, finding := range report.Findings {
-		entry := SuppressedFinding{Rule: finding.Rule, File: finding.File, Class: finding.Class}
+		entry := SuppressedFinding{
+			Fingerprint: findingFingerprint(finding.Rule, finding.File, finding.Class),
+			Rule:        finding.Rule, File: finding.File, Class: finding.Class,
+		}
 		if seen[entry.key()] {
 			continue
 		}
@@ -114,9 +149,9 @@ func NewBaseline(report Report) Baseline {
 
 	return Baseline{
 		Version: BaselineVersion,
-		Note: "Debt accepted at the time this file was written. Findings are keyed by " +
-			"rule, file, and class list, never by position, so moving code does not " +
-			"resurrect them. Remove an entry to start failing on it again.",
+		Note: "Debt accepted at the time this file was written. Stable fingerprints are " +
+			"derived from rule, file, and class evidence rather than source position. Remove " +
+			"an entry to start failing on it again.",
 		Suppressed: entries,
 	}
 }
@@ -126,8 +161,38 @@ func WriteBaseline(path string, baseline Baseline) error {
 	if err != nil {
 		return fmt.Errorf("encode baseline: %w", err)
 	}
-	if err := os.WriteFile(path, append(encoded, '\n'), 0o644); err != nil {
-		return fmt.Errorf("write %s: %w", path, err)
+	directory := filepath.Dir(path)
+	temporary, err := os.CreateTemp(directory, ".tw-doctor-baseline-*")
+	if err != nil {
+		return fmt.Errorf("create temporary baseline for %s: %w", path, err)
+	}
+	temporaryPath := temporary.Name()
+	defer func() { _ = temporary.Close() }()
+	defer func() { _ = os.Remove(temporaryPath) }()
+	if err := temporary.Chmod(0o644); err != nil {
+		return fmt.Errorf("set baseline permissions for %s: %w", path, err)
+	}
+	if _, err := temporary.Write(append(encoded, '\n')); err != nil {
+		return fmt.Errorf("write temporary baseline for %s: %w", path, err)
+	}
+	if err := temporary.Sync(); err != nil {
+		return fmt.Errorf("sync temporary baseline for %s: %w", path, err)
+	}
+	if err := temporary.Close(); err != nil {
+		return fmt.Errorf("close temporary baseline for %s: %w", path, err)
+	}
+	if err := os.Rename(temporaryPath, path); err != nil {
+		return fmt.Errorf("replace %s: %w", path, err)
 	}
 	return nil
+}
+
+func ensureJSONEnd(decoder *json.Decoder) error {
+	var extra any
+	if err := decoder.Decode(&extra); err == io.EOF {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	return fmt.Errorf("unexpected data after baseline document")
 }

@@ -22,7 +22,8 @@ can trust and nobody can debug.
 # warn            — reported, but does not move the score
 # off             — not reported at all
 no-arbitrary-value = "warn"
-responsive-bloat = "off"
+variant-density = "warn"
+no-overlapping-utilities = "warn"
 # New in this release and disabled by default for one minor release.
 unused-token = "warn"
 color-contrast = "warn"
@@ -57,7 +58,9 @@ min-confidence = "high"
 path = "twdoctor-baseline.json"
 ```
 
-Every table and every key is optional.
+Every table and every key is optional. Unknown tables, settings, and rule IDs;
+duplicate keys or tables; invalid globs; and baseline paths outside the analysis
+root are errors. This makes misspelled configuration fail closed.
 
 When a prefix is configured or detected, unprefixed class names are treated as
 application CSS rather than Tailwind utilities. They produce no findings, do not
@@ -89,8 +92,9 @@ uncertain finding costs less trust than a silent miss.
 The following evidence can report below `high`, so `min-confidence = "medium"`
 is what scores it:
 
-- `responsive-bloat`, because a five-variant threshold is a heuristic with no
-  defect behind it.
+- `variant-density`, because density is a maintainability heuristic rather than
+  a defect.
+- `no-overlapping-utilities`, because partial property overlap can be intentional.
 - an unclassifiable utility conflict that the property taxonomy cannot separate
   conservatively;
 - `unused-token` when configuration, plugin, extraction, or package-ownership
@@ -110,14 +114,13 @@ Independently of configuration, discovery always skips `.git`, `node_modules`,
 
 ### `.gitignore`
 
-With `respect-gitignore` left on, a `.gitignore` is read from every directory as
-it is walked and applies to that directory and below, as Git does. Supported:
+With `respect-gitignore` left on, `.gitignore` files are loaded before Tailwind
+package discovery and apply to both configuration evidence and source analysis.
+Supported:
 comments, blank lines, `!` negation, a trailing `/` for directories, a leading
 `/` to anchor, and `*`/`**` globs.
 
-Not supported: `.git/info/exclude`, the global excludes file, and character
-ranges such as `[a-z]`. A pattern using an unsupported feature is applied as a
-literal glob rather than being silently dropped.
+Not supported: `.git/info/exclude` and the global excludes file.
 
 ### Supported TOML
 
@@ -149,10 +152,11 @@ the report as `suppressed`, so accepted debt stays visible rather than vanishing
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "note": "Debt accepted at the time this file was written. ...",
   "suppressed": [
     {
+      "fingerprint": "sha256:...",
       "rule": "no-conflicting-utilities",
       "file": "src/components/card.tsx",
       "class": "p-4 p-2 rounded",
@@ -162,18 +166,22 @@ the report as `suppressed`, so accepted debt stays visible rather than vanishing
 }
 ```
 
-### Why there is no line number in the key
+### Stable fingerprints and version 1 migration
 
-A finding is identified by **rule, file, and class list** — never by position.
+A fingerprint is derived from **rule, file, and class evidence** — never by position.
 Adding an import above a component would otherwise shift every line in it and
 resurrect all of that file's accepted debt as new debt, on a change that altered
 nothing. The cost of leaving position out is that two identical class lists in
 one file are suppressed together; that is the right trade, because the alternative
 makes the file fail on formatting.
 
-`version` is checked. A baseline written by a newer build is refused rather than
-misread. `reason` is for the humans reading the file; nothing in the tool
-interprets it.
+Version 2 requires the explicit fingerprint and rejects unknown JSON fields.
+The reader recomputes each fingerprint from its visible evidence and refuses a
+mismatch rather than accepting an opaque suppression key.
+Version 1 files remain readable so the CLI can be upgraded before the baseline
+is regenerated; `--write-baseline` always writes version 2. Baseline replacement
+uses a same-directory temporary file and atomic rename. `reason` remains solely
+for humans.
 
 ### Removing debt
 
@@ -198,4 +206,6 @@ Units are never converted, runtime expressions are never evaluated,
 symbolic-link source files are not followed, and all candidate edits are
 validated before the first file is replaced. The report and `--fail-under` gate
 are computed again after the fixes, so JSON and SARIF describe the resulting
-source.
+source. Each file replacement is atomic. If an operating-system error occurs
+after earlier files were replaced, stderr reports the exact applied file and
+replacement counts before returning exit code 2.

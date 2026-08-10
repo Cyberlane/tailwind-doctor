@@ -123,6 +123,24 @@ func TestRunWritesTheReportBeforeGating(t *testing.T) {
 	}
 }
 
+func TestRunGatesOnExtractionCoverage(t *testing.T) {
+	root := writeProject(t, `export const Card = ({ classes }) => <div className={classes} />`)
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--require-coverage", "100", root}, &stdout, &stderr); code != exitBelowThreshold {
+		t.Fatalf("exit code = %d, want %d; stderr=%q", code, exitBelowThreshold, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Resolved 0/1") {
+		t.Fatalf("coverage report missing from stdout: %q", stdout.String())
+	}
+}
+
+func TestRunRejectsInvalidCoverageThreshold(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--require-coverage", "101", writeProject(t, cleanSource)}, &stdout, &stderr); code != exitOperationalError {
+		t.Fatalf("exit code = %d, want %d", code, exitOperationalError)
+	}
+}
+
 func TestRunRefusesTwoOutputFormats(t *testing.T) {
 	root := t.TempDir()
 	var stdout, stderr bytes.Buffer

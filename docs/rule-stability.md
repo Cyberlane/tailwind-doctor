@@ -48,10 +48,15 @@ produced by the same arithmetic.
 Two scores are comparable only when `scoreModel.version` *and* the enabled rule
 set match. Both are published in every report for exactly this reason.
 
-## `--fail-under` Gates The Headline Score Only
+## Quality gates
 
-At v1 the threshold applies to the headline score. Per-category sub-scores are
+`--fail-under` applies to the headline score. Per-category sub-scores are
 published but not gateable.
+
+`--require-coverage` independently gates the percentage of candidate class lists
+that extraction resolved. Both gates use exit code 1 after the report is written;
+an invalid threshold remains an operational error with exit code 2. Coverage
+does not alter score arithmetic.
 
 Sub-scores are new, and a gate is a promise to keep a number stable. The
 headline score is the one this project is prepared to make that promise about

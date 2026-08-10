@@ -114,7 +114,17 @@ var ruleRegistry = []RuleDefinition{
 		// defect behind it, so it is reported and score-neutral.
 		ID: "responsive-bloat", Category: CategoryMaintainability, Exposure: ExposureClassList,
 		DefaultSeverity: SeverityError, DefaultConfidence: ConfidenceMedium,
-		Since: "0.1.0", DefaultOn: true,
+		Since: "0.1.0", DefaultOn: false,
+	},
+	{
+		ID: "variant-density", Category: CategoryMaintainability, Exposure: ExposureClassList,
+		DefaultSeverity: SeverityError, DefaultConfidence: ConfidenceMedium,
+		Since: "0.2.0", DefaultOn: false,
+	},
+	{
+		ID: "no-overlapping-utilities", Category: CategoryCorrectness, Exposure: ExposureUtility,
+		DefaultSeverity: SeverityError, DefaultConfidence: ConfidenceMedium,
+		Since: "0.2.0", DefaultOn: false,
 	},
 	{
 		ID: "unused-token", Category: CategoryConsistency, Exposure: ExposureToken,

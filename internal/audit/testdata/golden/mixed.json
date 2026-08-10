@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "tool": {
     "name": "tw-doctor",
     "version": "dev"
@@ -7,7 +7,7 @@
   "score": 26,
   "scoreExcludingBaseline": 26,
   "scoreModel": {
-    "version": 1,
+    "version": 2,
     "transferFunction": "100 * H / (H + D)",
     "halfScoreDensity": 0.2,
     "weights": {
@@ -84,7 +84,17 @@
     },
     {
       "id": "responsive-bloat",
+      "severity": "off",
+      "confidence": "medium"
+    },
+    {
+      "id": "variant-density",
       "severity": "error",
+      "confidence": "medium"
+    },
+    {
+      "id": "no-overlapping-utilities",
+      "severity": "off",
       "confidence": "medium"
     },
     {
@@ -99,6 +109,7 @@
     }
   ],
   "diagnostics": [],
+  "packages": [],
   "tokens": [],
   "accessibility": {
     "resolvedColorPairs": 0,
@@ -110,6 +121,12 @@
       }
     ]
   },
+  "coverage": {
+    "resolvedClassLists": 6,
+    "unresolvedClassLists": 1,
+    "unscopedClassLists": 0,
+    "resolutionPercent": 85
+  },
   "findings": [
     {
       "rule": "no-arbitrary-value",
@@ -119,6 +136,8 @@
       "class": "shadow-[0_1px_2px_rgba(0,0,0,0.1)]",
       "line": 2,
       "column": 55,
+      "endLine": 2,
+      "endColumn": 89,
       "severity": "error",
       "confidence": "high",
       "scored": true
@@ -131,6 +150,8 @@
       "class": "p-4 p-2 text-[#123456]",
       "line": 1,
       "column": 17,
+      "endLine": 1,
+      "endColumn": 20,
       "severity": "error",
       "confidence": "high",
       "scored": true
@@ -143,18 +164,22 @@
       "class": "text-[#123456]",
       "line": 1,
       "column": 21,
+      "endLine": 1,
+      "endColumn": 35,
       "severity": "error",
       "confidence": "high",
       "scored": true
     },
     {
-      "rule": "responsive-bloat",
+      "rule": "variant-density",
       "category": "maintainability",
-      "message": "Five or more variant utilities make this class list difficult to maintain.",
+      "message": "Variant utilities make up at least 60% of this class list; consider extracting a component or variant.",
       "file": "src/page.html",
       "class": "sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10",
       "line": 2,
       "column": 17,
+      "endLine": 2,
+      "endColumn": 54,
       "severity": "error",
       "confidence": "medium",
       "scored": false
@@ -167,6 +192,8 @@
       "class": "inline-flex items-center px-4 px-2",
       "line": 2,
       "column": 40,
+      "endLine": 2,
+      "endColumn": 44,
       "severity": "error",
       "confidence": "high",
       "scored": true

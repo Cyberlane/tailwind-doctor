@@ -116,14 +116,18 @@ type sarifArtifact struct {
 type sarifRegion struct {
 	StartLine   int `json:"startLine,omitempty"`
 	StartColumn int `json:"startColumn,omitempty"`
+	EndLine     int `json:"endLine,omitempty"`
+	EndColumn   int `json:"endColumn,omitempty"`
 }
 
 type sarifRunProps struct {
-	Score                  int             `json:"score"`
-	ScoreExcludingBaseline int             `json:"scoreExcludingBaseline"`
-	ScoreModelVersion      int             `json:"scoreModelVersion"`
-	Categories             []CategoryScore `json:"categories"`
-	Scanned                Scanned         `json:"scanned"`
+	Score                  int                     `json:"score"`
+	ScoreExcludingBaseline int                     `json:"scoreExcludingBaseline"`
+	ScoreModelVersion      int                     `json:"scoreModelVersion"`
+	Categories             []CategoryScore         `json:"categories"`
+	Scanned                Scanned                 `json:"scanned"`
+	Coverage               CoverageReport          `json:"coverage"`
+	Packages               []TailwindPackageReport `json:"packages"`
 }
 
 // sarifLevel maps a finding onto SARIF's severity vocabulary. A finding the
@@ -178,7 +182,10 @@ func WriteSARIF(writer io.Writer, report Report) error {
 			Locations: []sarifLocation{{
 				PhysicalLocation: sarifPhysicalLocation{
 					ArtifactLocation: sarifArtifact{URI: finding.File},
-					Region:           sarifRegion{StartLine: finding.Line, StartColumn: finding.Column},
+					Region: sarifRegion{
+						StartLine: finding.Line, StartColumn: finding.Column,
+						EndLine: finding.EndLine, EndColumn: finding.EndColumn,
+					},
 				},
 			}},
 			PartialFingerprints: map[string]string{sarifFingerprintKey: sarifFingerprint(finding)},
@@ -223,6 +230,8 @@ func WriteSARIF(writer io.Writer, report Report) error {
 				ScoreModelVersion:      report.ScoreModel.Version,
 				Categories:             report.Categories,
 				Scanned:                report.Scanned,
+				Coverage:               report.Coverage,
+				Packages:               report.Packages,
 			},
 		}},
 	}

@@ -83,6 +83,15 @@ path = "debt.json"
 func TestLoadConfigRejectsWhatItCannotUnderstand(t *testing.T) {
 	cases := map[string]string{
 		"unknown severity":  "[rules]\nno-arbitrary-value = \"loud\"\n",
+		"unknown rule":      "[rules]\nnot-a-rule = \"off\"\n",
+		"unknown table":     "[network]\nenabled = true\n",
+		"unknown setting":   "[paths]\nignroe = [\"dist/**\"]\n",
+		"duplicate key":     "[tailwind]\nprefix = \"a-\"\nprefix = \"b-\"\n",
+		"duplicate table":   "[paths]\nignore = []\n[paths]\nrespect-gitignore = false\n",
+		"invalid glob":      "[paths]\nignore = [\"src/[\"]\n",
+		"escaping glob":     "[paths]\nignore = [\"../**\"]\n",
+		"absolute baseline": "[baseline]\npath = \"/tmp/debt.json\"\n",
+		"escaping baseline": "[baseline]\npath = \"../debt.json\"\n",
 		"wrong type":        "[paths]\nignore = \"generated\"\n",
 		"unsupported value": "[tailwind]\nprefix = 12\n",
 		"missing value":     "[tailwind]\nprefix\n",
@@ -146,6 +155,20 @@ func TestRunHonoursIgnoredPaths(t *testing.T) {
 		t.Fatalf("scanned %d files, want 1", report.Scanned.Files)
 	}
 	if len(report.Findings) != 1 || report.Findings[0].File != "src/page.html" {
+		t.Fatalf("findings = %#v", report.Findings)
+	}
+}
+
+func TestIgnoredTailwindConfigDoesNotAffectIncludedSources(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, ConfigFileName, "[paths]\nignore = [\"tailwind.config.js\"]\n")
+	writeFile(t, root, "tailwind.config.js", `module.exports = { prefix: "tw-" }`)
+	writeFile(t, root, "page.html", `<div class="p-4 p-2"></div>`)
+	report, err := Run(root)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if len(report.Findings) != 1 || report.Findings[0].Rule != "no-conflicting-utilities" {
 		t.Fatalf("findings = %#v", report.Findings)
 	}
 }
@@ -289,6 +312,39 @@ func TestBaselineRejectsAnUnknownVersion(t *testing.T) {
 	writeFile(t, root, BaselineFileName, `{"version": 99, "suppressed": []}`)
 	if _, err := Run(root); err == nil || !strings.Contains(err.Error(), "not supported") {
 		t.Fatalf("expected a version error, got %v", err)
+	}
+}
+
+func TestNewBaselineUsesStableFingerprints(t *testing.T) {
+	report := Report{Findings: []Finding{{Rule: "no-arbitrary-value", File: "page.html", Class: "p-[3px]"}}}
+	baseline := NewBaseline(report)
+	if baseline.Version != BaselineVersion || len(baseline.Suppressed) != 1 {
+		t.Fatalf("baseline = %+v", baseline)
+	}
+	want := findingFingerprint("no-arbitrary-value", "page.html", "p-[3px]")
+	if baseline.Suppressed[0].Fingerprint != want {
+		t.Fatalf("fingerprint = %q, want %q", baseline.Suppressed[0].Fingerprint, want)
+	}
+}
+
+func TestLoadBaselineAcceptsVersionOneDuringMigration(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, BaselineFileName, `{"version":1,"suppressed":[{"rule":"no-arbitrary-value","file":"page.html","class":"p-[3px]"}]}`)
+	baseline, err := LoadBaseline(root, BaselineFileName)
+	if err != nil {
+		t.Fatalf("LoadBaseline: %v", err)
+	}
+	if !baseline.suppresses(Finding{Rule: "no-arbitrary-value", File: "page.html", Class: "p-[3px]"}) {
+		t.Fatal("version 1 entry did not suppress its finding")
+	}
+}
+
+func TestLoadBaselineRejectsMismatchedFingerprint(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, BaselineFileName,
+		`{"version":2,"suppressed":[{"fingerprint":"sha256:wrong","rule":"no-arbitrary-value","file":"page.html","class":"p-[3px]"}]}`)
+	if _, err := LoadBaseline(root, BaselineFileName); err == nil || !strings.Contains(err.Error(), "does not match") {
+		t.Fatalf("error = %v", err)
 	}
 }
 

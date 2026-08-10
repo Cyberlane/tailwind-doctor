@@ -35,7 +35,10 @@ func loadAdapterTheme(fsys fs.FS, pkg Package, sources []string, version string,
 		Plugins:   []string{},
 	}
 	if len(sources) == 0 {
-		return theme, fmt.Errorf("Tailwind v%s package %s has no theme source", version, pkg.Dir)
+		// A package manifest is sufficient version evidence. Tailwind defaults are
+		// the complete static theme when the project declares no config or v4 CSS
+		// entry, so manifest-only installations remain analyzable.
+		return theme, nil
 	}
 	for _, source := range sources {
 		if err := loader(fsys, cleanPath(source), &theme, map[string]bool{}, 0); err != nil {

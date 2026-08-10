@@ -57,9 +57,10 @@ func TestTransferMatchesThePublishedTable(t *testing.T) {
 // maximumReachableDensity is the largest D the current rule set can produce.
 // Each rule's rate is bounded by one finding per unit of its own exposure, so
 // the sum is bounded by the sum of the category weights involved: 2 for
-// no-arbitrary-value, 3 for no-conflicting-utilities, 1 for responsive-bloat,
-// and 4 for color contrast when its introductory opt-in is enabled.
-const maximumReachableDensity = 10
+// Summing every current rule's category weight gives the conservative bound:
+// 2 arbitrary + 3 conflicts + 3 overlaps + 1 variant density + 2 unused token
+// + 4 contrast. Retired rules contribute nothing.
+const maximumReachableDensity = 15
 
 // The score must keep falling across the whole range a real codebase can reach,
 // and must not bottom out inside it. That is the entire reason this replaced
@@ -164,7 +165,6 @@ func TestCategoryScoresMatchTheWorkedExample(t *testing.T) {
 	}{
 		{CategoryCorrectness, 93},
 		{CategoryConsistency, 91},
-		{CategoryMaintainability, 100},
 	} {
 		actual := byName[expected.category]
 		if actual.Score == nil {
@@ -177,6 +177,9 @@ func TestCategoryScoresMatchTheWorkedExample(t *testing.T) {
 	}
 
 	maintainability := byName[CategoryMaintainability]
+	if maintainability.Score != nil {
+		t.Errorf("maintainability score = %d, want null while its replacement rule is opt-in", *maintainability.Score)
+	}
 	if maintainability.ScoredFindings != 0 || maintainability.UnscoredFindings != 8 {
 		t.Errorf("maintainability counted %d scored and %d unscored, want 0 and 8",
 			maintainability.ScoredFindings, maintainability.UnscoredFindings)
@@ -194,6 +197,14 @@ func TestCategoryScoresAreOrderedDeterministically(t *testing.T) {
 	for index := range first {
 		if first[index].Name != categoryOrder[index] || first[index].Name != second[index].Name {
 			t.Fatalf("category order is not fixed: %#v then %#v", first, second)
+		}
+	}
+}
+
+func TestCategoryScoresAreUnmeasuredWithoutExposure(t *testing.T) {
+	for _, category := range categoryScores(nil, Scanned{}, defaultConfig()) {
+		if category.Score != nil {
+			t.Errorf("%s score = %d, want null without exposure", category.Name, *category.Score)
 		}
 	}
 }

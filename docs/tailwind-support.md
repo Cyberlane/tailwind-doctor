@@ -5,8 +5,8 @@ code.
 
 | Tailwind version | Status | Theme source | Degraded behaviour |
 |---|---|---|---|
-| v3 (3.x) | Supported | `tailwind.config.{js,cjs,mjs,ts,mts,cts}` is read statically | If a construct cannot be read without executing it, the package uses the default theme and reports why |
-| v4 (4.x) | Supported | CSS `@theme` blocks and custom properties across every package entry | Theme declarations that can be read statically form the inventory |
+| v3 (3.x) | Supported | `tailwind.config.{js,cjs,mjs,ts,mts,cts}` is read statically; a manifest-only package uses v3 defaults | If a construct cannot be read without executing it, the package uses the default theme and reports why |
+| v4 (4.x) | Supported | CSS `@theme` blocks and custom properties across every package entry; a manifest-only package uses v4 defaults | Theme declarations that can be read statically form the inventory |
 | Anything else, or no version signal | No token inventory | None | Token-dependent rules do not run; an explicitly unsupported major is diagnosed |
 
 ## Version detection
@@ -54,6 +54,7 @@ Both dialects become the same canonical inventory.
 | Box shadow | `boxShadow` | `--shadow-*` |
 | Breakpoint | `screens` | `--breakpoint-*` |
 | Container | No tokens | `--container-*` |
+| Z-index | `zIndex` | Dynamic values; no theme namespace |
 
 Tailwind v3's `theme.container` is an options object rather than a token scale,
 so it does not produce container tokens.
@@ -62,8 +63,8 @@ so it does not produce container tokens.
 
 Tailwind `content` globs do not control source discovery. Relative `@import`
 and `presets` references are followed only while they remain inside the
-project; imports from `node_modules` are never read. The nine remaining v4
-theme namespaces and Tailwind v3's `zIndex` are not yet inventoried.
+project; imports from `node_modules` are never read. Additional v4 theme
+namespaces remain candidates for later conservative inventory coverage.
 
 The analyzer never runs a project's JavaScript. A configuration assembled by a
 function, spread, or imported value cannot be interpreted safely. When that
@@ -94,8 +95,8 @@ allowing a possibly overridden colour value to produce a false failure.
 
 ## Monorepos
 
-Every source file is scoped to the nearest Tailwind configuration in an
-ancestor directory. Inventories remain package-local and are never merged, so
+Every source file is scoped to the nearest Tailwind configuration or manifest
+in an ancestor directory. Inventories remain package-local and are never merged, so
 two packages may define the same token name with different values.
 
 Tailwind is a trademark of Tailwind Labs. This project is not affiliated with
