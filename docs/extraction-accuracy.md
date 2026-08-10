@@ -128,6 +128,12 @@ itself: every record's recorded position must still point at its recorded string
 Ground truth is hand-written, so it can drift; if it has, the accuracy figure is
 meaningless and the suite says so before reporting a number.
 
+Module-level helper calls require lexical import evidence. Calls to `cn`,
+`clsx`, `classnames`, or `cva` that already sit inside a class-bearing framework
+expression are contextual, but a bare module-level call without an import may be
+an unrelated local function and is not treated as a class list. Imported aliases
+are followed without resolving or executing their modules.
+
 ## A Note On Running The Tool On This Repository
 
 `testdata/corpus` is excluded by this repository's own `twdoctor.toml`. The

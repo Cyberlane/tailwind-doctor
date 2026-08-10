@@ -68,5 +68,5 @@ jobs:
           gh release create "$RELEASE_TAG" dist/release/*
           --verify-tag
           --title "Tailwind Doctor $RELEASE_TAG"
-          --notes-file docs/release-notes/v0.1.0.md
+          --notes-file "docs/release-notes/$RELEASE_TAG.md"
           --latest

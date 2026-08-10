@@ -163,12 +163,16 @@ func RunWithConfig(root string, config Config, baseline *Baseline) (Report, erro
 				resolvedTheme.resolvedLists++
 			}
 			report.Scanned.ClassLists++
-			report.Scanned.Utilities += len(splitUtilities(list))
 			var inventory *tokens.Inventory
 			allowSuggestions := false
 			if resolvedTheme != nil {
 				inventory = resolvedTheme.theme.Inventory
 				allowSuggestions = !resolvedTheme.theme.Degraded
+			}
+			for _, utility := range splitUtilities(list) {
+				if tailwind.ParseUtility(utility.text, syntax).Recognized {
+					report.Scanned.Utilities++
+				}
 			}
 			findings, usedTokens := inspectWithInventory(relative, list, syntax, inventory, allowSuggestions)
 			trustedContrastTheme := resolvedTheme != nil && !resolvedTheme.theme.Degraded &&
@@ -367,6 +371,9 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 
 	for _, token := range splitUtilities(list) {
 		parsed := tailwind.ParseUtility(token.text, syntax)
+		if !parsed.Recognized {
+			continue
+		}
 		meaning := tailwind.ClassifyUtility(parsed.Base, inventory)
 
 		if parsed.HasArbitraryValue() {

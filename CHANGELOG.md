@@ -2,6 +2,22 @@
 
 All notable changes to Tailwind Doctor are documented here.
 
+## [Unreleased]
+
+## [0.1.1] - 2026-08-10
+
+### Fixed
+
+- Preserve the order of stacked Tailwind variants so order-sensitive selectors
+  do not produce high-confidence conflict findings.
+- Ignore unprefixed application classes when a Tailwind prefix is configured.
+- Require import evidence for module-level class-helper calls, preventing an
+  unrelated local function named `cn`, `clsx`, or `cva` from fabricating class
+  lists while retaining contextual and aliased helper extraction.
+- Make npm release recovery resolve paths from the requested output and verify
+  that a recovered signed tag targets the workflow commit.
+- Select release notes from the release tag instead of a hard-coded version.
+
 ## [0.1.0] - 2026-08-10
 
 ### Added
@@ -30,4 +46,6 @@ All notable changes to Tailwind Doctor are documented here.
 - `unused-token` and `color-contrast` are disabled by default for their
   introductory release and therefore do not change the default score.
 
+[Unreleased]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Cyberlane/tailwind-doctor/releases/tag/v0.1.0

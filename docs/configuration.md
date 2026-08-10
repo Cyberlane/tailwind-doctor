@@ -59,6 +59,10 @@ path = "twdoctor-baseline.json"
 
 Every table and every key is optional.
 
+When a prefix is configured or detected, unprefixed class names are treated as
+application CSS rather than Tailwind utilities. They produce no findings, do not
+consume tokens, and do not enter score exposure.
+
 ### Severity
 
 A rule's severity decides what it does when it matches:

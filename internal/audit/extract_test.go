@@ -158,35 +158,35 @@ func TestExtractReadsClassHelpers(t *testing.T) {
 		{
 			name:   "clsx string arguments",
 			path:   "app.tsx",
-			source: `const a = clsx('p-4', 'm-2')`,
+			source: "import clsx from 'clsx';\nconst a = clsx('p-4', 'm-2')",
 			want: []string{
-				`1:17 resolved clsx "p-4"`,
-				`1:24 resolved clsx "m-2"`,
+				`2:17 resolved clsx "p-4"`,
+				`2:24 resolved clsx "m-2"`,
 			},
 		},
 		{
 			name:   "object keys are classes and values are conditions",
 			path:   "app.tsx",
-			source: `const a = clsx({ 'p-4': isWide, 'm-2': isTall })`,
+			source: "import clsx from 'clsx';\nconst a = clsx({ 'p-4': isWide, 'm-2': isTall })",
 			want: []string{
-				`1:19 resolved clsx "p-4"`,
-				`1:34 resolved clsx "m-2"`,
+				`2:19 resolved clsx "p-4"`,
+				`2:34 resolved clsx "m-2"`,
 			},
 		},
 		{
 			name:   "arguments that are not literals are unresolved",
 			path:   "app.tsx",
-			source: `const a = cn('p-4', props.class)`,
+			source: "import { cn } from './utils';\nconst a = cn('p-4', props.class)",
 			want: []string{
-				`1:15 resolved cn "p-4"`,
-				`1:21 unresolved cn "props.class"`,
+				`2:15 resolved cn "p-4"`,
+				`2:21 unresolved cn "props.class"`,
 			},
 		},
 		{
 			name:   "a nested call is reported whole rather than guessed at",
 			path:   "app.tsx",
-			source: `const a = cn(buttonVariants({ size }))`,
-			want:   []string{`1:14 unresolved cn "buttonVariants({ size })"`},
+			source: "import { cn } from './utils';\nconst a = cn(buttonVariants({ size }))",
+			want:   []string{`2:14 unresolved cn "buttonVariants({ size })"`},
 		},
 	}
 
@@ -200,11 +200,35 @@ func TestExtractReadsClassHelpers(t *testing.T) {
 	}
 }
 
+func TestExtractRequiresBindingEvidenceForModuleHelpers(t *testing.T) {
+	source := `function cn(message: string) { return message }
+const diagnostic = cn("text-[#123456] p-4 p-2")`
+	if got := Extract("example.tsx", source); len(got) != 0 {
+		t.Fatalf("unrelated local cn produced class lists: %v", summarise(got))
+	}
+}
+
+func TestExtractReadsImportedHelperAliases(t *testing.T) {
+	source := `import {
+  clsx as mergeClasses,
+} from "clsx";
+const value = mergeClasses("p-4", "m-2")`
+	got := summarise(Extract("example.tsx", source))
+	want := []string{
+		`4:29 resolved clsx "p-4"`,
+		`4:36 resolved clsx "m-2"`,
+	}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+}
+
 // A cva call holds class lists in three places and variant names in two others.
 // Reading a variant name as a class list is a fabricated finding, so the
 // distinction is asserted rather than assumed.
 func TestExtractReadsCvaLeavesButNotVariantNames(t *testing.T) {
-	source := `const button = cva("inline-flex", {
+	source := `import { cva } from "class-variance-authority";
+const button = cva("inline-flex", {
   variants: {
     size: { sm: "h-8 px-3", "icon-lg": "size-10" },
   },
@@ -213,10 +237,10 @@ func TestExtractReadsCvaLeavesButNotVariantNames(t *testing.T) {
 })`
 	got := summarise(Extract("button.tsx", source))
 	want := []string{
-		`1:21 resolved cva-leaf "inline-flex"`,
-		`3:18 resolved cva-leaf "h-8 px-3"`,
-		`3:41 resolved cva-leaf "size-10"`,
-		`5:44 resolved cva-leaf "gap-1"`,
+		`2:21 resolved cva-leaf "inline-flex"`,
+		`4:18 resolved cva-leaf "h-8 px-3"`,
+		`4:41 resolved cva-leaf "size-10"`,
+		`6:44 resolved cva-leaf "gap-1"`,
 	}
 	if strings.Join(got, "|") != strings.Join(want, "|") {
 		t.Fatalf("got %v, want %v", got, want)

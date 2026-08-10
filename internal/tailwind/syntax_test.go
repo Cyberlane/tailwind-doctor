@@ -4,21 +4,23 @@ import "testing"
 
 func TestParseUtilityUnderstandsSyntax(t *testing.T) {
 	testCases := []struct {
-		name      string
-		raw       string
-		syntax    UtilitySyntax
-		base      string
-		variants  []string
-		negative  bool
-		important bool
+		name       string
+		raw        string
+		syntax     UtilitySyntax
+		base       string
+		variants   []string
+		negative   bool
+		important  bool
+		recognized bool
 	}{
-		{name: "plain utility", raw: "p-4", syntax: DefaultUtilitySyntax(), base: "p-4"},
-		{name: "stacked variants", raw: "hover:md:p-4", syntax: DefaultUtilitySyntax(), base: "p-4", variants: []string{"hover", "md"}},
-		{name: "arbitrary value containing a colon", raw: "text-[color:red]", syntax: DefaultUtilitySyntax(), base: "text-[color:red]"},
-		{name: "v3 important marker", raw: "!p-4", syntax: DefaultUtilitySyntax(), base: "p-4", important: true},
-		{name: "v4 important marker", raw: "p-4!", syntax: DefaultUtilitySyntax(), base: "p-4", important: true},
-		{name: "negative before the prefix", raw: "-tw-mt-2", syntax: UtilitySyntax{Prefix: "tw-", Separator: ":"}, base: "mt-2", negative: true},
-		{name: "custom separator", raw: "hover_p-4", syntax: UtilitySyntax{Separator: "_"}, base: "p-4", variants: []string{"hover"}},
+		{name: "plain utility", raw: "p-4", syntax: DefaultUtilitySyntax(), base: "p-4", recognized: true},
+		{name: "stacked variants", raw: "hover:md:p-4", syntax: DefaultUtilitySyntax(), base: "p-4", variants: []string{"hover", "md"}, recognized: true},
+		{name: "arbitrary value containing a colon", raw: "text-[color:red]", syntax: DefaultUtilitySyntax(), base: "text-[color:red]", recognized: true},
+		{name: "v3 important marker", raw: "!p-4", syntax: DefaultUtilitySyntax(), base: "p-4", important: true, recognized: true},
+		{name: "v4 important marker", raw: "p-4!", syntax: DefaultUtilitySyntax(), base: "p-4", important: true, recognized: true},
+		{name: "negative before the prefix", raw: "-tw-mt-2", syntax: UtilitySyntax{Prefix: "tw-", Separator: ":"}, base: "mt-2", negative: true, recognized: true},
+		{name: "unprefixed v3 class", raw: "mt-2", syntax: UtilitySyntax{Prefix: "tw-", Separator: ":"}, base: "mt-2"},
+		{name: "custom separator", raw: "hover_p-4", syntax: UtilitySyntax{Separator: "_"}, base: "p-4", variants: []string{"hover"}, recognized: true},
 	}
 
 	for _, testCase := range testCases {
@@ -41,15 +43,18 @@ func TestParseUtilityUnderstandsSyntax(t *testing.T) {
 			if parsed.Important != testCase.important {
 				t.Errorf("Important = %v, want %v", parsed.Important, testCase.important)
 			}
+			if parsed.Recognized != testCase.recognized {
+				t.Errorf("Recognized = %v, want %v", parsed.Recognized, testCase.recognized)
+			}
 		})
 	}
 }
 
-func TestVariantKeyIsOrderIndependent(t *testing.T) {
+func TestVariantKeyPreservesOrder(t *testing.T) {
 	first := ParseUtility("hover:md:p-4", DefaultUtilitySyntax())
 	second := ParseUtility("md:hover:p-4", DefaultUtilitySyntax())
-	if first.VariantKey() != second.VariantKey() {
-		t.Errorf("VariantKey differs: %q vs %q", first.VariantKey(), second.VariantKey())
+	if first.VariantKey() == second.VariantKey() {
+		t.Errorf("order-sensitive keys match: %q", first.VariantKey())
 	}
 }
 
@@ -75,5 +80,9 @@ func TestParseUtilityStripsAVariantPrefix(t *testing.T) {
 	negative := ParseUtility("-tw:mt-2", syntax)
 	if negative.Base != "mt-2" || !negative.Negative {
 		t.Errorf("negative = %+v", negative)
+	}
+	unprefixed := ParseUtility("mt-2", syntax)
+	if unprefixed.Recognized {
+		t.Errorf("unprefixed = %+v, want unrecognized", unprefixed)
 	}
 }
