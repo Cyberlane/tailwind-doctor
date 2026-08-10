@@ -48,10 +48,11 @@ type ClassList struct {
 // depends on nothing but the path's extension and the content.
 func Extract(path, content string) []ClassList {
 	current := &scanner{
-		source:    content,
-		extension: strings.ToLower(filepath.Ext(path)),
-		line:      1,
-		column:    1,
+		source:        content,
+		extension:     strings.ToLower(filepath.Ext(path)),
+		moduleHelpers: discoverModuleHelpers(content),
+		line:          1,
+		column:        1,
 	}
 	current.run()
 	return current.found
@@ -64,6 +65,10 @@ type scanner struct {
 	line      int
 	column    int
 	found     []ClassList
+	// moduleHelpers maps a local import binding to the helper it represents.
+	// Module-level calls are considered class lists only with this evidence;
+	// calls already inside class/className expressions remain contextual.
+	moduleHelpers map[string]string
 }
 
 func (s *scanner) done() bool {

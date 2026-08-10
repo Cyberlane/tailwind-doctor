@@ -33,6 +33,22 @@ func TestInspectKeepsVariantsSeparate(t *testing.T) {
 	}
 }
 
+func TestInspectKeepsOrderSensitiveVariantStacksSeparate(t *testing.T) {
+	findings := inspect("src/list.tsx", classList("*:first:pt-0 first:*:pt-4"), tailwind.DefaultUtilitySyntax())
+	if len(findings) != 0 {
+		t.Fatalf("expected order-sensitive variants to stay separate, got %#v", findings)
+	}
+}
+
+func TestInspectIgnoresUnprefixedApplicationClasses(t *testing.T) {
+	syntax := tailwind.UtilitySyntax{Prefix: "tw-", Separator: ":"}
+	findings := inspect("src/card.tsx", classList("p-4 p-2 text-[#123456] tw-p-4 tw-p-2"), syntax)
+	if len(findings) != 1 || findings[0].Rule != "no-conflicting-utilities" ||
+		findings[0].Message != "tw-p-4 conflicts with tw-p-2 in the same variant." {
+		t.Fatalf("findings = %#v", findings)
+	}
+}
+
 // A finding has to say where to look, or a user has to search for it by hand.
 func TestFindingsCarryTheirPosition(t *testing.T) {
 	root := t.TempDir()

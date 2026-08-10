@@ -2,7 +2,7 @@
 
 Tailwind Doctor (`tw-doctor`) is a fast, read-only-by-default CLI that measures design-system debt in Tailwind class lists. It reports a project-wide **Design System Health Score** with file-level evidence.
 
-> **Status: v0.1.0.** The first public release is intentionally conservative.
+> **Status: v0.1.1.** The first public release line is intentionally conservative.
 > Read [What Exists Today](#what-exists-today) and the documented coverage gaps
 > before using its score as a gate.
 
@@ -77,7 +77,7 @@ npx tailwind-doctor .
 Or install the Go binary directly:
 
 ```bash
-go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.1.0
+go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.1.1
 ```
 
 ```bash

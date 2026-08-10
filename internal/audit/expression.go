@@ -23,6 +23,160 @@ var classHelpers = map[string]string{
 
 const cvaHelper = "cva"
 
+// discoverModuleHelpers records imported helper bindings without evaluating or
+// resolving modules. Requiring binding evidence for module-level calls prevents
+// an unrelated local function named cn or cva from turning ordinary strings
+// into fabricated class lists. Calls inside class-bearing expressions remain
+// contextual and do not need an import.
+func discoverModuleHelpers(source string) map[string]string {
+	bindings := map[string]string{}
+	for index := 0; index < len(source); {
+		switch {
+		case strings.HasPrefix(source[index:], "//"):
+			index = skipUntil(source, index, "\n")
+		case strings.HasPrefix(source[index:], "/*"):
+			index = skipUntil(source, index+2, "*/")
+		case source[index] == '\'' || source[index] == '"' || source[index] == '`':
+			index = skipLiteral(source, index)
+		case strings.HasPrefix(source[index:], "import") && wordBoundary(source, index-1) && wordBoundary(source, index+len("import")):
+			end := importStatementEnd(source, index)
+			addImportBindings(bindings, source[index:end])
+			index = end
+		default:
+			index++
+		}
+	}
+	return bindings
+}
+
+func wordBoundary(source string, index int) bool {
+	if index < 0 || index >= len(source) {
+		return true
+	}
+	character := source[index]
+	return !isExpressionNameCharacter(character)
+}
+
+func importStatementEnd(source string, start int) int {
+	depth := 0
+	var quote byte
+	for index := start; index < len(source); index++ {
+		character := source[index]
+		switch {
+		case quote != 0:
+			if character == '\\' {
+				index++
+			} else if character == quote {
+				quote = 0
+			}
+		case character == '\'' || character == '"':
+			quote = character
+		case character == '{' || character == '(' || character == '[':
+			depth++
+		case character == '}' || character == ')' || character == ']':
+			if depth > 0 {
+				depth--
+			}
+		case character == ';' && depth == 0:
+			return index + 1
+		case character == '\n' && depth == 0:
+			if strings.Contains(normalizeImportWhitespace(source[start:index]), " from ") {
+				return index
+			}
+		}
+	}
+	return len(source)
+}
+
+func addImportBindings(bindings map[string]string, statement string) {
+	statement = normalizeImportWhitespace(statement)
+	from := strings.LastIndex(statement, " from ")
+	if from < 0 {
+		return
+	}
+	clause := strings.TrimSpace(strings.TrimPrefix(statement[:from], "import"))
+	module := strings.TrimSpace(statement[from+len(" from "):])
+	module = strings.Trim(module, " \t\r\n;'\"")
+
+	if !strings.HasPrefix(clause, "{") {
+		defaultBinding := clause
+		if before, _, found := strings.Cut(defaultBinding, ","); found {
+			defaultBinding = before
+		}
+		defaultBinding = strings.TrimSpace(defaultBinding)
+		switch module {
+		case "clsx":
+			if defaultBinding != "" {
+				bindings[defaultBinding] = "clsx"
+			}
+		case "classnames":
+			if defaultBinding != "" {
+				bindings[defaultBinding] = "classnames"
+			}
+		}
+	}
+
+	open, close := strings.IndexByte(clause, '{'), strings.LastIndexByte(clause, '}')
+	if open < 0 || close <= open {
+		return
+	}
+	for _, imported := range strings.Split(clause[open+1:close], ",") {
+		fields := strings.Fields(strings.TrimSpace(imported))
+		if len(fields) == 0 || fields[0] == "type" {
+			continue
+		}
+		canonical, local := fields[0], fields[0]
+		if len(fields) == 3 && fields[1] == "as" {
+			local = fields[2]
+		}
+		if canonical == cvaHelper && module == "class-variance-authority" {
+			bindings[local] = canonical
+			continue
+		}
+		if _, known := classHelpers[canonical]; known {
+			bindings[local] = canonical
+		}
+	}
+}
+
+func normalizeImportWhitespace(statement string) string {
+	var normalized strings.Builder
+	space := false
+	var quote byte
+	for index := 0; index < len(statement); index++ {
+		character := statement[index]
+		if quote != 0 {
+			normalized.WriteByte(character)
+			if character == '\\' && index+1 < len(statement) {
+				index++
+				normalized.WriteByte(statement[index])
+			} else if character == quote {
+				quote = 0
+			}
+			continue
+		}
+		if character == '\'' || character == '"' {
+			if space && normalized.Len() > 0 {
+				normalized.WriteByte(' ')
+			}
+			space = false
+			quote = character
+			normalized.WriteByte(character)
+			continue
+		}
+		if character == ' ' || character == '\t' || character == '\r' || character == '\n' {
+			space = true
+			continue
+		}
+		if space && normalized.Len() > 0 {
+			normalized.WriteByte(' ')
+		}
+		space = false
+		normalized.WriteByte(character)
+	}
+	return normalized.String()
+}
+
 // matchingDelimiter returns the offset of the delimiter closing the one at
 // start, or -1. Strings and comments inside are stepped over so that a brace in
 // a string cannot unbalance the count.
@@ -304,13 +458,17 @@ func (s *scanner) scanIdentifierExpression(end int, shape string) {
 		s.advance(1)
 		return
 	}
-	if helper, ok := classHelpers[name]; ok {
+	canonical := name
+	if imported, found := s.moduleHelpers[name]; found {
+		canonical = imported
+	}
+	if helper, ok := classHelpers[canonical]; ok {
 		s.advance(1)
 		s.scanClassExpression(closing, shapeOrDefault(shape, helper))
 		s.advanceTo(closing + 1)
 		return
 	}
-	if name == cvaHelper {
+	if canonical == cvaHelper {
 		s.advance(1)
 		s.scanCvaArguments(closing)
 		s.advanceTo(closing + 1)
@@ -493,8 +651,8 @@ func (s *scanner) scanJavaScriptRegion(end int) {
 
 func (s *scanner) scanPossibleHelperCall(end int) {
 	name := s.readIdentifier()
-	_, isHelper := classHelpers[name]
-	if !isHelper && name != cvaHelper {
+	canonical, imported := s.moduleHelpers[name]
+	if !imported {
 		return
 	}
 	s.skipExpressionNoise(end)
@@ -506,10 +664,10 @@ func (s *scanner) scanPossibleHelperCall(end int) {
 		return
 	}
 	s.advance(1)
-	if name == cvaHelper {
+	if canonical == cvaHelper {
 		s.scanCvaArguments(closing)
 	} else {
-		s.scanClassExpression(closing, classHelpers[name])
+		s.scanClassExpression(closing, classHelpers[canonical])
 	}
 	s.advanceTo(closing + 1)
 }

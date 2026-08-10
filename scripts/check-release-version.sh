@@ -13,6 +13,12 @@ fi
 release_tag=$1
 release_version=${release_tag#v}
 repository_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+release_notes="$repository_root/docs/release-notes/$release_tag.md"
+
+if [[ ! -f $release_notes ]]; then
+  echo "missing release notes: $release_notes" >&2
+  exit 1
+fi
 
 while IFS= read -r manifest; do
   package_name=$(node -p "require(process.argv[1]).name" "$manifest")
@@ -42,4 +48,4 @@ if (alias.dependencies["tw-doctor"] !== version) {
 }
 NODE
 
-echo "All npm packages match $release_tag."
+echo "All npm packages and release notes match $release_tag."

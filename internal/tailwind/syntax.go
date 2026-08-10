@@ -1,7 +1,6 @@
 package tailwind
 
 import (
-	"sort"
 	"strings"
 )
 
@@ -40,6 +39,10 @@ func (syntax UtilitySyntax) separator() string {
 
 // ParsedUtility is a utility separated into the parts that affect its meaning.
 type ParsedUtility struct {
+	// Recognized is false when the project requires a prefix and the raw class
+	// does not carry it. An unprefixed class may belong to application CSS, so
+	// Tailwind rules must not treat it as a utility.
+	Recognized bool
 	// Variants are the stacked conditions, in source order.
 	Variants []string
 	// Base is the utility with variants, prefix, important marker, and leading
@@ -90,16 +93,19 @@ func SplitOnSeparator(raw, separator string) []string {
 func ParseUtility(raw string, syntax UtilitySyntax) ParsedUtility {
 	segments := SplitOnSeparator(raw, syntax.separator())
 	prefixNegative := false
+	recognized := syntax.Prefix == ""
 	if syntax.PrefixIsVariant && syntax.Prefix != "" && len(segments) > 1 {
 		switch segments[0] {
 		case syntax.Prefix:
 			segments = segments[1:]
+			recognized = true
 		case "-" + syntax.Prefix:
 			segments = segments[1:]
 			prefixNegative = true
+			recognized = true
 		}
 	}
-	parsed := ParsedUtility{Base: segments[len(segments)-1]}
+	parsed := ParsedUtility{Base: segments[len(segments)-1], Recognized: recognized}
 	if len(segments) > 1 {
 		parsed.Variants = segments[:len(segments)-1]
 	}
@@ -121,22 +127,24 @@ func ParseUtility(raw string, syntax UtilitySyntax) ParsedUtility {
 		parsed.Negative = true
 	}
 	if syntax.Prefix != "" && !syntax.PrefixIsVariant {
-		parsed.Base = strings.TrimPrefix(parsed.Base, syntax.Prefix)
+		if trimmed, found := strings.CutPrefix(parsed.Base, syntax.Prefix); found {
+			parsed.Base = trimmed
+			parsed.Recognized = true
+		}
 	}
 
 	return parsed
 }
 
-// VariantKey identifies the condition under which a utility applies. Variants
-// are sorted because hover:md:p-4 and md:hover:p-4 select the same elements, so
-// two utilities carrying them conflict with each other.
+// VariantKey identifies the ordered condition under which a utility applies.
+// Some stacked variants are order-sensitive, and Tailwind v3 and v4 even apply
+// their stacks in opposite directions. Only an identical sequence is therefore
+// safe to treat as the same selector context.
 func (parsed ParsedUtility) VariantKey() string {
 	if len(parsed.Variants) == 0 {
 		return ""
 	}
-	sorted := append([]string(nil), parsed.Variants...)
-	sort.Strings(sorted)
-	return strings.Join(sorted, "|")
+	return strings.Join(parsed.Variants, "|")
 }
 
 // HasArbitraryValue reports a bracketed value such as text-[#123456]. An

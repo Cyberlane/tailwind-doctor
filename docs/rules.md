@@ -39,7 +39,11 @@ cannot be classified conservatively remains medium confidence and score-neutral.
 
 Reports utility classes in the same variant that target the same simple utility group, such as `p-4 p-2`. Variant-specific utilities such as `p-4 md:p-6` are treated as independent.
 
-Stacked variants are compared as a set, so `hover:md:p-4` and `md:hover:p-2` are seen to select the same elements and do conflict. An important marker (`!p-4` or `p-4!`) and a leading minus (`-mt-2`) change how a utility applies but not which property it sets, so they do not exempt it.
+Stacked variants are compared in source order. Tailwind contains order-sensitive
+variant combinations, so only identical stacks such as `hover:md:p-4` and
+`hover:md:p-2` are treated as the same selector context. An important marker
+(`!p-4` or `p-4!`) and a leading minus (`-mt-2`) change how a utility applies but
+not which property it sets, so they do not exempt it.
 
 ## `no-arbitrary-value`
 

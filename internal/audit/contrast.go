@@ -93,6 +93,9 @@ func inspectContrast(file string, list ClassList, syntax tailwind.UtilitySyntax,
 
 	for _, token := range splitUtilities(list) {
 		parsed := tailwind.ParseUtility(token.text, syntax)
+		if !parsed.Recognized {
+			continue
+		}
 		key := parsed.VariantKey()
 		switch {
 		case strings.HasPrefix(parsed.Base, "text-opacity-"):

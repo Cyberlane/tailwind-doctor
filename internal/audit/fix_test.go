@@ -50,7 +50,7 @@ func TestFixHandlesEveryVerbatimExtractionShape(t *testing.T) {
 	writeFile(t, root, "package.json", `{"dependencies":{"tailwindcss":"^4.1.0"}}`)
 	writeFile(t, root, "app.css", "@import \"tailwindcss\"; @theme { --color-brand: #abcdef; }\n.card { @apply text-[#abcdef]; }\n")
 	writeFile(t, root, "page.html", `<div class="text-[#abcdef]"></div>`)
-	writeFile(t, root, "card.tsx", `const card = cva("text-[#abcdef]", { variants: { tone: { brand: "text-[#abcdef]" } } }); const value = clsx("text-[#abcdef]")`)
+	writeFile(t, root, "card.tsx", `import clsx from "clsx"; import { cva } from "class-variance-authority"; const card = cva("text-[#abcdef]", { variants: { tone: { brand: "text-[#abcdef]" } } }); const value = clsx("text-[#abcdef]")`)
 	writeFile(t, root, "nav.vue", `<div :class="['text-[#abcdef]']"></div>`)
 	writeFile(t, root, "hero.astro", `<div class:list={['text-[#abcdef]']}></div>`)
 

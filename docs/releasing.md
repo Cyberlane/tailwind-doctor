@@ -53,7 +53,7 @@ The following must all carry the same version before tagging:
 Validate the version and complete distribution locally:
 
 ```bash
-scripts/check-release-version.sh v0.1.0
+scripts/check-release-version.sh vMAJOR.MINOR.PATCH
 scripts/test-release.sh
 ```
 
