@@ -17,51 +17,24 @@ if [[ "$installed_version" != "$required_version" ]]; then
   exit 1
 fi
 
-is_supported_source() {
-  local path=$1
-  case "$path" in
-    *.bash|*.cjs|*.cts|*.go|*.js|*.jsx|*.mjs|*.mts|*.py|*.pyi|*.rs|*.sh|*.swift|*.ts|*.tsx|*.zsh)
-      return 0
-      ;;
-  esac
-
-  local first_line
-  if [[ -f "$path" ]] && IFS= read -r first_line < "$path"; then
-    case "$first_line" in
-      '#!'*'/bash'|'#!'*'/dash'|'#!'*'/sh'|'#!'*'/zsh'|'#!'*'/env bash'|'#!'*'/env dash'|'#!'*'/env sh'|'#!'*'/env zsh'|'#!'*'/env node'|'#!'*'/env nodejs'|'#!'*'/env python'|'#!'*'/env python3')
-        return 0
-        ;;
-    esac
-  fi
-  return 1
-}
-
-staged_sources=()
-while IFS= read -r -d '' path; do
-  if is_supported_source "$path"; then
-    staged_sources+=("$path")
-  fi
-done < <(git diff --cached --name-only --diff-filter=ACMR -z)
-
-if (( ${#staged_sources[@]} == 0 )); then
-  exit 0
-fi
-
-for path in "${staged_sources[@]}"; do
-  if ! git diff --quiet -- "$path"; then
-    echo "Mori cannot review partially staged source: $path" >&2
-    echo "Stage the complete file or restore its unstaged changes before committing." >&2
-    exit 1
-  fi
-done
-
 report=$(mktemp "${TMPDIR:-/tmp}/tw-doctor-mori.XXXXXX")
 trap 'rm -f "$report"' EXIT
 
-arguments=(scan --format text --fail-on-focused-match)
-for path in "${staged_sources[@]}"; do
-  arguments+=(--focus-path "$path")
-done
+arguments=(review staged check --format text)
+
+receipt_mode=${MORI_STAGED_REVIEW_RECEIPT:-}
+if [[ -n "$receipt_mode" ]]; then
+  if [[ "$receipt_mode" != "1" ]]; then
+    echo "MORI_STAGED_REVIEW_RECEIPT must be exactly 1 when explicitly authorized." >&2
+    exit 2
+  fi
+  receipt_path=$(git rev-parse --git-path mori/staged-review.json)
+  if [[ ! -f "$receipt_path" ]]; then
+    echo "No local staged review receipt exists. Inspect the report, then run 'mori review staged acknowledge --accept-focused .' only with explicit maintainer authorization." >&2
+    exit 1
+  fi
+  arguments+=(--review-receipt "$receipt_path")
+fi
 
 set +e
 mori "${arguments[@]}" . >"$report" 2>&1
@@ -69,12 +42,13 @@ status=$?
 set -e
 
 if (( status == 0 )); then
-  echo "Mori pre-commit review passed for ${#staged_sources[@]} staged source file(s)."
+  echo "Mori pre-commit staged-index review passed."
   exit 0
 fi
 
 sed -n '1,2400p' "$report" >&2
 if (( status == 3 )); then
   echo "Mori found focused structural matches. Inspect both locations and reuse, refactor, or document why the similarity is intentional." >&2
+  echo "For an explicitly authorized one-commit exception, create an exact staged receipt and run the commit with MORI_STAGED_REVIEW_RECEIPT=1; findings remain visible." >&2
 fi
 exit "$status"

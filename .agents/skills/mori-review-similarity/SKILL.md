@@ -75,7 +75,7 @@ status `4` means at least one configured coverage policy failed. The report is
 still written; classify the scan as not applicable or insufficiently covered,
 never as a clean result.
 
-Schema-16 reports include `coverage` and `file_coverage`. Verify the exact
+Schema-18 reports include `coverage` and `file_coverage`. Verify the exact
 fragment-file numerator and analyzed-file denominator, then inspect every
 supported file with zero fragments, its zero-fragment reason, boundary counts,
 skipped-fragment count, and parse-diagnostic count. Generated exclusions remain
@@ -120,6 +120,21 @@ with a changed occurrence. It never fetches the revision. Use repeatable
 `--focus-path` for exact paths when Git-derived focus is unavailable or when a
 review includes additional files. The two focus inputs are additive.
 
+For a pre-commit review, prefer the immutable index snapshot:
+
+```sh
+mori review staged check --format json .
+```
+
+Confirm `configuration.input.mode` is `git-index`, retain its HEAD and index
+digest, and require both working-tree inclusion flags to be false. Staged mode
+reads tracked source, ignore rules, `.mori.json`, and any baseline from that
+same snapshot; a baseline must be a tracked regular file inside the worktree.
+It must never be described as including unstaged, external, or untracked
+content.
+`--include-focused` bypasses ordinary ignore rules for focused files but not
+explicit excludes, generated policy, unsupported syntax, or resource limits.
+
 One revision does not safely describe multiple worktree histories. When the
 full scan includes a nested worktree or submodule, give it its own locally
 available revision with repeatable `--changed-worktree PATH=REVISION` values:
@@ -146,6 +161,12 @@ by default. Inspect `configuration` in the JSON report to verify the effective
 config, ignore files, exclusions, comparison domain, and family or pair
 filters. Use `--no-ignore` or `--no-config` only when the review scope requires
 it.
+
+When `.mori.json` defines named review surfaces, prefer `--scope NAME` over
+reconstructing roots and exclusions. Verify `configuration.scope` and
+`scope_roots`; explicit positional paths replace only the scope's default
+roots. Use `--format compact` for a bounded shortlist only. Retain JSON for
+machine validation and durable evidence.
 
 For intentional cross-language discovery, choose exactly one filtering mode.
 Use this broad family selection:
@@ -177,11 +198,26 @@ Never combine
 TypeScript and TSX belong to one family and do not count as cross-language.
 Bash/POSIX shell and Zsh likewise belong to the `shell` family. Use
 `--language-pair bash,zsh` when only cross-dialect shell results are wanted.
+PHP and Hack likewise belong to the `php-hack` family. Use `--language-pair
+php,hack` for a dialect-only review. Modern Hack uses `.hack`; legacy `.php`
+is selected as Hack only from an exact bounded `<?hh` header on the first line
+or after one optional shebang.
 Shell files produce a `script` comparison unit for top-level executable
 statements and separate `function` units for named functions, each subject to
 the token floor. Require both fragment kinds when claiming shell-file coverage;
 a function-only result does not cover top-level orchestration, and a script
 result excludes function bodies.
+Java support covers implemented methods, constructors, compact constructors,
+and lambdas; bodyless methods are unexamined. C# support covers implemented
+methods, constructors, destructors, operators, accessors, local functions,
+anonymous methods, and lambdas; bodyless members are unexamined. Treat type
+checking, overload resolution, dispatch, exception behavior, and effects as
+source-review concerns rather than conclusions from canonical syntax.
+PHP support covers implemented functions, methods, anonymous functions, and
+arrow functions. Hack covers implemented functions, methods, anonymous
+functions, and lambdas. Bodyless declarations are unexamined. The pinned Hack
+grammar upstream is archived, so disclose Hack parser warnings as incomplete
+coverage and inspect newer syntax directly.
 Swift support covers implemented functions, initializers, deinitializers, and
 closures. Treat protocol requirements, computed properties, accessors, and
 subscripts as unexamined comparison units, and disclose any Swift parser
@@ -248,7 +284,7 @@ requires it.
 
 ## Validate the report
 
-Require `schema_version` to equal `16`. Validate the mandatory `tool` object,
+Require `schema_version` to equal `19`. Validate the mandatory `tool` object,
 including version, revision, source date, modified flag, platform, Go version,
 and normalization version. Official release binaries provide a full revision
 and source date. A version-pinned source build can report its version while
@@ -280,10 +316,18 @@ revision or date from the version string. Inspect:
   and how many focused files were actually discovered. In multi-worktree mode,
   verify every `worktrees` entry and its independent requested base and full
   commits; do not infer nested-repository coverage from the parent entry;
+- `configuration.focus.path_evidence`: require every supported non-deleted focused path
+  to be `analyzed` in strict review, and report generated, resource,
+  unsupported, or undiscovered statuses instead of collapsing them;
+- `configuration.input`: for staged scans, verify the Git-index digest, HEAD,
+  and false working-tree and untracked inclusion flags; the index digest also
+  binds any loaded baseline blob;
+- `configuration.scope` and `scope_roots`: verify the selected named project
+  surface and remember that these fields participate in baseline compatibility;
 - `configuration.profile`: record the selected named defaults and verify the
   neighboring effective fields rather than assuming the profile was unmodified;
 - `configuration.scan_profile_digest`, `baseline_profile_digest`, and
-  `baseline_profile_status`: require exact schema-3 profile compatibility when
+  `baseline_profile_status`: require exact schema-4 profile compatibility when
   a baseline suppresses findings;
 - `configuration.ignore_file_evidence`: confirm that each loaded ignore source
   has exact SHA-256 content evidence included in the scan-profile digest;
@@ -312,7 +356,8 @@ revision or date from the version string. Inspect:
   highly without treating the summary as behavioral evidence.
 - `review_priority` and `review_signals`: when review ranking is selected,
   explain the source-location reasons for ordering and never present the
-  priority as semantic confidence.
+  priority as semantic confidence. Generic entry-point, constructor, and
+  anonymous names deliberately do not receive same-name priority.
 
 Treat an operational error or an unexpected schema as a failed scan. Exit
 status `3` means policy findings were found with `--fail-on-match` or
@@ -321,6 +366,13 @@ after the repository has adopted a reviewed threshold, scope, and exclusions.
 Exit status `4` means one or more strict coverage policies were not met and
 must be reported as not applicable or incomplete rather than as a successful
 clean scan. Coverage failure takes precedence over finding status `3`.
+
+When the project has a `.mori-version` or project-installed Mori skill, check
+their coordination after a CLI update with `mori project upgrade --check .`.
+Exit status `5` means managed assets drift. Preview with `--dry-run` before an
+authorized `--apply`; apply updates the pin and embedded skill with backups but
+does not install the CLI, rewrite project-specific automation, commit, push, or
+release.
 
 When reviewing a change, rely on native focus ordering when available. Review
 at most 25 distinct identities deeply, not the first 25 raw location pairs.
@@ -352,9 +404,26 @@ revoke acceptance. `baseline update` is preview-only unless `--accept-all` is
 explicit. Mutations use complete internal reports and reject warnings unless
 each reviewed kind is repeated with `--allow-warning`.
 
-Schema-3 baselines bind acceptance to the effective scan-profile digest.
+When the owner explicitly accepts focused findings for exactly one staged
+commit and durable suppression would be misleading, use:
+
+```sh
+mori review staged acknowledge --accept-focused .
+```
+
+The default local receipt lives under
+private Git metadata and uses owner-only permissions on POSIX filesystems.
+Pass it to `mori review staged check` with `--review-receipt`; require a
+compatible receipt in schema-19 evidence. The canonical check and acknowledge
+commands share staged focused-file inclusion and complete focused coverage by
+construction. The receipt changes only the focused-match policy exit status,
+never hides findings, and any HEAD, index, staged-review contract, profile,
+tool, normalization, or focused-identity change invalidates it.
+
+Schema-4 baselines bind acceptance to the effective scan-profile digest and
+support `false-positive` as a precise durable classification.
 Require `configuration.baseline_profile_status` to be `compatible` in strict
-gates. Schema-1 and schema-2 baselines remain readable with a warning, but use
+gates. Schema-1 through schema-3 baselines remain readable with a warning, but use
 `baseline migrate --accept-profile` before mutation. Content scope is the
 default: one accepted normalized content-pair identity can suppress identical
 copies in new locations. Use path scope when copied code in a new file must
