@@ -79,6 +79,12 @@ Do not claim work is complete without running them and reading the output.
   statement blocks, or bypass the hook merely to make a commit pass.
 - Treat warnings, parse diagnostics, skipped fragments, zero-fragment files,
   insufficient coverage, and truncation as incomplete evidence.
+- Keep the tracked hook active. It uses `mori review staged check` to review one
+  immutable index with complete focused-source coverage. For an explicitly
+  maintainer-authorized one-commit exception, inspect the complete report, run
+  `mori review staged acknowledge --accept-focused .`, and commit that exact
+  index with `MORI_STAGED_REVIEW_RECEIPT=1`; the receipt changes only exit policy
+  and fails closed after any bound input or contract changes.
 - Do not use `git commit --no-verify` without explicit maintainer approval and a
   recorded rationale.
 
