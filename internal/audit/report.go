@@ -289,6 +289,23 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 				CountNoun(projectTokens, "project token"), len(tokenPackage.Unused),
 				CountNoun(len(tokenPackage.Inventory), "total inventory entry", "total inventory entries"),
 				tokenPackage.Confidence)
+			// "N unused" with no names would send the reader to --json for the
+			// very thing this line exists to say.
+			if len(tokenPackage.Unused) > 0 {
+				const unusedShown = 5
+				names := make([]string, 0, unusedShown)
+				for _, token := range tokenPackage.Unused {
+					if len(names) == unusedShown {
+						break
+					}
+					names = append(names, token.Path)
+				}
+				fmt.Fprintf(writer, "  - unused: %s", strings.Join(names, ", "))
+				if remaining := len(tokenPackage.Unused) - len(names); remaining > 0 {
+					fmt.Fprintf(writer, ", … and %d more", remaining)
+				}
+				fmt.Fprintln(writer)
+			}
 			for _, reason := range tokenPackage.ConfidenceReasons {
 				fmt.Fprintf(writer, "  - %s\n", reason)
 			}

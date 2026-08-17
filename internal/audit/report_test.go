@@ -316,6 +316,32 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	}
 }
 
+// "46 unused" with no names sends the reader to --json for the very thing the
+// line exists to say; the first few names belong on the report.
+func TestHumanReportNamesUnusedTokens(t *testing.T) {
+	unused := []TokenReport{}
+	for index := range 7 {
+		unused = append(unused, TokenReport{Path: fmt.Sprintf("--color-legacy-%d", index)})
+	}
+	report := Report{Tokens: []TokenPackageReport{{
+		Package: ".", TailwindVersion: "4", Unused: unused,
+	}}}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+	if !strings.Contains(buffer.String(),
+		"  - unused: --color-legacy-0, --color-legacy-1, --color-legacy-2, --color-legacy-3, --color-legacy-4, … and 2 more\n") {
+		t.Errorf("human output does not name the unused tokens:\n%s", buffer.String())
+	}
+
+	report.Tokens[0].Unused = unused[:1]
+	buffer.Reset()
+	WriteHuman(&buffer, report)
+	if !strings.Contains(buffer.String(), "  - unused: --color-legacy-0\n") {
+		t.Errorf("a short unused list is printed whole:\n%s", buffer.String())
+	}
+}
+
 // A CI log that says "exit 1" without saying which gate failed sends the
 // reader to the workflow file; the verdict can carry the gate itself.
 func TestHumanReportShowsTheGateInTheVerdict(t *testing.T) {

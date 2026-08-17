@@ -13,6 +13,7 @@ Tailwind Doctor: 13/100
 
 Token coverage:
 - . (Tailwind v4): 3 project tokens, 1 unused, 3 total inventory entries, high confidence
+  - unused: --color-orphan
 
 Findings by rule:
 - no-arbitrary-value: 1
