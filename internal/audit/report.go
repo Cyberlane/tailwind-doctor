@@ -302,6 +302,7 @@ func WriteHuman(writer io.Writer, report Report) {
 	unscored := len(report.Findings) - scored
 
 	writeRuleSummary(writer, report.Findings)
+	writeRepeatedArbitraryValues(writer, report.Findings)
 	if scored == len(report.Findings) {
 		fmt.Fprintf(writer, "\n%d finding(s):\n", len(report.Findings))
 	} else {
@@ -331,6 +332,66 @@ func WriteHuman(writer io.Writer, report Report) {
 	}
 	if report.Suppressed > 0 {
 		fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)
+	}
+}
+
+// repeatedValuesShown caps the repeated-values block: the point is the handful
+// of missing tokens that dominate, not a second exhaustive list.
+const repeatedValuesShown = 10
+
+// writeRepeatedArbitraryValues aggregates no-arbitrary-value findings by the
+// offending utility. One value used 165 times is one missing design token, not
+// 165 separate problems, and this block is where that becomes visible.
+func writeRepeatedArbitraryValues(writer io.Writer, findings []Finding) {
+	type valueCount struct {
+		class       string
+		count       int
+		replacement string
+	}
+	byClass := map[string]*valueCount{}
+	for _, finding := range findings {
+		if finding.Rule != "no-arbitrary-value" {
+			continue
+		}
+		count, found := byClass[finding.Class]
+		if !found {
+			count = &valueCount{class: finding.Class}
+			byClass[finding.Class] = count
+		}
+		count.count++
+		if count.replacement == "" {
+			count.replacement = finding.replacement
+		}
+	}
+	repeated := make([]*valueCount, 0, len(byClass))
+	for _, count := range byClass {
+		if count.count > 1 {
+			repeated = append(repeated, count)
+		}
+	}
+	if len(repeated) == 0 {
+		return
+	}
+	sort.Slice(repeated, func(left, right int) bool {
+		if repeated[left].count != repeated[right].count {
+			return repeated[left].count > repeated[right].count
+		}
+		return repeated[left].class < repeated[right].class
+	})
+	fmt.Fprintln(writer, "\nRepeated arbitrary values:")
+	shown := repeated
+	if len(shown) > repeatedValuesShown {
+		shown = shown[:repeatedValuesShown]
+	}
+	for _, count := range shown {
+		fmt.Fprintf(writer, "- %d × %s", count.count, count.class)
+		if count.replacement != "" {
+			fmt.Fprintf(writer, " → %s", count.replacement)
+		}
+		fmt.Fprintln(writer)
+	}
+	if len(repeated) > len(shown) {
+		fmt.Fprintf(writer, "- … and %d more repeated value(s)\n", len(repeated)-len(shown))
 	}
 }
 

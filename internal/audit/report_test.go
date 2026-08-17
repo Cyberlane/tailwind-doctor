@@ -316,6 +316,39 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	}
 }
 
+// text-[11px] appearing 165 times is one missing token, not 165 separate
+// problems. Aggregating repeated arbitrary values turns a wall of findings
+// into a handful of design decisions.
+func TestHumanReportAggregatesRepeatedArbitraryValues(t *testing.T) {
+	findings := []Finding{
+		{Rule: "no-conflicting-utilities", Class: "p-2 p-4", File: "src/x.tsx", Message: "conflict", Scored: true},
+	}
+	for range 3 {
+		findings = append(findings, Finding{Rule: "no-arbitrary-value", Class: "text-[11px]",
+			File: "src/a.tsx", Message: "avoid", Scored: true})
+	}
+	for range 2 {
+		findings = append(findings, Finding{Rule: "no-arbitrary-value", Class: "w-[13px]",
+			File: "src/b.tsx", Message: "avoid", Scored: true, replacement: "w-3.5"})
+	}
+	findings = append(findings, Finding{Rule: "no-arbitrary-value", Class: "h-[9px]",
+		File: "src/c.tsx", Message: "avoid", Scored: true})
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, Report{Findings: findings})
+	output := buffer.String()
+
+	block := "Repeated arbitrary values:\n" +
+		"- 3 × text-[11px]\n" +
+		"- 2 × w-[13px] → w-3.5\n"
+	if !strings.Contains(output, block) {
+		t.Errorf("human output is missing the repeated-values block:\n%s", output)
+	}
+	if strings.Contains(output, "- 1 × h-[9px]") {
+		t.Errorf("a value seen once must not be aggregated:\n%s", output)
+	}
+}
+
 // A doctor that only diagnoses buries its own cure: --fix exists, so the
 // report must say how many findings it would resolve.
 func TestHumanReportCountsAutoFixableFindings(t *testing.T) {
