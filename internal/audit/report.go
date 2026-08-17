@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"runtime/debug"
+	"sort"
 	"strings"
 
 	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
@@ -290,6 +291,8 @@ func WriteHuman(writer io.Writer, report Report) {
 		}
 	}
 	unscored := len(report.Findings) - scored
+
+	writeRuleSummary(writer, report.Findings)
 	if scored == len(report.Findings) {
 		fmt.Fprintf(writer, "\n%d finding(s):\n", len(report.Findings))
 	} else {
@@ -310,5 +313,46 @@ func WriteHuman(writer io.Writer, report Report) {
 	}
 	if report.Suppressed > 0 {
 		fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)
+	}
+}
+
+// writeRuleSummary answers "what kind of debt dominates" before the per-file
+// list answers "where". Rules are ordered by total count, then by name, so the
+// output stays deterministic when counts tie.
+func writeRuleSummary(writer io.Writer, findings []Finding) {
+	type ruleCount struct {
+		rule   string
+		total  int
+		scored int
+	}
+	byRule := map[string]*ruleCount{}
+	for _, finding := range findings {
+		count, found := byRule[finding.Rule]
+		if !found {
+			count = &ruleCount{rule: finding.Rule}
+			byRule[finding.Rule] = count
+		}
+		count.total++
+		if finding.Scored {
+			count.scored++
+		}
+	}
+	counts := make([]*ruleCount, 0, len(byRule))
+	for _, count := range byRule {
+		counts = append(counts, count)
+	}
+	sort.Slice(counts, func(left, right int) bool {
+		if counts[left].total != counts[right].total {
+			return counts[left].total > counts[right].total
+		}
+		return counts[left].rule < counts[right].rule
+	})
+	fmt.Fprintln(writer, "\nFindings by rule:")
+	for _, count := range counts {
+		if count.scored == count.total {
+			fmt.Fprintf(writer, "- %s: %d\n", count.rule, count.total)
+			continue
+		}
+		fmt.Fprintf(writer, "- %s: %d (%d scored)\n", count.rule, count.total, count.scored)
 	}
 }

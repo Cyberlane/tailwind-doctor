@@ -16,6 +16,10 @@ Accessibility coverage gaps:
 Token coverage:
 - . (Tailwind v4): 3 project token(s), 1 unused, 3 total inventory entries, high confidence
 
+Findings by rule:
+- no-arbitrary-value: 1
+- unused-token: 1
+
 2 finding(s):
 - [unused-token] app.css:7:3: Custom token --color-orphan is not used by any resolved class list.
 - [no-arbitrary-value] app.css:11:23: Avoid arbitrary values; use mt-4, which matches --spacing.

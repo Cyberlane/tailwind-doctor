@@ -11,6 +11,9 @@ Accessibility coverage gaps:
   Consistency      23
   Maintainability  not measured
 
+Findings by rule:
+- no-arbitrary-value: 1
+
 1 finding(s):
 - [no-arbitrary-value] page.html:1:21: Avoid arbitrary values; replace text-[#abcdef] with a named design token.
 

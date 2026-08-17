@@ -22,6 +22,9 @@ Accessibility coverage gaps:
 Token coverage:
 - . (Tailwind v4): 13 project token(s), 0 unused, 13 total inventory entries, high confidence
 
+Findings by rule:
+- color-contrast: 6
+
 6 finding(s):
 - [color-contrast] known-fail.html:1:11: text-ink on bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
 - [color-contrast] known-fail.html:2:11: text-ink on bg-panel has a 4.48:1 contrast ratio; WCAG 2.2 requires at least 4.5:1. Use text-black for a passing foreground token.

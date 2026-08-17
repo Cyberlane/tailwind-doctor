@@ -11,6 +11,11 @@ Accessibility coverage gaps:
   Consistency      47
   Maintainability  100
 
+Findings by rule:
+- no-arbitrary-value: 2
+- no-conflicting-utilities: 2
+- variant-density: 1 (0 scored)
+
 5 finding(s), 4 scored:
 - [no-arbitrary-value] src/card.tsx:2:55: Avoid arbitrary values; replace shadow-[0_1px_2px_rgba(0,0,0,0.1)] with a named design token.
 - [no-conflicting-utilities] src/page.html:1:17: p-4 conflicts with p-2 in the same variant.

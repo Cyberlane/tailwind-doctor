@@ -279,11 +279,37 @@ func TestHumanReportSummarizesUnscoredFindings(t *testing.T) {
 			t.Errorf("human output is missing %q:\n%s", want, output)
 		}
 	}
-	if strings.Contains(output, "variant-density") {
+	if strings.Contains(output, "[variant-density]") {
 		t.Errorf("unscored findings must not be listed in human output:\n%s", output)
 	}
 	if report.Score != MaximumScore {
 		t.Errorf("a medium-confidence finding must not move the score, got %d", report.Score)
+	}
+}
+
+// On a project with thousands of findings the list alone answers "where", not
+// "what kind of debt dominates"; the per-rule counts answer that in one glance.
+func TestHumanReportSummarizesFindingsByRule(t *testing.T) {
+	report := Report{
+		Findings: []Finding{
+			{Rule: "no-arbitrary-value", File: "src/a.tsx", Message: "one", Scored: true},
+			{Rule: "no-arbitrary-value", File: "src/b.tsx", Message: "two", Scored: true},
+			{Rule: "no-conflicting-utilities", File: "src/c.tsx", Message: "three", Scored: true},
+			{Rule: "no-conflicting-utilities", File: "src/d.tsx", Message: "four", Confidence: ConfidenceMedium},
+			{Rule: "variant-density", File: "src/e.tsx", Message: "five", Confidence: ConfidenceMedium},
+		},
+	}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+	output := buffer.String()
+
+	summary := "Findings by rule:\n" +
+		"- no-arbitrary-value: 2\n" +
+		"- no-conflicting-utilities: 2 (1 scored)\n" +
+		"- variant-density: 1 (0 scored)\n"
+	if !strings.Contains(output, summary) {
+		t.Errorf("human output is missing the per-rule summary:\n%s", output)
 	}
 }
 
@@ -302,10 +328,10 @@ func TestHumanReportListsScoredFindingsOnly(t *testing.T) {
 	WriteHuman(&buffer, report)
 	output := buffer.String()
 
-	if !strings.Contains(output, "no-arbitrary-value") {
+	if !strings.Contains(output, "[no-arbitrary-value]") {
 		t.Errorf("scored finding missing from human output:\n%s", output)
 	}
-	if strings.Contains(output, "no-conflicting-utilities") {
+	if strings.Contains(output, "[no-conflicting-utilities]") {
 		t.Errorf("unscored finding listed in human output:\n%s", output)
 	}
 	for _, want := range []string{
