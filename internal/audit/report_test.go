@@ -316,6 +316,52 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	}
 }
 
+// Repeating the full path on every finding buries the findings; grouping under
+// one file header is how every mainstream linter keeps long lists readable.
+func TestHumanReportGroupsFindingsByFile(t *testing.T) {
+	report := Report{Findings: []Finding{
+		{Rule: "no-arbitrary-value", File: "src/a.tsx", Line: 3, Column: 7, Message: "first", Scored: true},
+		{Rule: "no-arbitrary-value", File: "src/a.tsx", Line: 9, Column: 2, Message: "second", Scored: true},
+		{Rule: "no-conflicting-utilities", File: "src/b.tsx", Line: 1, Column: 1, Message: "third", Scored: true},
+	}}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+
+	block := "src/a.tsx\n" +
+		"  3:7 [no-arbitrary-value] first\n" +
+		"  9:2 [no-arbitrary-value] second\n" +
+		"src/b.tsx\n" +
+		"  1:1 [no-conflicting-utilities] third\n"
+	if !strings.Contains(buffer.String(), block) {
+		t.Errorf("human output is missing the grouped findings:\n%s", buffer.String())
+	}
+}
+
+// The human report is for reading, not archiving: past a point, more lines are
+// less information. The machine formats stay exhaustive.
+func TestHumanReportTruncatesLongFindingLists(t *testing.T) {
+	findings := []Finding{}
+	for index := range 130 {
+		findings = append(findings, Finding{Rule: "no-arbitrary-value",
+			File: fmt.Sprintf("src/f%03d.tsx", index), Line: 1, Column: 1, Message: "m", Scored: true})
+	}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, Report{Findings: findings})
+	output := buffer.String()
+
+	if !strings.Contains(output, "src/f099.tsx") {
+		t.Errorf("finding 100 should still be listed:\n%s", output)
+	}
+	if strings.Contains(output, "src/f100.tsx") {
+		t.Errorf("finding 101 should be truncated:\n%s", output)
+	}
+	if !strings.Contains(output, "… and 30 more finding(s) in 30 file(s); use --json or --sarif for the full list.") {
+		t.Errorf("human output is missing the truncation notice:\n%s", output)
+	}
+}
+
 // text-[11px] appearing 165 times is one missing token, not 165 separate
 // problems. Aggregating repeated arbitrary values turns a wall of findings
 // into a handful of design decisions.

@@ -308,13 +308,7 @@ func WriteHuman(writer io.Writer, report Report) {
 	} else {
 		fmt.Fprintf(writer, "\n%d finding(s), %d scored:\n", len(report.Findings), scored)
 	}
-	for _, finding := range report.Findings {
-		if !finding.Scored {
-			continue
-		}
-		fmt.Fprintf(writer, "- [%s] %s:%d:%d: %s\n",
-			finding.Rule, finding.File, finding.Line, finding.Column, finding.Message)
-	}
+	writeGroupedFindings(writer, report.Findings)
 	// Unscored findings are still real observations, but at medium or low
 	// confidence they drown out the scored list in large projects. The machine
 	// formats carry every finding; the human format carries the count.
@@ -332,6 +326,55 @@ func WriteHuman(writer io.Writer, report Report) {
 	}
 	if report.Suppressed > 0 {
 		fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)
+	}
+}
+
+// findingsShown caps the findings list. The human report is for reading, not
+// archiving: past this point more lines carry less information, and the
+// machine formats stay exhaustive. Truncation happens at a file boundary so a
+// file is never half-reported.
+const findingsShown = 100
+
+// writeGroupedFindings lists scored findings under one header per file, in the
+// report's existing total order, truncating after findingsShown findings.
+func writeGroupedFindings(writer io.Writer, findings []Finding) {
+	printed := 0
+	index := 0
+	for index < len(findings) {
+		if !findings[index].Scored {
+			index++
+			continue
+		}
+		file := findings[index].File
+		block := []Finding{}
+		for cursor := index; cursor < len(findings) && findings[cursor].File == file; cursor++ {
+			if findings[cursor].Scored {
+				block = append(block, findings[cursor])
+			}
+			index = cursor + 1
+		}
+		if printed >= findingsShown {
+			remainingFindings := len(block)
+			remainingFiles := 1
+			for cursor := index; cursor < len(findings); cursor++ {
+				if !findings[cursor].Scored {
+					continue
+				}
+				remainingFindings++
+				if findings[cursor].File != file {
+					file = findings[cursor].File
+					remainingFiles++
+				}
+			}
+			fmt.Fprintf(writer, "… and %d more finding(s) in %d file(s); use --json or --sarif for the full list.\n",
+				remainingFindings, remainingFiles)
+			return
+		}
+		fmt.Fprintln(writer, file)
+		for _, finding := range block {
+			fmt.Fprintf(writer, "  %d:%d [%s] %s\n", finding.Line, finding.Column, finding.Rule, finding.Message)
+		}
+		printed += len(block)
 	}
 }
 

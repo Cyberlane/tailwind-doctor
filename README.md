@@ -23,8 +23,9 @@ Resolved 310/322 candidate class list(s) (96%); 0 resolved list(s) were outside 
   Maintainability  not measured
 
 3 finding(s):
-- [no-conflicting-utilities] src/card.tsx:12:22: p-4 conflicts with p-2 in the same variant.
-- [no-arbitrary-value] src/card.tsx:12:31: Avoid arbitrary values; replace w-[137px] with a named design token.
+src/card.tsx
+  12:22 [no-conflicting-utilities] p-4 conflicts with p-2 in the same variant.
+  12:31 [no-arbitrary-value] Avoid arbitrary values; replace w-[137px] with a named design token.
 ```
 
 ## What Exists Today

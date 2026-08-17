@@ -26,9 +26,10 @@ Findings by rule:
 - color-contrast: 6
 
 6 finding(s):
-- [color-contrast] known-fail.html:1:11: text-ink on bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
-- [color-contrast] known-fail.html:2:11: text-ink on bg-panel has a 4.48:1 contrast ratio; WCAG 2.2 requires at least 4.5:1. Use text-black for a passing foreground token.
-- [color-contrast] known-fail.html:3:11: text-black/50 on bg-white has a 3.98:1 contrast ratio; WCAG 2.2 requires at least 4.5:1.
-- [color-contrast] known-fail.html:4:11: text-[#777777] on bg-[#888888] has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
-- [color-contrast] known-fail.html:5:11: text-oklch-a on bg-oklch-b has a 1.07:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
-- [color-contrast] known-fail.html:6:11: dark:text-ink on dark:bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use dark:text-black for a passing foreground token.
+known-fail.html
+  1:11 [color-contrast] text-ink on bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
+  2:11 [color-contrast] text-ink on bg-panel has a 4.48:1 contrast ratio; WCAG 2.2 requires at least 4.5:1. Use text-black for a passing foreground token.
+  3:11 [color-contrast] text-black/50 on bg-white has a 3.98:1 contrast ratio; WCAG 2.2 requires at least 4.5:1.
+  4:11 [color-contrast] text-[#777777] on bg-[#888888] has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
+  5:11 [color-contrast] text-oklch-a on bg-oklch-b has a 1.07:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
+  6:11 [color-contrast] dark:text-ink on dark:bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use dark:text-black for a passing foreground token.

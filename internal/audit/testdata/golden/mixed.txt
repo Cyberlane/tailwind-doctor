@@ -17,9 +17,12 @@ Findings by rule:
 - variant-density: 1 (0 scored)
 
 5 finding(s), 4 scored:
-- [no-arbitrary-value] src/card.tsx:2:55: Avoid arbitrary values; replace shadow-[0_1px_2px_rgba(0,0,0,0.1)] with a named design token.
-- [no-conflicting-utilities] src/page.html:1:17: p-4 conflicts with p-2 in the same variant.
-- [no-arbitrary-value] src/page.html:1:21: Avoid arbitrary values; replace text-[#123456] with a named design token.
-- [no-conflicting-utilities] styles.css:2:40: px-4 conflicts with px-2 in the same variant.
+src/card.tsx
+  2:55 [no-arbitrary-value] Avoid arbitrary values; replace shadow-[0_1px_2px_rgba(0,0,0,0.1)] with a named design token.
+src/page.html
+  1:17 [no-conflicting-utilities] p-4 conflicts with p-2 in the same variant.
+  1:21 [no-arbitrary-value] Avoid arbitrary values; replace text-[#123456] with a named design token.
+styles.css
+  2:40 [no-conflicting-utilities] px-4 conflicts with px-2 in the same variant.
 
 1 unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.
