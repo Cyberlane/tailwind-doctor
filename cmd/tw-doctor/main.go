@@ -126,7 +126,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 			return exitOperationalError
 		}
 	default:
-		audit.WriteHuman(stdout, report)
+		audit.WriteHumanWith(stdout, report, audit.HumanOptions{FailUnder: *failUnder})
 	}
 
 	// The threshold is always applied. A threshold of 0 is a valid, always-passing

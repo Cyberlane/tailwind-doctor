@@ -210,7 +210,18 @@ func WriteJSON(writer io.Writer, report Report) error {
 	return encoder.Encode(report)
 }
 
+// HumanOptions carries presentation state the report itself does not know:
+// today the CLI's --fail-under gate, so the verdict can say whether it passes.
+type HumanOptions struct {
+	// FailUnder is the CLI gate; zero means no gate was configured.
+	FailUnder int
+}
+
 func WriteHuman(writer io.Writer, report Report) {
+	WriteHumanWith(writer, report, HumanOptions{})
+}
+
+func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 	fmt.Fprintf(writer, "Tailwind Doctor: %d/%d", report.Score, MaximumScore)
 	if report.ScoreExcludingBaseline != report.Score {
 		fmt.Fprintf(writer, " (%d ignoring baseline)", report.ScoreExcludingBaseline)
@@ -311,6 +322,13 @@ func WriteHuman(writer io.Writer, report Report) {
 		report.Score, MaximumScore, len(report.Findings), scored)
 	if fixableCount > 0 {
 		fmt.Fprintf(writer, ", %d fixable", fixableCount)
+	}
+	if options.FailUnder > 0 {
+		state := "passing"
+		if report.Score < options.FailUnder {
+			state = "failing"
+		}
+		fmt.Fprintf(writer, " (gate --fail-under %d: %s)", options.FailUnder, state)
 	}
 	fmt.Fprintln(writer)
 }

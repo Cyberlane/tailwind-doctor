@@ -316,6 +316,35 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	}
 }
 
+// A CI log that says "exit 1" without saying which gate failed sends the
+// reader to the workflow file; the verdict can carry the gate itself.
+func TestHumanReportShowsTheGateInTheVerdict(t *testing.T) {
+	report := Report{
+		Score: 60,
+		Findings: []Finding{
+			{Rule: "no-arbitrary-value", File: "src/a.tsx", Message: "one", Scored: true},
+		},
+	}
+
+	var buffer bytes.Buffer
+	WriteHumanWith(&buffer, report, HumanOptions{FailUnder: 70})
+	if !strings.Contains(buffer.String(), "Tailwind Doctor: 60/100 — 1 finding(s), 1 scored (gate --fail-under 70: failing)") {
+		t.Errorf("verdict is missing the failing gate:\n%s", buffer.String())
+	}
+
+	buffer.Reset()
+	WriteHumanWith(&buffer, report, HumanOptions{FailUnder: 50})
+	if !strings.Contains(buffer.String(), "(gate --fail-under 50: passing)") {
+		t.Errorf("verdict is missing the passing gate:\n%s", buffer.String())
+	}
+
+	buffer.Reset()
+	WriteHuman(&buffer, report)
+	if strings.Contains(buffer.String(), "gate") {
+		t.Errorf("no gate configured, none shown:\n%s", buffer.String())
+	}
+}
+
 // On a long report the opening score scrolls out of the terminal before the
 // reader reaches the end; the verdict must also land at the prompt.
 func TestHumanReportRepeatsVerdictAtTheEnd(t *testing.T) {

@@ -98,6 +98,17 @@ func TestRunExitCodes(t *testing.T) {
 	}
 }
 
+// The human report must say which gate failed, so a CI log explains itself.
+func TestRunShowsTheGateInTheReport(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--fail-under", "99", writeProject(t, debtSource)}, &stdout, &stderr); code != exitBelowThreshold {
+		t.Fatalf("exit code = %d, want %d (stderr: %s)", code, exitBelowThreshold, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "(gate --fail-under 99: failing)") {
+		t.Fatalf("report does not name the failing gate: %q", stdout.String())
+	}
+}
+
 func TestRunRejectsOutOfRangeThresholdWithAnExplanation(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 
