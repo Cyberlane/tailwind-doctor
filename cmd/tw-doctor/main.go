@@ -99,13 +99,15 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fixed, err := audit.Fix(root)
 		if err != nil {
 			if fixed.Files > 0 {
-				fmt.Fprintf(stderr, "tw-doctor: fixed %d arbitrary value(s) in %d file(s) before the failure\n",
-					fixed.Replacements, fixed.Files)
+				fmt.Fprintf(stderr, "tw-doctor: fixed %s in %s before the failure\n",
+					audit.CountNoun(fixed.Replacements, "arbitrary value"),
+					audit.CountNoun(fixed.Files, "file"))
 			}
 			fmt.Fprintln(stderr, "tw-doctor:", err)
 			return exitOperationalError
 		}
-		fmt.Fprintf(stderr, "tw-doctor: fixed %d arbitrary value(s) in %d file(s)\n", fixed.Replacements, fixed.Files)
+		fmt.Fprintf(stderr, "tw-doctor: fixed %s in %s\n",
+			audit.CountNoun(fixed.Replacements, "arbitrary value"), audit.CountNoun(fixed.Files, "file"))
 	}
 
 	report, err := audit.Run(root)
@@ -164,6 +166,7 @@ func writeBaselineFile(root string, stdout, stderr io.Writer) int {
 		return exitOperationalError
 	}
 
-	fmt.Fprintf(stdout, "Wrote %s with %d suppressed finding(s).\n", destination, len(baseline.Suppressed))
+	fmt.Fprintf(stdout, "Wrote %s with %s.\n", destination,
+		audit.CountNoun(len(baseline.Suppressed), "suppressed finding"))
 	return exitSuccess
 }

@@ -1,8 +1,8 @@
 Tailwind Doctor: 26/100
 ✗ No Tailwind package detected; theme-dependent rules are disabled
-✓ Scanned 3 file(s): 6 class list(s), 18 utilities
-✗ 1 of 7 class list(s) (15%) are dynamic expressions and were not analyzed
-• 0 color pair(s) measured, 1 unknown; enable the color-contrast rule to score accessibility
+✓ Scanned 3 files: 6 class lists, 18 utilities
+✗ 1 of 7 class lists (15%) was not analyzed: dynamic expressions
+• 0 color pairs measured, 1 unknown; enable the color-contrast rule to score accessibility
 
   Accessibility    not measured
   Correctness      38
@@ -14,7 +14,7 @@ Findings by rule:
 - no-conflicting-utilities: 2
 - variant-density: 1 (0 scored)
 
-5 finding(s), 4 scored:
+5 findings, 4 scored:
 src/card.tsx
   2:55 [no-arbitrary-value] Avoid arbitrary values; replace shadow-[0_1px_2px_rgba(0,0,0,0.1)] with a named design token.
 src/page.html
@@ -23,6 +23,6 @@ src/page.html
 styles.css
   2:40 [no-conflicting-utilities] px-4 conflicts with px-2 in the same variant.
 
-1 unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.
+1 unscored finding hidden (medium or low confidence); use --json or --sarif to review.
 
-Tailwind Doctor: 26/100 — 5 finding(s), 4 scored
+Tailwind Doctor: 26/100 — 5 findings, 4 scored

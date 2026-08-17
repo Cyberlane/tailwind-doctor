@@ -14,10 +14,10 @@ npx tw-doctor .
 
 ```text
 Tailwind Doctor: 91/100
-✓ 1 Tailwind package(s) detected
-✓ Theme inventoried: 24 project token(s)
-✓ Scanned 42 file(s): 310 class list(s), 1840 utilities
-✗ 12 of 322 class list(s) (4%) are dynamic expressions and were not analyzed
+✓ 1 Tailwind package detected
+✓ Theme inventoried: 24 project tokens
+✓ Scanned 42 files: 310 class lists, 1840 utilities
+✗ 12 of 322 class lists (4%) were not analyzed: dynamic expressions
 ✓ Every resolved class list matched a Tailwind package
 
   Accessibility    not measured
@@ -25,10 +25,12 @@ Tailwind Doctor: 91/100
   Consistency      95
   Maintainability  not measured
 
-3 finding(s):
+2 findings:
 src/card.tsx
   12:22 [no-conflicting-utilities] p-4 conflicts with p-2 in the same variant.
   12:31 [no-arbitrary-value] Avoid arbitrary values; replace w-[137px] with a named design token.
+
+Tailwind Doctor: 91/100 — 2 findings, 2 scored
 ```
 
 ## What Exists Today

@@ -210,6 +210,24 @@ func WriteJSON(writer io.Writer, report Report) error {
 	return encoder.Encode(report)
 }
 
+// CountNoun formats a count with a correctly pluralized noun; mechanical
+// "(s)" suffixes read like a printf, not a report. An optional second form
+// overrides the default "+s" for irregular nouns ("utility", "utilities").
+func CountNoun(count int, singular string, plural ...string) string {
+	return fmt.Sprintf("%d %s", count, noun(count, singular, plural...))
+}
+
+// noun is CountNoun without the number, for sentences that already carry it.
+func noun(count int, singular string, plural ...string) string {
+	if count == 1 {
+		return singular
+	}
+	if len(plural) > 0 {
+		return plural[0]
+	}
+	return singular + "s"
+}
+
 // HumanOptions carries presentation state the report itself does not know:
 // today the CLI's --fail-under gate, so the verdict can say whether it passes.
 type HumanOptions struct {
@@ -234,8 +252,9 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 	// an edge of the project and becomes the project.
 	if len(report.Packages) > 0 && report.Coverage.ResolvedClassLists > 0 &&
 		report.Coverage.UnscopedClassLists*2 >= report.Coverage.ResolvedClassLists {
-		fmt.Fprintf(writer, "Warning: %d of %d resolved class list(s) are outside every detected Tailwind package; theme-dependent rules ran without a theme for those files. The package root may be misdetected.\n",
-			report.Coverage.UnscopedClassLists, report.Coverage.ResolvedClassLists)
+		fmt.Fprintf(writer, "Warning: %d of %s are outside every detected Tailwind package; theme-dependent rules ran without a theme for those files. The package root may be misdetected.\n",
+			report.Coverage.UnscopedClassLists,
+			CountNoun(report.Coverage.ResolvedClassLists, "resolved class list"))
 	}
 
 	fmt.Fprintln(writer)
@@ -249,7 +268,7 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 	}
 
 	if len(report.Diagnostics) > 0 {
-		fmt.Fprintf(writer, "\nConfiguration (%d diagnostic(s)):\n", len(report.Diagnostics))
+		fmt.Fprintf(writer, "\nConfiguration (%s):\n", CountNoun(len(report.Diagnostics), "diagnostic"))
 		for _, diagnostic := range report.Diagnostics {
 			fmt.Fprintf(writer, "- [%s] %s:%d:%d: %s\n",
 				diagnostic.Kind, diagnostic.File, diagnostic.Line, diagnostic.Column, diagnostic.Message)
@@ -265,9 +284,11 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 					projectTokens++
 				}
 			}
-			fmt.Fprintf(writer, "- %s (Tailwind v%s): %d project token(s), %d unused, %d total inventory entries, %s confidence\n",
-				tokenPackage.Package, tokenPackage.TailwindVersion, projectTokens,
-				len(tokenPackage.Unused), len(tokenPackage.Inventory), tokenPackage.Confidence)
+			fmt.Fprintf(writer, "- %s (Tailwind v%s): %s, %d unused, %s, %s confidence\n",
+				tokenPackage.Package, tokenPackage.TailwindVersion,
+				CountNoun(projectTokens, "project token"), len(tokenPackage.Unused),
+				CountNoun(len(tokenPackage.Inventory), "total inventory entry", "total inventory entries"),
+				tokenPackage.Confidence)
 			for _, reason := range tokenPackage.ConfidenceReasons {
 				fmt.Fprintf(writer, "  - %s\n", reason)
 			}
@@ -277,7 +298,7 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 	if len(report.Findings) == 0 {
 		fmt.Fprintln(writer, "\nNo findings. Your class lists look healthy.")
 		if report.Suppressed > 0 {
-			fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)
+			fmt.Fprintf(writer, "\n%s suppressed by the baseline.\n", CountNoun(report.Suppressed, "finding"))
 		}
 		return
 	}
@@ -292,16 +313,17 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 	writeRuleSummary(writer, report.Findings)
 	writeRepeatedArbitraryValues(writer, report.Findings)
 	if scored == len(report.Findings) {
-		fmt.Fprintf(writer, "\n%d finding(s):\n", len(report.Findings))
+		fmt.Fprintf(writer, "\n%s:\n", CountNoun(len(report.Findings), "finding"))
 	} else {
-		fmt.Fprintf(writer, "\n%d finding(s), %d scored:\n", len(report.Findings), scored)
+		fmt.Fprintf(writer, "\n%s, %d scored:\n", CountNoun(len(report.Findings), "finding"), scored)
 	}
 	writeGroupedFindings(writer, report.Findings)
 	// Unscored findings are still real observations, but at medium or low
 	// confidence they drown out the scored list in large projects. The machine
 	// formats carry every finding; the human format carries the count.
 	if unscored > 0 {
-		fmt.Fprintf(writer, "\n%d unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.\n", unscored)
+		fmt.Fprintf(writer, "\n%s hidden (medium or low confidence); use --json or --sarif to review.\n",
+			CountNoun(unscored, "unscored finding"))
 	}
 	fixableCount := 0
 	for _, finding := range report.Findings {
@@ -310,16 +332,17 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 		}
 	}
 	if fixableCount > 0 {
-		fmt.Fprintf(writer, "\n%d finding(s) can be fixed automatically; run tw-doctor --fix.\n", fixableCount)
+		fmt.Fprintf(writer, "\n%s can be fixed automatically; run tw-doctor --fix.\n",
+			CountNoun(fixableCount, "finding"))
 	}
 	if report.Suppressed > 0 {
-		fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)
+		fmt.Fprintf(writer, "\n%s suppressed by the baseline.\n", CountNoun(report.Suppressed, "finding"))
 	}
 
 	// On a long report the opening score has scrolled away by the time the
 	// reader reaches the prompt, so the verdict lands here too.
-	fmt.Fprintf(writer, "\nTailwind Doctor: %d/%d — %d finding(s), %d scored",
-		report.Score, MaximumScore, len(report.Findings), scored)
+	fmt.Fprintf(writer, "\nTailwind Doctor: %d/%d — %s, %d scored",
+		report.Score, MaximumScore, CountNoun(len(report.Findings), "finding"), scored)
 	if fixableCount > 0 {
 		fmt.Fprintf(writer, ", %d fixable", fixableCount)
 	}
@@ -338,27 +361,34 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 // instead of as bare telemetry. Reason-code detail stays in --json.
 func writeChecks(writer io.Writer, report Report) {
 	if len(report.Packages) > 0 {
-		fmt.Fprintf(writer, "✓ %d Tailwind package(s) detected\n", len(report.Packages))
+		fmt.Fprintf(writer, "✓ %s detected\n", CountNoun(len(report.Packages), "Tailwind package"))
 	} else {
 		fmt.Fprintln(writer, "✗ No Tailwind package detected; theme-dependent rules are disabled")
 	}
 	if report.Scanned.Tokens > 0 {
-		fmt.Fprintf(writer, "✓ Theme inventoried: %d project token(s)\n", report.Scanned.Tokens)
+		fmt.Fprintf(writer, "✓ Theme inventoried: %s\n", CountNoun(report.Scanned.Tokens, "project token"))
 	}
-	fmt.Fprintf(writer, "✓ Scanned %d file(s): %d class list(s), %d utilities\n",
-		report.Scanned.Files, report.Scanned.ClassLists, report.Scanned.Utilities)
+	fmt.Fprintf(writer, "✓ Scanned %s: %s, %s\n",
+		CountNoun(report.Scanned.Files, "file"),
+		CountNoun(report.Scanned.ClassLists, "class list"),
+		CountNoun(report.Scanned.Utilities, "utility", "utilities"))
 
 	totalClassLists := report.Coverage.ResolvedClassLists + report.Coverage.UnresolvedClassLists
 	if report.Coverage.UnresolvedClassLists > 0 {
-		fmt.Fprintf(writer, "✗ %d of %d class list(s) (%d%%) are dynamic expressions and were not analyzed\n",
-			report.Coverage.UnresolvedClassLists, totalClassLists, 100-report.Coverage.ResolutionPercent)
+		verb := "were"
+		if report.Coverage.UnresolvedClassLists == 1 {
+			verb = "was"
+		}
+		fmt.Fprintf(writer, "✗ %d of %s (%d%%) %s not analyzed: dynamic expressions\n",
+			report.Coverage.UnresolvedClassLists, CountNoun(totalClassLists, "class list"),
+			100-report.Coverage.ResolutionPercent, verb)
 	} else if totalClassLists > 0 {
 		fmt.Fprintln(writer, "✓ Every class list resolved statically")
 	}
 	if len(report.Packages) > 0 {
 		if report.Coverage.UnscopedClassLists > 0 {
-			fmt.Fprintf(writer, "✗ %d resolved class list(s) matched no Tailwind package\n",
-				report.Coverage.UnscopedClassLists)
+			fmt.Fprintf(writer, "✗ %s matched no Tailwind package\n",
+				CountNoun(report.Coverage.UnscopedClassLists, "resolved class list"))
 		} else if report.Coverage.ResolvedClassLists > 0 {
 			fmt.Fprintln(writer, "✓ Every resolved class list matched a Tailwind package")
 		}
@@ -372,11 +402,13 @@ func writeChecks(writer io.Writer, report Report) {
 			}
 		}
 		if contrastEnabled {
-			fmt.Fprintf(writer, "✓ %d color pair(s) measured, %d unknown; unknown reasons are in --json\n",
-				report.Accessibility.ResolvedColorPairs, report.Accessibility.UnknownColorPairs)
+			fmt.Fprintf(writer, "✓ %s measured, %d unknown; unknown reasons are in --json\n",
+				CountNoun(report.Accessibility.ResolvedColorPairs, "color pair"),
+				report.Accessibility.UnknownColorPairs)
 		} else {
-			fmt.Fprintf(writer, "• %d color pair(s) measured, %d unknown; enable the color-contrast rule to score accessibility\n",
-				report.Accessibility.ResolvedColorPairs, report.Accessibility.UnknownColorPairs)
+			fmt.Fprintf(writer, "• %s measured, %d unknown; enable the color-contrast rule to score accessibility\n",
+				CountNoun(report.Accessibility.ResolvedColorPairs, "color pair"),
+				report.Accessibility.UnknownColorPairs)
 		}
 	}
 }
@@ -418,8 +450,9 @@ func writeGroupedFindings(writer io.Writer, findings []Finding) {
 					remainingFiles++
 				}
 			}
-			fmt.Fprintf(writer, "… and %d more finding(s) in %d file(s); use --json or --sarif for the full list.\n",
-				remainingFindings, remainingFiles)
+			fmt.Fprintf(writer, "… and %d more %s in %s; use --json or --sarif for the full list.\n",
+				remainingFindings, noun(remainingFindings, "finding"),
+				CountNoun(remainingFiles, "file"))
 			return
 		}
 		fmt.Fprintln(writer, file)
@@ -494,7 +527,8 @@ func writeRepeatedArbitraryValues(writer io.Writer, findings []Finding) {
 		fmt.Fprintln(writer)
 	}
 	if len(repeated) > len(shown) {
-		fmt.Fprintf(writer, "- … and %d more repeated value(s)\n", len(repeated)-len(shown))
+		remaining := len(repeated) - len(shown)
+		fmt.Fprintf(writer, "- … and %d more repeated %s\n", remaining, noun(remaining, "value"))
 	}
 }
 

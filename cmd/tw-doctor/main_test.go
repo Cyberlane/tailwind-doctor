@@ -140,7 +140,7 @@ func TestRunGatesOnExtractionCoverage(t *testing.T) {
 	if code := run([]string{"--require-coverage", "100", root}, &stdout, &stderr); code != exitBelowThreshold {
 		t.Fatalf("exit code = %d, want %d; stderr=%q", code, exitBelowThreshold, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "1 of 1 class list(s) (100%) are dynamic expressions") {
+	if !strings.Contains(stdout.String(), "1 of 1 class list (100%) was not analyzed") {
 		t.Fatalf("coverage report missing from stdout: %q", stdout.String())
 	}
 }
@@ -180,7 +180,7 @@ func TestRunFixesBeforeReportingAndGating(t *testing.T) {
 	if code := run([]string{"--fix", "--json", "--fail-under", "100", root}, &stdout, &stderr); code != exitSuccess {
 		t.Fatalf("exit code = %d, stderr = %q", code, stderr.String())
 	}
-	if !strings.Contains(stderr.String(), "fixed 1 arbitrary value(s) in 1 file(s)") {
+	if !strings.Contains(stderr.String(), "fixed 1 arbitrary value in 1 file") {
 		t.Fatalf("stderr = %q", stderr.String())
 	}
 	if strings.Contains(stdout.String(), "text-[#abcdef]") || !strings.Contains(stdout.String(), `"score": 100`) {

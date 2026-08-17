@@ -1,10 +1,10 @@
 Tailwind Doctor: 13/100
-✓ 1 Tailwind package(s) detected
-✓ Theme inventoried: 3 project token(s)
-✓ Scanned 1 file(s): 1 class list(s), 3 utilities
+✓ 1 Tailwind package detected
+✓ Theme inventoried: 3 project tokens
+✓ Scanned 1 file: 1 class list, 3 utilities
 ✓ Every class list resolved statically
 ✓ Every resolved class list matched a Tailwind package
-• 0 color pair(s) measured, 1 unknown; enable the color-contrast rule to score accessibility
+• 0 color pairs measured, 1 unknown; enable the color-contrast rule to score accessibility
 
   Accessibility    not measured
   Correctness      100
@@ -12,17 +12,17 @@ Tailwind Doctor: 13/100
   Maintainability  not measured
 
 Token coverage:
-- . (Tailwind v4): 3 project token(s), 1 unused, 3 total inventory entries, high confidence
+- . (Tailwind v4): 3 project tokens, 1 unused, 3 total inventory entries, high confidence
 
 Findings by rule:
 - no-arbitrary-value: 1
 - unused-token: 1
 
-2 finding(s):
+2 findings:
 app.css
   7:3 [unused-token] Custom token --color-orphan is not used by any resolved class list.
   11:23 [no-arbitrary-value] Avoid arbitrary values; use mt-4, which matches --spacing.
 
-1 finding(s) can be fixed automatically; run tw-doctor --fix.
+1 finding can be fixed automatically; run tw-doctor --fix.
 
-Tailwind Doctor: 13/100 — 2 finding(s), 2 scored, 1 fixable
+Tailwind Doctor: 13/100 — 2 findings, 2 scored, 1 fixable

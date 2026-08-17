@@ -1,10 +1,10 @@
 Tailwind Doctor: 8/100
-✓ 1 Tailwind package(s) detected
-✓ Theme inventoried: 13 project token(s)
-✓ Scanned 4 file(s): 21 class list(s), 47 utilities
+✓ 1 Tailwind package detected
+✓ Theme inventoried: 13 project tokens
+✓ Scanned 4 files: 21 class lists, 47 utilities
 ✓ Every class list resolved statically
 ✓ Every resolved class list matched a Tailwind package
-✓ 11 color pair(s) measured, 11 unknown; unknown reasons are in --json
+✓ 11 color pairs measured, 11 unknown; unknown reasons are in --json
 
   Accessibility    8
   Correctness      not measured
@@ -12,12 +12,12 @@ Tailwind Doctor: 8/100
   Maintainability  not measured
 
 Token coverage:
-- . (Tailwind v4): 13 project token(s), 0 unused, 13 total inventory entries, high confidence
+- . (Tailwind v4): 13 project tokens, 0 unused, 13 total inventory entries, high confidence
 
 Findings by rule:
 - color-contrast: 6
 
-6 finding(s):
+6 findings:
 known-fail.html
   1:11 [color-contrast] text-ink on bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
   2:11 [color-contrast] text-ink on bg-panel has a 4.48:1 contrast ratio; WCAG 2.2 requires at least 4.5:1. Use text-black for a passing foreground token.
@@ -26,4 +26,4 @@ known-fail.html
   5:11 [color-contrast] text-oklch-a on bg-oklch-b has a 1.07:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
   6:11 [color-contrast] dark:text-ink on dark:bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use dark:text-black for a passing foreground token.
 
-Tailwind Doctor: 8/100 — 6 finding(s), 6 scored
+Tailwind Doctor: 8/100 — 6 findings, 6 scored

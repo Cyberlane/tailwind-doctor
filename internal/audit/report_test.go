@@ -190,7 +190,7 @@ module.exports = { theme: { extend: { fontFamily: { ...defaults.fontFamily } } }
 
 	var buffer bytes.Buffer
 	WriteHuman(&buffer, report)
-	for _, want := range []string{"Configuration (1 diagnostic(s))", "[unreadable-config]", "tailwind.config.js"} {
+	for _, want := range []string{"Configuration (1 diagnostic)", "[unreadable-config]", "tailwind.config.js"} {
 		if !strings.Contains(buffer.String(), want) {
 			t.Errorf("human output is missing %q:\n%s", want, buffer.String())
 		}
@@ -273,7 +273,7 @@ func TestHumanReportSummarizesUnscoredFindings(t *testing.T) {
 		"Consistency",
 		"Accessibility",
 		"not measured",
-		"1 unscored finding(s) hidden",
+		"1 unscored finding hidden",
 	} {
 		if !strings.Contains(output, want) {
 			t.Errorf("human output is missing %q:\n%s", want, output)
@@ -304,7 +304,7 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	WriteHuman(&buffer, report)
 	output := buffer.String()
 
-	if !strings.Contains(output, "Warning: 80 of 100 resolved class list(s) are outside every detected Tailwind package") {
+	if !strings.Contains(output, "Warning: 80 of 100 resolved class lists are outside every detected Tailwind package") {
 		t.Errorf("human output is missing the unscoped-coverage warning:\n%s", output)
 	}
 
@@ -328,7 +328,7 @@ func TestHumanReportShowsTheGateInTheVerdict(t *testing.T) {
 
 	var buffer bytes.Buffer
 	WriteHumanWith(&buffer, report, HumanOptions{FailUnder: 70})
-	if !strings.Contains(buffer.String(), "Tailwind Doctor: 60/100 — 1 finding(s), 1 scored (gate --fail-under 70: failing)") {
+	if !strings.Contains(buffer.String(), "Tailwind Doctor: 60/100 — 1 finding, 1 scored (gate --fail-under 70: failing)") {
 		t.Errorf("verdict is missing the failing gate:\n%s", buffer.String())
 	}
 
@@ -360,7 +360,7 @@ func TestHumanReportRepeatsVerdictAtTheEnd(t *testing.T) {
 	WriteHuman(&buffer, report)
 	output := buffer.String()
 
-	verdict := "Tailwind Doctor: 60/100 — 2 finding(s), 1 scored, 1 fixable\n"
+	verdict := "Tailwind Doctor: 60/100 — 2 findings, 1 scored, 1 fixable\n"
 	if !strings.HasSuffix(output, verdict) {
 		t.Errorf("human output must end with the verdict %q:\n%s", verdict, output)
 	}
@@ -390,12 +390,12 @@ func TestHumanReportRendersCheckLines(t *testing.T) {
 	output := buffer.String()
 
 	for _, want := range []string{
-		"✓ 1 Tailwind package(s) detected",
-		"✓ Theme inventoried: 9 project token(s)",
-		"✓ Scanned 10 file(s): 90 class list(s), 300 utilities",
-		"✗ 10 of 100 class list(s) (10%) are dynamic expressions and were not analyzed",
+		"✓ 1 Tailwind package detected",
+		"✓ Theme inventoried: 9 project tokens",
+		"✓ Scanned 10 files: 90 class lists, 300 utilities",
+		"✗ 10 of 100 class lists (10%) were not analyzed: dynamic expressions",
 		"✓ Every resolved class list matched a Tailwind package",
-		"• 5 color pair(s) measured, 7 unknown; enable the color-contrast rule to score accessibility",
+		"• 5 color pairs measured, 7 unknown; enable the color-contrast rule to score accessibility",
 	} {
 		if !strings.Contains(output, want) {
 			t.Errorf("human output is missing %q:\n%s", want, output)
@@ -454,7 +454,7 @@ func TestHumanReportTruncatesLongFindingLists(t *testing.T) {
 	if strings.Contains(output, "src/f100.tsx") {
 		t.Errorf("finding 101 should be truncated:\n%s", output)
 	}
-	if !strings.Contains(output, "… and 30 more finding(s) in 30 file(s); use --json or --sarif for the full list.") {
+	if !strings.Contains(output, "… and 30 more findings in 30 files; use --json or --sarif for the full list.") {
 		t.Errorf("human output is missing the truncation notice:\n%s", output)
 	}
 }
@@ -505,7 +505,7 @@ func TestHumanReportCountsAutoFixableFindings(t *testing.T) {
 
 	var buffer bytes.Buffer
 	WriteHuman(&buffer, report)
-	if !strings.Contains(buffer.String(), "2 finding(s) can be fixed automatically; run tw-doctor --fix.") {
+	if !strings.Contains(buffer.String(), "2 findings can be fixed automatically; run tw-doctor --fix.") {
 		t.Errorf("human output is missing the fixable count:\n%s", buffer.String())
 	}
 
@@ -565,8 +565,8 @@ func TestHumanReportListsScoredFindingsOnly(t *testing.T) {
 		t.Errorf("unscored finding listed in human output:\n%s", output)
 	}
 	for _, want := range []string{
-		"2 finding(s), 1 scored:",
-		"1 unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.",
+		"2 findings, 1 scored:",
+		"1 unscored finding hidden (medium or low confidence); use --json or --sarif to review.",
 	} {
 		if !strings.Contains(output, want) {
 			t.Errorf("human output is missing %q:\n%s", want, output)
