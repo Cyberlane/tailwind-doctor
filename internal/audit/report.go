@@ -304,6 +304,15 @@ func WriteHuman(writer io.Writer, report Report) {
 	if report.Suppressed > 0 {
 		fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)
 	}
+
+	// On a long report the opening score has scrolled away by the time the
+	// reader reaches the prompt, so the verdict lands here too.
+	fmt.Fprintf(writer, "\nTailwind Doctor: %d/%d — %d finding(s), %d scored",
+		report.Score, MaximumScore, len(report.Findings), scored)
+	if fixableCount > 0 {
+		fmt.Fprintf(writer, ", %d fixable", fixableCount)
+	}
+	fmt.Fprintln(writer)
 }
 
 // writeChecks renders the run's coverage as doctor-style check lines: each

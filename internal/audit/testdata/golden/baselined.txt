@@ -17,3 +17,5 @@ page.html
   1:21 [no-arbitrary-value] Avoid arbitrary values; replace text-[#abcdef] with a named design token.
 
 1 finding(s) suppressed by the baseline.
+
+Tailwind Doctor: 23/100 — 1 finding(s), 1 scored

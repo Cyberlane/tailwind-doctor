@@ -24,3 +24,5 @@ app.css
   11:23 [no-arbitrary-value] Avoid arbitrary values; use mt-4, which matches --spacing.
 
 1 finding(s) can be fixed automatically; run tw-doctor --fix.
+
+Tailwind Doctor: 13/100 — 2 finding(s), 2 scored, 1 fixable

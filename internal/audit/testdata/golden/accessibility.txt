@@ -25,3 +25,5 @@ known-fail.html
   4:11 [color-contrast] text-[#777777] on bg-[#888888] has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
   5:11 [color-contrast] text-oklch-a on bg-oklch-b has a 1.07:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use text-black for a passing foreground token.
   6:11 [color-contrast] dark:text-ink on dark:bg-near has a 1.26:1 contrast ratio; WCAG 2.2 requires at least 3.0:1. Use dark:text-black for a passing foreground token.
+
+Tailwind Doctor: 8/100 — 6 finding(s), 6 scored

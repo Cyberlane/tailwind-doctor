@@ -316,6 +316,33 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	}
 }
 
+// On a long report the opening score scrolls out of the terminal before the
+// reader reaches the end; the verdict must also land at the prompt.
+func TestHumanReportRepeatsVerdictAtTheEnd(t *testing.T) {
+	report := Report{
+		Score: 60,
+		Findings: []Finding{
+			{Rule: "no-arbitrary-value", File: "src/a.tsx", Message: "one", Scored: true, fixable: true},
+			{Rule: "no-conflicting-utilities", File: "src/b.tsx", Message: "two", Confidence: ConfidenceMedium},
+		},
+	}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+	output := buffer.String()
+
+	verdict := "Tailwind Doctor: 60/100 — 2 finding(s), 1 scored, 1 fixable\n"
+	if !strings.HasSuffix(output, verdict) {
+		t.Errorf("human output must end with the verdict %q:\n%s", verdict, output)
+	}
+
+	buffer.Reset()
+	WriteHuman(&buffer, Report{Score: 100})
+	if strings.Contains(buffer.String(), "—") {
+		t.Errorf("a clean report is short; no trailing verdict needed:\n%s", buffer.String())
+	}
+}
+
 // The header stats were telemetry — dense counts with no judgment attached.
 // Doctor-style check lines say what each number means for the run.
 func TestHumanReportRendersCheckLines(t *testing.T) {

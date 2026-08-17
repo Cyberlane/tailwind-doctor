@@ -24,3 +24,5 @@ styles.css
   2:40 [no-conflicting-utilities] px-4 conflicts with px-2 in the same variant.
 
 1 unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.
+
+Tailwind Doctor: 26/100 — 5 finding(s), 4 scored
