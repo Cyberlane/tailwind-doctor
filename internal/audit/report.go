@@ -283,14 +283,30 @@ func WriteHuman(writer io.Writer, report Report) {
 		}
 		return
 	}
-	fmt.Fprintf(writer, "\n%d finding(s):\n", len(report.Findings))
+	scored := 0
 	for _, finding := range report.Findings {
-		fmt.Fprintf(writer, "- [%s] %s:%d:%d: %s",
-			finding.Rule, finding.File, finding.Line, finding.Column, finding.Message)
-		if !finding.Scored {
-			fmt.Fprintf(writer, " (%s confidence, not scored)", finding.Confidence)
+		if finding.Scored {
+			scored++
 		}
-		fmt.Fprintln(writer)
+	}
+	unscored := len(report.Findings) - scored
+	if scored == len(report.Findings) {
+		fmt.Fprintf(writer, "\n%d finding(s):\n", len(report.Findings))
+	} else {
+		fmt.Fprintf(writer, "\n%d finding(s), %d scored:\n", len(report.Findings), scored)
+	}
+	for _, finding := range report.Findings {
+		if !finding.Scored {
+			continue
+		}
+		fmt.Fprintf(writer, "- [%s] %s:%d:%d: %s\n",
+			finding.Rule, finding.File, finding.Line, finding.Column, finding.Message)
+	}
+	// Unscored findings are still real observations, but at medium or low
+	// confidence they drown out the scored list in large projects. The machine
+	// formats carry every finding; the human format carries the count.
+	if unscored > 0 {
+		fmt.Fprintf(writer, "\n%d unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.\n", unscored)
 	}
 	if report.Suppressed > 0 {
 		fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)

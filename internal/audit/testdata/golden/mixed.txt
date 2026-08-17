@@ -11,9 +11,10 @@ Accessibility coverage gaps:
   Consistency      47
   Maintainability  100
 
-5 finding(s):
+5 finding(s), 4 scored:
 - [no-arbitrary-value] src/card.tsx:2:55: Avoid arbitrary values; prefer a named design token.
 - [no-conflicting-utilities] src/page.html:1:17: p-4 conflicts with p-2 in the same variant.
 - [no-arbitrary-value] src/page.html:1:21: Avoid arbitrary values; prefer a named design token.
-- [variant-density] src/page.html:2:17: Variant utilities make up at least 60% of this class list; consider extracting a component or variant. (medium confidence, not scored)
 - [no-conflicting-utilities] styles.css:2:40: px-4 conflicts with px-2 in the same variant.
+
+1 unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.

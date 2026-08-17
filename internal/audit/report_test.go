@@ -256,7 +256,7 @@ func TestReportKeepsTheUnsuppressedScoreVisible(t *testing.T) {
 	}
 }
 
-func TestHumanReportShowsSubScoresAndUnscoredFindings(t *testing.T) {
+func TestHumanReportSummarizesUnscoredFindings(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, root, ConfigFileName, "[rules]\nvariant-density = \"error\"\n")
 	writeFile(t, root, "page.html", `<div class="sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10"></div>`)
@@ -273,14 +273,47 @@ func TestHumanReportShowsSubScoresAndUnscoredFindings(t *testing.T) {
 		"Consistency",
 		"Accessibility",
 		"not measured",
-		"variant-density",
-		"not scored",
+		"1 unscored finding(s) hidden",
 	} {
 		if !strings.Contains(output, want) {
 			t.Errorf("human output is missing %q:\n%s", want, output)
 		}
 	}
+	if strings.Contains(output, "variant-density") {
+		t.Errorf("unscored findings must not be listed in human output:\n%s", output)
+	}
 	if report.Score != MaximumScore {
 		t.Errorf("a medium-confidence finding must not move the score, got %d", report.Score)
+	}
+}
+
+func TestHumanReportListsScoredFindingsOnly(t *testing.T) {
+	report := Report{
+		Scanned: Scanned{ClassLists: 2, Utilities: 4},
+		Findings: []Finding{
+			{Rule: "no-arbitrary-value", Category: CategoryConsistency, Confidence: ConfidenceHigh,
+				File: "src/a.tsx", Line: 1, Column: 2, Message: "Avoid arbitrary values.", Scored: true},
+			{Rule: "no-conflicting-utilities", Category: CategoryCorrectness, Confidence: ConfidenceMedium,
+				File: "src/b.tsx", Line: 3, Column: 4, Message: "text-a conflicts with text-b in the same variant."},
+		},
+	}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+	output := buffer.String()
+
+	if !strings.Contains(output, "no-arbitrary-value") {
+		t.Errorf("scored finding missing from human output:\n%s", output)
+	}
+	if strings.Contains(output, "no-conflicting-utilities") {
+		t.Errorf("unscored finding listed in human output:\n%s", output)
+	}
+	for _, want := range []string{
+		"2 finding(s), 1 scored:",
+		"1 unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.",
+	} {
+		if !strings.Contains(output, want) {
+			t.Errorf("human output is missing %q:\n%s", want, output)
+		}
 	}
 }

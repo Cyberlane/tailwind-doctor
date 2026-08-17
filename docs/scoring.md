@@ -172,7 +172,9 @@ D = 0.035                               Score      85
 ```
 
 The opt-in density rule reports at medium confidence, so those eight findings
-are visible and score-neutral. Because it was explicitly enabled, maintainability
+are score-neutral. They stay visible in the `--json` and `--sarif` reports;
+the human report lists scored findings only and summarizes the rest as a
+hidden-findings count. Because it was explicitly enabled, maintainability
 is measured and scores 100 while carrying eight unscored findings. Without an
 enabled rule or any exposure, the category would be `null`.
 
