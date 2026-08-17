@@ -345,7 +345,7 @@
       },
       {
         "reason": "missing-foreground",
-        "count": 3
+        "count": 2
       },
       {
         "reason": "multiple-foreground-colors",
@@ -353,7 +353,7 @@
       },
       {
         "reason": "unresolved-foreground-color",
-        "count": 2
+        "count": 3
       },
       {
         "reason": "unresolved-opacity-context",

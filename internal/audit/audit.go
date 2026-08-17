@@ -527,7 +527,9 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 		key := parsed.VariantKey() + "|" + group
 		if previous, ok := seen[key]; ok {
 			confidence := ConfidenceHigh
-			if inventory == nil && ambiguousConflictGroups[group] {
+			// Reaching a lexical prefix group means classification failed for
+			// both utilities; a resolved theme does not make that guess certain.
+			if ambiguousConflictGroups[group] {
 				confidence = ConfidenceMedium
 			}
 			findings = append(findings, Finding{

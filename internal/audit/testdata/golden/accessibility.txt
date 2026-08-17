@@ -7,9 +7,9 @@ Detected 1 Tailwind package(s) from static evidence
 
 Accessibility coverage gaps:
 - missing-background: 2
-- missing-foreground: 3
+- missing-foreground: 2
 - multiple-foreground-colors: 1
-- unresolved-foreground-color: 2
+- unresolved-foreground-color: 3
 - unresolved-opacity-context: 1
 - unresolved-text-threshold: 1
 - unsupported-color-compositing: 1

@@ -25,8 +25,9 @@ func TestClassifyUtilitySeparatesAmbiguousPrefixes(t *testing.T) {
 		{"text-center", "text-align", "", ""},
 		{"bg-brand", "background-color", tokens.FamilyColor, "brand"},
 		{"bg-cover", "background-size", "", ""},
-		{"border-r", "border-width", "", ""},
+		{"border-r", "border-r-width", "", ""},
 		{"border-brand", "border-color", tokens.FamilyColor, "brand"},
+		{"border-r-brand", "border-r-color", tokens.FamilyColor, "brand"},
 		{"font-bold", "font-weight", tokens.FamilyFontWeight, "bold"},
 	}
 	for _, testCase := range testCases {
@@ -59,6 +60,34 @@ func TestClassifyUtilityFallsBackToDefaultThemeWithoutInventory(t *testing.T) {
 			if meaning.Property != testCase.property || meaning.Family != testCase.family {
 				t.Fatalf("meaning = %+v, want property %q family %q",
 					meaning, testCase.property, testCase.family)
+			}
+		})
+	}
+}
+
+// A side suffix does not make a utility a width: border-l-transparent colors
+// the left edge, and border-y and border-r touch different edges entirely.
+// Collapsing them all into "border-width" reported overrides as conflicts.
+func TestClassifyUtilitySeparatesBorderSidesAndKinds(t *testing.T) {
+	testCases := []struct {
+		utility  string
+		property string
+	}{
+		{"border-y", "border-y-width"},
+		{"border-t-2", "border-t-width"},
+		{"border-l-transparent", "border-l-color"},
+		{"border-transparent", "border-color"},
+		{"border-t-[#eee]", "border-t-color"},
+		{"bg-transparent", "background-color"},
+		{"bg-clip-padding", "background-clip"},
+		{"bg-origin-border", "background-origin"},
+		{"text-transparent", "color"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.utility, func(t *testing.T) {
+			meaning := ClassifyUtility(testCase.utility, nil)
+			if meaning.Property != testCase.property {
+				t.Fatalf("meaning = %+v, want property %q", meaning, testCase.property)
 			}
 		})
 	}

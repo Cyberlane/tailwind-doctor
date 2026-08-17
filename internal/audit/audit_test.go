@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Cyberlane/tailwind-doctor/internal/tailwind"
+	"github.com/Cyberlane/tailwind-doctor/internal/tokens"
 )
 
 // classList builds the extraction result a rule would receive for a literal
@@ -147,6 +148,11 @@ func TestInspectSeparatesAmbiguousPropertyFamilies(t *testing.T) {
 		{"table border model and colour", "border-collapse border-transparent", 0},
 		{"two font sizes", "text-xs text-4xl", 1},
 		{"two text colours", "text-gray-600 text-white", 1},
+		{"side width and side colour", "border-l border-l-transparent", 0},
+		{"different border sides", "border-y border-r", 0},
+		{"width for all sides and one side", "border border-r", 0},
+		{"same border side twice", "border-t-2 border-t-4", 1},
+		{"colour keyword and background clip", "bg-transparent bg-clip-padding", 0},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
@@ -160,6 +166,19 @@ func TestInspectSeparatesAmbiguousPropertyFamilies(t *testing.T) {
 
 // Responsive bloat is a maintainability heuristic, not a defect. It is reported
 // but must not move a number people publish in a README.
+// When neither utility could be classified, the conflict is a guess from a
+// shared lexical prefix; a resolved theme does not make that guess certain.
+func TestConflictOnUnclassifiedPrefixStaysMedium(t *testing.T) {
+	findings, _ := inspectWithInventory("src/card.tsx", classList("text-brandy text-blurple"),
+		tailwind.DefaultUtilitySyntax(), tokens.NewInventory(), false)
+	if len(findings) != 1 || findings[0].Rule != "no-conflicting-utilities" {
+		t.Fatalf("expected one conflict finding, got %#v", findings)
+	}
+	if findings[0].Confidence != ConfidenceMedium {
+		t.Fatalf("confidence = %q, want medium", findings[0].Confidence)
+	}
+}
+
 // The human report shows one line per finding; without the offending class in
 // the message, "avoid arbitrary values" forces the reader to open the file and
 // count columns to learn which value the finding is about.

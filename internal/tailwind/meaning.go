@@ -160,6 +160,8 @@ func classifyText(base string, inventory *tokens.Inventory) UtilityMeaning {
 	switch {
 	case contains([]string{"left", "right", "center", "justify", "start", "end"}, name):
 		return UtilityMeaning{Property: "text-align"}
+	case isColorKeyword(name):
+		return UtilityMeaning{Property: "color", Family: tokens.FamilyColor}
 	case hasToken(inventory, tokens.FamilyColor, name):
 		return namedMeaning("text-", suffix, "color", tokens.FamilyColor)
 	case hasToken(inventory, tokens.FamilyFontSize, name):
@@ -182,39 +184,78 @@ func classifyBackground(base string, inventory *tokens.Inventory) UtilityMeaning
 		return UtilityMeaning{Property: "background-size"}
 	case strings.HasPrefix(name, "repeat"):
 		return UtilityMeaning{Property: "background-repeat"}
+	case strings.HasPrefix(name, "clip-"):
+		return UtilityMeaning{Property: "background-clip"}
+	case strings.HasPrefix(name, "origin-"):
+		return UtilityMeaning{Property: "background-origin"}
 	case contains([]string{"bottom", "center", "left", "left-bottom", "left-top", "right", "right-bottom", "right-top", "top"}, name):
 		return UtilityMeaning{Property: "background-position"}
 	case contains([]string{"fixed", "local", "scroll"}, name):
 		return UtilityMeaning{Property: "background-attachment"}
+	case isColorKeyword(name):
+		return UtilityMeaning{Property: "background-color", Family: tokens.FamilyColor}
 	case hasToken(inventory, tokens.FamilyColor, name):
 		return namedMeaning("bg-", suffix, "background-color", tokens.FamilyColor)
 	}
 	return UtilityMeaning{}
 }
 
+// classifyBorder keeps border sides and kinds apart: border-y and border-r
+// touch different edges, and border-l-transparent colors an edge rather than
+// sizing it. Folding them all into one "border-width" reported deliberate
+// overrides as conflicts.
 func classifyBorder(base string, inventory *tokens.Inventory) UtilityMeaning {
 	if base == "border" {
 		return UtilityMeaning{Property: "border-width"}
 	}
 	suffix := strings.TrimPrefix(base, "border-")
-	if arbitrary, _, found := arbitraryParts(suffix); found {
-		if looksLikeColor(arbitrary) {
-			return namedOrArbitrary(base, "border-", suffix, "border-color", tokens.FamilyColor)
+	side := ""
+	rest := suffix
+	for _, direction := range []string{"x-", "y-", "s-", "e-", "t-", "r-", "b-", "l-"} {
+		if strings.HasPrefix(suffix, direction) {
+			side = strings.TrimSuffix(direction, "-")
+			rest = strings.TrimPrefix(suffix, direction)
+			break
 		}
-		return UtilityMeaning{Property: "border-width", ArbitraryValue: arbitrary}
 	}
-	name := withoutModifier(suffix)
-	if contains([]string{"solid", "dashed", "dotted", "double", "hidden", "none"}, name) {
-		return UtilityMeaning{Property: "border-style"}
+	if side == "" && contains([]string{"x", "y", "s", "e", "t", "r", "b", "l"}, withoutModifier(suffix)) {
+		return UtilityMeaning{Property: "border-" + withoutModifier(suffix) + "-width"}
 	}
-	if name == "collapse" || name == "separate" {
-		return UtilityMeaning{Property: "border-collapse"}
+
+	property := func(kind string) string {
+		if side == "" {
+			return "border-" + kind
+		}
+		return "border-" + side + "-" + kind
 	}
-	if isBorderWidth(name) {
-		return UtilityMeaning{Property: "border-width"}
+	suggestionPrefix := "border-"
+	if side != "" {
+		suggestionPrefix = "border-" + side + "-"
+	}
+
+	if arbitrary, _, found := arbitraryParts(rest); found {
+		if looksLikeColor(arbitrary) {
+			return namedOrArbitrary(base, suggestionPrefix, rest, property("color"), tokens.FamilyColor)
+		}
+		return UtilityMeaning{Property: property("width"), ArbitraryValue: arbitrary}
+	}
+	name := withoutModifier(rest)
+	if side == "" {
+		if contains([]string{"solid", "dashed", "dotted", "double", "hidden", "none"}, name) {
+			return UtilityMeaning{Property: "border-style"}
+		}
+		if name == "collapse" || name == "separate" {
+			return UtilityMeaning{Property: "border-collapse"}
+		}
+	}
+	if contains([]string{"0", "2", "4", "8"}, name) {
+		return UtilityMeaning{Property: property("width")}
+	}
+	if isColorKeyword(name) {
+		return UtilityMeaning{Property: property("color"), Family: tokens.FamilyColor}
 	}
 	if hasToken(inventory, tokens.FamilyColor, name) {
-		return namedMeaning("border-", suffix, "border-color", tokens.FamilyColor)
+		return namedMeaning(suggestionPrefix, rest, property("color"), tokens.FamilyColor)
 	}
 	return UtilityMeaning{}
 }
@@ -262,6 +303,9 @@ func classifyShadow(base string, inventory *tokens.Inventory) UtilityMeaning {
 		return namedOrArbitrary(base, "shadow-", suffix, "box-shadow-color", tokens.FamilyColor)
 	}
 	name := withoutModifier(suffix)
+	if isColorKeyword(name) {
+		return UtilityMeaning{Property: "box-shadow-color", Family: tokens.FamilyColor}
+	}
 	if hasToken(inventory, tokens.FamilyColor, name) {
 		return namedMeaning("shadow-", suffix, "box-shadow-color", tokens.FamilyColor)
 	}
@@ -329,6 +373,12 @@ func looksLikeColor(value string) bool {
 		strings.HasPrefix(value, "color:") || isBasicNamedColor(value)
 }
 
+// isColorKeyword reports CSS-wide color keywords that Tailwind exposes as
+// utility suffixes without any theme token behind them.
+func isColorKeyword(name string) bool {
+	return contains([]string{"transparent", "current", "inherit"}, name)
+}
+
 func isBasicNamedColor(value string) bool {
 	return contains([]string{
 		"aqua", "black", "blue", "fuchsia", "gray", "green", "grey", "lime",
@@ -348,18 +398,6 @@ func hasToken(inventory *tokens.Inventory, family tokens.Family, name string) bo
 func contains(values []string, wanted string) bool {
 	for _, value := range values {
 		if value == wanted {
-			return true
-		}
-	}
-	return false
-}
-
-func isBorderWidth(name string) bool {
-	if contains([]string{"x", "y", "s", "e", "t", "r", "b", "l", "0", "2", "4", "8"}, name) {
-		return true
-	}
-	for _, direction := range []string{"x-", "y-", "s-", "e-", "t-", "r-", "b-", "l-"} {
-		if strings.HasPrefix(name, direction) {
 			return true
 		}
 	}
