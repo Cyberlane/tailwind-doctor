@@ -108,6 +108,33 @@ func TestExtractSplitsInterpolatedAttributes(t *testing.T) {
 	}
 }
 
+// A substitution inside a token makes the whole token unknowable. Splitting on
+// the substitution invented utilities like "text-[" that the source never
+// contained, which were then linted — and scored — as real classes.
+func TestExtractDropsTokensSplitByInterpolation(t *testing.T) {
+	got := summarise(Extract("bar.svelte", `<div class="absolute text-[{size}px] font-bold"></div>`))
+	want := []string{
+		`1:22 unresolved attr-interpolated "text-[{size}px]"`,
+		`1:13 resolved attr-interpolated "absolute font-bold"`,
+	}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+}
+
+// The template-literal form of the same shape, including a space inside the
+// substitution, which must not split the token either.
+func TestExtractDropsTemplateTokensSplitBySubstitution(t *testing.T) {
+	got := summarise(Extract("bar.tsx", "<div className={`absolute text-[${height / 2}px] z-[1]`} />"))
+	want := []string{
+		`1:27 unresolved jsx-template "text-[${height / 2}px]"`,
+		`1:18 resolved jsx-template "absolute z-[1]"`,
+	}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+}
+
 // A helper call is read argument by argument, so what is knowable is kept and
 // only the specific values that are not are reported as unknown.
 func TestExtractReportsExpressionValuesAsUnresolved(t *testing.T) {

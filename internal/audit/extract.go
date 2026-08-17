@@ -462,41 +462,61 @@ func (s *scanner) recordInterpolated(value string, line, column int, shape, open
 	literal := strings.Builder{}
 	literalLine, literalColumn, haveLiteral := 0, 0, false
 
-	for index := 0; index < len(value); {
-		if !strings.HasPrefix(value[index:], opening) {
-			if !haveLiteral && !isSpace(value[index]) {
-				literalLine, literalColumn = position.line, position.column
-				haveLiteral = true
-			}
-			literal.WriteByte(value[index])
+	index := 0
+	for index < len(value) {
+		if isSpace(value[index]) {
 			position.advance(value[index])
 			index++
 			continue
 		}
 
-		segmentLine, segmentColumn := position.line, position.column
-		braceStart := index + len(opening) - 1
-		end := matchingDelimiter(value, braceStart, '{', '}')
-		if end < 0 {
-			end = len(value) - 1
+		// One whitespace-separated token. A substitution belongs to the token
+		// it touches, and whitespace inside the substitution's braces does not
+		// end the token: text-[${height / 2}px] is a single token.
+		tokenLine, tokenColumn := position.line, position.column
+		start := index
+		substituted := false
+		for index < len(value) && !isSpace(value[index]) {
+			if !strings.HasPrefix(value[index:], opening) {
+				position.advance(value[index])
+				index++
+				continue
+			}
+			substituted = true
+			braceStart := index + len(opening) - 1
+			end := matchingDelimiter(value, braceStart, '{', '}')
+			if end < 0 {
+				end = len(value) - 1
+			}
+			for ; index <= end; index++ {
+				position.advance(value[index])
+			}
 		}
-		end++
-		s.record(ClassList{
-			Value: value[index:end], Line: segmentLine, Column: segmentColumn,
-			Shape: shape, Resolved: false,
-		})
-		for ; index < end; index++ {
-			position.advance(value[index])
+
+		if substituted {
+			// The whole token is one unknowable site. Splitting it on the
+			// substitution would lint its literal halves — classes such as
+			// "text-[" that the source never contained.
+			s.record(ClassList{
+				Value: value[start:index], Line: tokenLine, Column: tokenColumn,
+				Shape: shape, Resolved: false,
+			})
+			continue
 		}
-		literal.WriteByte(' ')
+		if !haveLiteral {
+			literalLine, literalColumn, haveLiteral = tokenLine, tokenColumn, true
+		}
+		if literal.Len() > 0 {
+			literal.WriteByte(' ')
+		}
+		literal.WriteString(value[start:index])
 	}
 
-	classes := strings.Join(strings.Fields(literal.String()), " ")
-	if classes == "" {
+	if !haveLiteral {
 		return
 	}
 	s.record(ClassList{
-		Value: classes, Line: literalLine, Column: literalColumn, Shape: shape, Resolved: true,
+		Value: literal.String(), Line: literalLine, Column: literalColumn, Shape: shape, Resolved: true,
 	})
 }
 
