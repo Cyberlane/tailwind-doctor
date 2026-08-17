@@ -85,9 +85,12 @@ Severity is what you configure; confidence is what the tool is willing to stand
 behind. They are independent, and a finding is scored only when it clears both:
 its severity is `error` *and* its confidence is at least `min-confidence`.
 
-Nothing is ever hidden by confidence. A finding below the threshold is reported,
-tagged in every output format, and carries `"scored": false` in JSON — a visibly
-uncertain finding costs less trust than a silent miss.
+Nothing is ever dropped by confidence. A finding below the threshold is always
+present in the `--json` and `--sarif` reports, where it carries
+`"scored": false` — a visibly uncertain finding costs less trust than a silent
+miss. The human report lists scored findings only and summarizes the
+below-threshold ones as a hidden-findings count pointing at the machine
+formats.
 
 The following evidence can report below `high`, so `min-confidence = "medium"`
 is what scores it:

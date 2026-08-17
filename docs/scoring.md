@@ -30,8 +30,9 @@ A finding is scored if and only if all three hold:
 2. Its confidence is at or above `min-confidence`, which defaults to `high`.
 3. The baseline did not suppress it.
 
-Everything else is still reported. A finding that does not move the score is
-tagged as such in every output format.
+Everything else is still reported. A finding that does not move the score
+carries `"scored": false` in the machine formats; the human report summarizes
+unscored findings as a count rather than listing them.
 
 ## Each Rule Declares Its Own Denominator
 

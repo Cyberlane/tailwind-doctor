@@ -33,9 +33,14 @@ with `color-contrast = "error"` or `"warn"` under `[rules]`.
 
 Category `correctness`, measured per utility. Reported at high confidence for
 utility groups the tool can separate unambiguously. The token-aware property
-taxonomy distinguishes text colour from font size, background colour from size
-and position, and border colour from width and style. A lexical conflict that
-cannot be classified conservatively remains medium confidence and score-neutral.
+taxonomy distinguishes text colour from font size, background colour from size,
+position, clip, and origin, and border colour from width and style — per side,
+so `border-y` and `border-r` never conflict and `border-l-transparent` is a
+colour, not a width. When a file has no resolved project theme, classification
+falls back to Tailwind's default theme, so default scale names such as
+`text-4xl` and `text-gray-600` keep their meaning. A lexical conflict that
+cannot be classified conservatively remains medium confidence and
+score-neutral, even when a theme resolved.
 
 Reports utility classes in the same variant that target the same simple utility group, such as `p-4 p-2`. Variant-specific utilities such as `p-4 md:p-6` are treated as independent.
 

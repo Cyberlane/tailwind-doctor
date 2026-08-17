@@ -99,6 +99,11 @@ Every source file is scoped to the nearest Tailwind configuration or manifest
 in an ancestor directory. Inventories remain package-local and are never merged, so
 two packages may define the same token name with different values.
 
+A v4 CSS entry with no `package.json` anywhere inside the scanned directory —
+the common case when one app of a monorepo is scanned on its own and the
+manifest lives above the scan root — scopes its package to the scan root, so
+the theme still governs every scanned source file.
+
 Tailwind is a trademark of Tailwind Labs. This project is not affiliated with
 or endorsed by Tailwind Labs.
 

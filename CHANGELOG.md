@@ -4,6 +4,42 @@ All notable changes to Tailwind Doctor are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- Doctor-style human report: coverage check lines with judgments, a per-rule
+  finding summary, a repeated-arbitrary-values block with exact-match
+  replacements, findings grouped under one header per file and truncated at a
+  file boundary after 100, the auto-fixable count with a `--fix` hint, the
+  first unused token names, and a closing verdict that names the
+  `--fail-under` gate. Unscored findings are summarized as a count; `--json`
+  and `--sarif` continue to carry every finding.
+- ANSI color in the human report when writing to a terminal. Color only wraps
+  text and never changes it; pipes, redirects, `NO_COLOR`, and `TERM=dumb`
+  stay plain.
+- A warning when at least half of the resolved class lists fall outside every
+  detected Tailwind package, since theme-dependent rules then run without a
+  theme.
+- `no-arbitrary-value` messages name the offending class.
+
+### Fixed
+
+- A v4 CSS entry with no `package.json` inside the scanned directory now
+  scopes its package to the scan root, so a monorepo app scanned on its own
+  keeps its theme, token usage, suggestions, and contrast trust.
+- Utility classification consults Tailwind's default theme when no project
+  theme resolved, ending false conflicts such as `text-4xl` vs
+  `text-gray-600`.
+- Border utilities are classified per side and kind: `border-y` and
+  `border-r` no longer conflict, and `border-l-transparent` is a colour, not
+  a width. `border-collapse`/`border-separate`, `bg-clip-*`, `bg-origin-*`,
+  and the `transparent`/`current`/`inherit` colour keywords are recognized.
+- A conflict found only through a shared lexical prefix stays medium
+  confidence even when a theme resolved.
+- A token split by a template-literal substitution, such as
+  `text-[${size}px]`, is recorded whole as one unresolved site instead of
+  linting invented fragments like `text-[`.
+- Human-report counts are grammatically pluralized.
+
 ## [0.3.0] - 2026-08-10
 
 ### Added

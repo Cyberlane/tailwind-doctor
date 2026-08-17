@@ -25,6 +25,10 @@ Tailwind Doctor: 91/100
   Consistency      95
   Maintainability  not measured
 
+Findings by rule:
+- no-arbitrary-value: 1
+- no-conflicting-utilities: 1
+
 2 findings:
 src/card.tsx
   12:22 [no-conflicting-utilities] p-4 conflicts with p-2 in the same variant.
@@ -68,7 +72,9 @@ The limitations matter as much as the features, so they are stated plainly:
   monorepo-ownership evidence lowers unused-token confidence.
 - **Uncertain signals are score-neutral by default.** This includes
   `variant-density`, overlapping utility scopes, unclassifiable utility conflicts, and degraded
-  `unused-token` evidence. They are reported and tagged rather than hidden; see
+  `unused-token` evidence. The `--json` and `--sarif` reports carry every one,
+  tagged with its confidence; the human report summarizes them as a count so
+  they never bury the scored findings. See
   [docs/configuration.md](docs/configuration.md).
 - **Adding a rule will change your score.** New rules ship disabled for one minor release before that happens; the policy is in [docs/rule-stability.md](docs/rule-stability.md).
 
