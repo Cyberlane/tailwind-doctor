@@ -1,10 +1,8 @@
 Tailwind Doctor: 23/100 (11 ignoring baseline)
-Scanned 1 file(s), 1 class list(s), 3 utilities
-Resolved 1/1 candidate class list(s) (100%); 0 resolved list(s) were outside a Tailwind package
-Resolved 0 color pair(s); 1 candidate pair(s) remain unknown
-
-Accessibility coverage gaps:
-- untrusted-theme: 1
+✗ No Tailwind package detected; theme-dependent rules are disabled
+✓ Scanned 1 file(s): 1 class list(s), 3 utilities
+✓ Every class list resolved statically
+• 0 color pair(s) measured, 1 unknown; enable the color-contrast rule to score accessibility
 
   Accessibility    not measured
   Correctness      100

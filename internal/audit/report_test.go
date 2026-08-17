@@ -316,6 +316,47 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	}
 }
 
+// The header stats were telemetry — dense counts with no judgment attached.
+// Doctor-style check lines say what each number means for the run.
+func TestHumanReportRendersCheckLines(t *testing.T) {
+	report := Report{
+		Score:    60,
+		Scanned:  Scanned{Files: 10, ClassLists: 90, Utilities: 300, Tokens: 9},
+		Packages: []TailwindPackageReport{{Directory: ".", Version: "4"}},
+		Coverage: CoverageReport{ResolvedClassLists: 90, UnresolvedClassLists: 10,
+			UnscopedClassLists: 0, ResolutionPercent: 90},
+		Accessibility:   AccessibilityReport{ResolvedColorPairs: 5, UnknownColorPairs: 7},
+		ConfiguredRules: []ConfiguredRule{{ID: "color-contrast", Severity: SeverityOff}},
+	}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+	output := buffer.String()
+
+	for _, want := range []string{
+		"✓ 1 Tailwind package(s) detected",
+		"✓ Theme inventoried: 9 project token(s)",
+		"✓ Scanned 10 file(s): 90 class list(s), 300 utilities",
+		"✗ 10 of 100 class list(s) (10%) are dynamic expressions and were not analyzed",
+		"✓ Every resolved class list matched a Tailwind package",
+		"• 5 color pair(s) measured, 7 unknown; enable the color-contrast rule to score accessibility",
+	} {
+		if !strings.Contains(output, want) {
+			t.Errorf("human output is missing %q:\n%s", want, output)
+		}
+	}
+	if strings.Contains(output, "Accessibility coverage gaps") {
+		t.Errorf("reason codes belong in --json, not the human header:\n%s", output)
+	}
+
+	report.Packages = nil
+	buffer.Reset()
+	WriteHuman(&buffer, report)
+	if !strings.Contains(buffer.String(), "✗ No Tailwind package detected; theme-dependent rules are disabled") {
+		t.Errorf("a package-less run must say so:\n%s", buffer.String())
+	}
+}
+
 // Repeating the full path on every finding buries the findings; grouping under
 // one file header is how every mainstream linter keeps long lists readable.
 func TestHumanReportGroupsFindingsByFile(t *testing.T) {

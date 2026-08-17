@@ -1,18 +1,10 @@
 Tailwind Doctor: 8/100
-Scanned 4 file(s), 21 class list(s), 47 utilities
-Resolved 21/21 candidate class list(s) (100%); 0 resolved list(s) were outside a Tailwind package
-Resolved 11 color pair(s); 11 candidate pair(s) remain unknown
-Inventoried 13 project token(s) across 1 Tailwind package(s)
-Detected 1 Tailwind package(s) from static evidence
-
-Accessibility coverage gaps:
-- missing-background: 2
-- missing-foreground: 2
-- multiple-foreground-colors: 1
-- unresolved-foreground-color: 3
-- unresolved-opacity-context: 1
-- unresolved-text-threshold: 1
-- unsupported-color-compositing: 1
+✓ 1 Tailwind package(s) detected
+✓ Theme inventoried: 13 project token(s)
+✓ Scanned 4 file(s): 21 class list(s), 47 utilities
+✓ Every class list resolved statically
+✓ Every resolved class list matched a Tailwind package
+✓ 11 color pair(s) measured, 11 unknown; unknown reasons are in --json
 
   Accessibility    8
   Correctness      not measured

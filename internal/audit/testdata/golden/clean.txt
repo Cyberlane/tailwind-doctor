@@ -1,6 +1,7 @@
 Tailwind Doctor: 100/100
-Scanned 1 file(s), 2 class list(s), 6 utilities
-Resolved 2/2 candidate class list(s) (100%); 0 resolved list(s) were outside a Tailwind package
+✗ No Tailwind package detected; theme-dependent rules are disabled
+✓ Scanned 1 file(s): 2 class list(s), 6 utilities
+✓ Every class list resolved statically
 
   Accessibility    not measured
   Correctness      100

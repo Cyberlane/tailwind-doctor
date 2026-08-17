@@ -216,38 +216,15 @@ func WriteHuman(writer io.Writer, report Report) {
 		fmt.Fprintf(writer, " (%d ignoring baseline)", report.ScoreExcludingBaseline)
 	}
 	fmt.Fprintln(writer)
-	fmt.Fprintf(writer, "Scanned %d file(s), %d class list(s), %d utilities\n",
-		report.Scanned.Files, report.Scanned.ClassLists, report.Scanned.Utilities)
-	fmt.Fprintf(writer, "Resolved %d/%d candidate class list(s) (%d%%); %d resolved list(s) were outside a Tailwind package\n",
-		report.Coverage.ResolvedClassLists,
-		report.Coverage.ResolvedClassLists+report.Coverage.UnresolvedClassLists,
-		report.Coverage.ResolutionPercent, report.Coverage.UnscopedClassLists)
+	writeChecks(writer, report)
 	// A score computed while the theme applied to almost nothing looks exactly
-	// as confident as a fully themed run, and the one-line coverage stat above
-	// is easy to skim past. Half is the point where the themeless portion stops
-	// being an edge of the project and becomes the project.
+	// as confident as a fully themed run, and a one-line coverage check is easy
+	// to skim past. Half is the point where the themeless portion stops being
+	// an edge of the project and becomes the project.
 	if len(report.Packages) > 0 && report.Coverage.ResolvedClassLists > 0 &&
 		report.Coverage.UnscopedClassLists*2 >= report.Coverage.ResolvedClassLists {
 		fmt.Fprintf(writer, "Warning: %d of %d resolved class list(s) are outside every detected Tailwind package; theme-dependent rules ran without a theme for those files. The package root may be misdetected.\n",
 			report.Coverage.UnscopedClassLists, report.Coverage.ResolvedClassLists)
-	}
-	if report.Accessibility.ResolvedColorPairs > 0 || report.Accessibility.UnknownColorPairs > 0 {
-		fmt.Fprintf(writer, "Resolved %d color pair(s); %d candidate pair(s) remain unknown\n",
-			report.Accessibility.ResolvedColorPairs, report.Accessibility.UnknownColorPairs)
-	}
-	if len(report.Tokens) > 0 {
-		fmt.Fprintf(writer, "Inventoried %d project token(s) across %d Tailwind package(s)\n",
-			report.Scanned.Tokens, len(report.Tokens))
-	}
-	if len(report.Packages) > 0 {
-		fmt.Fprintf(writer, "Detected %d Tailwind package(s) from static evidence\n", len(report.Packages))
-	}
-
-	if len(report.Accessibility.UnknownReasons) > 0 {
-		fmt.Fprintln(writer, "\nAccessibility coverage gaps:")
-		for _, reason := range report.Accessibility.UnknownReasons {
-			fmt.Fprintf(writer, "- %s: %d\n", reason.Reason, reason.Count)
-		}
 	}
 
 	fmt.Fprintln(writer)
@@ -326,6 +303,54 @@ func WriteHuman(writer io.Writer, report Report) {
 	}
 	if report.Suppressed > 0 {
 		fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)
+	}
+}
+
+// writeChecks renders the run's coverage as doctor-style check lines: each
+// number arrives with a judgment (✓ fine, ✗ needs attention, • informational)
+// instead of as bare telemetry. Reason-code detail stays in --json.
+func writeChecks(writer io.Writer, report Report) {
+	if len(report.Packages) > 0 {
+		fmt.Fprintf(writer, "✓ %d Tailwind package(s) detected\n", len(report.Packages))
+	} else {
+		fmt.Fprintln(writer, "✗ No Tailwind package detected; theme-dependent rules are disabled")
+	}
+	if report.Scanned.Tokens > 0 {
+		fmt.Fprintf(writer, "✓ Theme inventoried: %d project token(s)\n", report.Scanned.Tokens)
+	}
+	fmt.Fprintf(writer, "✓ Scanned %d file(s): %d class list(s), %d utilities\n",
+		report.Scanned.Files, report.Scanned.ClassLists, report.Scanned.Utilities)
+
+	totalClassLists := report.Coverage.ResolvedClassLists + report.Coverage.UnresolvedClassLists
+	if report.Coverage.UnresolvedClassLists > 0 {
+		fmt.Fprintf(writer, "✗ %d of %d class list(s) (%d%%) are dynamic expressions and were not analyzed\n",
+			report.Coverage.UnresolvedClassLists, totalClassLists, 100-report.Coverage.ResolutionPercent)
+	} else if totalClassLists > 0 {
+		fmt.Fprintln(writer, "✓ Every class list resolved statically")
+	}
+	if len(report.Packages) > 0 {
+		if report.Coverage.UnscopedClassLists > 0 {
+			fmt.Fprintf(writer, "✗ %d resolved class list(s) matched no Tailwind package\n",
+				report.Coverage.UnscopedClassLists)
+		} else if report.Coverage.ResolvedClassLists > 0 {
+			fmt.Fprintln(writer, "✓ Every resolved class list matched a Tailwind package")
+		}
+	}
+
+	if report.Accessibility.ResolvedColorPairs > 0 || report.Accessibility.UnknownColorPairs > 0 {
+		contrastEnabled := false
+		for _, rule := range report.ConfiguredRules {
+			if rule.ID == "color-contrast" && rule.Severity != SeverityOff {
+				contrastEnabled = true
+			}
+		}
+		if contrastEnabled {
+			fmt.Fprintf(writer, "✓ %d color pair(s) measured, %d unknown; unknown reasons are in --json\n",
+				report.Accessibility.ResolvedColorPairs, report.Accessibility.UnknownColorPairs)
+		} else {
+			fmt.Fprintf(writer, "• %d color pair(s) measured, %d unknown; enable the color-contrast rule to score accessibility\n",
+				report.Accessibility.ResolvedColorPairs, report.Accessibility.UnknownColorPairs)
+		}
 	}
 }
 

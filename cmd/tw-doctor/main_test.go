@@ -129,7 +129,7 @@ func TestRunGatesOnExtractionCoverage(t *testing.T) {
 	if code := run([]string{"--require-coverage", "100", root}, &stdout, &stderr); code != exitBelowThreshold {
 		t.Fatalf("exit code = %d, want %d; stderr=%q", code, exitBelowThreshold, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Resolved 0/1") {
+	if !strings.Contains(stdout.String(), "1 of 1 class list(s) (100%) are dynamic expressions") {
 		t.Fatalf("coverage report missing from stdout: %q", stdout.String())
 	}
 }

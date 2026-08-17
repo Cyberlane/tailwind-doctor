@@ -14,8 +14,11 @@ npx tw-doctor .
 
 ```text
 Tailwind Doctor: 91/100
-Scanned 42 file(s), 310 class list(s), 1840 utilities
-Resolved 310/322 candidate class list(s) (96%); 0 resolved list(s) were outside a Tailwind package
+✓ 1 Tailwind package(s) detected
+✓ Theme inventoried: 24 project token(s)
+✓ Scanned 42 file(s): 310 class list(s), 1840 utilities
+✗ 12 of 322 class list(s) (4%) are dynamic expressions and were not analyzed
+✓ Every resolved class list matched a Tailwind package
 
   Accessibility    not measured
   Correctness      96
