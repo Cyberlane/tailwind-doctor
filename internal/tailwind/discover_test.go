@@ -125,6 +125,33 @@ func TestPackageForReportsNoPackageWhenThereIsNone(t *testing.T) {
 	}
 }
 
+func TestV4EntryWithoutManifestScopesToScanRoot(t *testing.T) {
+	files := fstest.MapFS{
+		"src/styles/app.css":            &fstest.MapFile{Data: []byte(`@import "tailwindcss";` + "\n" + `@theme { --color-brand: red; }`)},
+		"src/components/button.tsx":     &fstest.MapFile{Data: []byte(`<button className="p-4" />`)},
+		"src/components/deep/husk.tsx":  &fstest.MapFile{Data: []byte(`<div className="m-2" />`)},
+		"src/styles/tokens/palette.tsx": &fstest.MapFile{},
+		"tools/scripts/generate.ts":     &fstest.MapFile{},
+	}
+	layout, err := Discover(files)
+	if err != nil {
+		t.Fatalf("Discover: %v", err)
+	}
+	if len(layout.Packages) != 1 || layout.Packages[0].Dir != "." {
+		t.Fatalf("packages = %+v, want one package rooted at %q", layout.Packages, ".")
+	}
+	for _, file := range []string{
+		"src/components/button.tsx",
+		"src/components/deep/husk.tsx",
+		"tools/scripts/generate.ts",
+	} {
+		pkg, found := layout.PackageFor(file)
+		if !found || pkg.Dir != "." {
+			t.Errorf("%s bound to %+v, found %v; want the scan root", file, pkg, found)
+		}
+	}
+}
+
 func TestDiscoverSkipsVendoredDirectories(t *testing.T) {
 	files := fstest.MapFS{
 		"tailwind.config.js":                      &fstest.MapFile{Data: []byte("module.exports = {}")},

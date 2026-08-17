@@ -1,4 +1,4 @@
-package src
+package .
   version 4
   degraded false
   token color brand-50 = #eff6ff (--color-brand-50) src/app.css:5:3

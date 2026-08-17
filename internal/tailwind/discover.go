@@ -190,7 +190,11 @@ func nearestManifestDir(fsys fs.FS, start string) string {
 	if manifestFile, found := nearestManifestFile(fsys, start); found {
 		return cleanDir(path.Dir(manifestFile))
 	}
-	return cleanDir(start)
+	// No manifest anywhere up to the scan root: the entry belongs to a project
+	// whose package.json lives above the audited directory (a monorepo app
+	// scanned on its own). Scoping the package to the CSS entry's directory
+	// would exclude every source file outside it, so the scan root governs.
+	return "."
 }
 
 func nearestManifestFile(fsys fs.FS, start string) (string, bool) {
