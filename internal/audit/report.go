@@ -335,6 +335,17 @@ func WriteHuman(writer io.Writer, report Report) {
 	}
 }
 
+// sortByCountDescending orders a summary block by descending count with a
+// name tie-break, so identical inputs always render identically.
+func sortByCountDescending[T any](items []T, count func(T) int, name func(T) string) {
+	sort.Slice(items, func(left, right int) bool {
+		if count(items[left]) != count(items[right]) {
+			return count(items[left]) > count(items[right])
+		}
+		return name(items[left]) < name(items[right])
+	})
+}
+
 // repeatedValuesShown caps the repeated-values block: the point is the handful
 // of missing tokens that dominate, not a second exhaustive list.
 const repeatedValuesShown = 10
@@ -372,12 +383,9 @@ func writeRepeatedArbitraryValues(writer io.Writer, findings []Finding) {
 	if len(repeated) == 0 {
 		return
 	}
-	sort.Slice(repeated, func(left, right int) bool {
-		if repeated[left].count != repeated[right].count {
-			return repeated[left].count > repeated[right].count
-		}
-		return repeated[left].class < repeated[right].class
-	})
+	sortByCountDescending(repeated,
+		func(value *valueCount) int { return value.count },
+		func(value *valueCount) string { return value.class })
 	fmt.Fprintln(writer, "\nRepeated arbitrary values:")
 	shown := repeated
 	if len(shown) > repeatedValuesShown {
@@ -420,12 +428,9 @@ func writeRuleSummary(writer io.Writer, findings []Finding) {
 	for _, count := range byRule {
 		counts = append(counts, count)
 	}
-	sort.Slice(counts, func(left, right int) bool {
-		if counts[left].total != counts[right].total {
-			return counts[left].total > counts[right].total
-		}
-		return counts[left].rule < counts[right].rule
-	})
+	sortByCountDescending(counts,
+		func(count *ruleCount) int { return count.total },
+		func(count *ruleCount) string { return count.rule })
 	fmt.Fprintln(writer, "\nFindings by rule:")
 	for _, count := range counts {
 		if count.scored == count.total {
