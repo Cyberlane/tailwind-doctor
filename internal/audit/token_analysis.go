@@ -115,10 +115,12 @@ func tokenConfidence(theme resolvedTheme) (Confidence, []string) {
 		reasons = append(reasons, "one or more configured plugin surfaces are incomplete")
 	}
 	if theme.unresolvedLists > 0 {
-		reasons = append(reasons, fmt.Sprintf("%d class list(s) could not be resolved statically", theme.unresolvedLists))
+		reasons = append(reasons, fmt.Sprintf("%s could not be resolved statically",
+			CountNoun(theme.unresolvedLists, "class list")))
 	}
 	if theme.ambiguousLists > 0 {
-		reasons = append(reasons, fmt.Sprintf("%d class list(s) could not be assigned to one Tailwind package", theme.ambiguousLists))
+		reasons = append(reasons, fmt.Sprintf("%s could not be assigned to one Tailwind package",
+			CountNoun(theme.ambiguousLists, "class list")))
 	}
 	if len(reasons) > 0 {
 		return ConfidenceMedium, reasons
