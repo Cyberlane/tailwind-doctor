@@ -222,6 +222,15 @@ func WriteHuman(writer io.Writer, report Report) {
 		report.Coverage.ResolvedClassLists,
 		report.Coverage.ResolvedClassLists+report.Coverage.UnresolvedClassLists,
 		report.Coverage.ResolutionPercent, report.Coverage.UnscopedClassLists)
+	// A score computed while the theme applied to almost nothing looks exactly
+	// as confident as a fully themed run, and the one-line coverage stat above
+	// is easy to skim past. Half is the point where the themeless portion stops
+	// being an edge of the project and becomes the project.
+	if len(report.Packages) > 0 && report.Coverage.ResolvedClassLists > 0 &&
+		report.Coverage.UnscopedClassLists*2 >= report.Coverage.ResolvedClassLists {
+		fmt.Fprintf(writer, "Warning: %d of %d resolved class list(s) are outside every detected Tailwind package; theme-dependent rules ran without a theme for those files. The package root may be misdetected.\n",
+			report.Coverage.UnscopedClassLists, report.Coverage.ResolvedClassLists)
+	}
 	if report.Accessibility.ResolvedColorPairs > 0 || report.Accessibility.UnknownColorPairs > 0 {
 		fmt.Fprintf(writer, "Resolved %d color pair(s); %d candidate pair(s) remain unknown\n",
 			report.Accessibility.ResolvedColorPairs, report.Accessibility.UnknownColorPairs)

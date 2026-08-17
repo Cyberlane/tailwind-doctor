@@ -287,6 +287,35 @@ func TestHumanReportSummarizesUnscoredFindings(t *testing.T) {
 	}
 }
 
+// A score computed while the theme applied to almost nothing looks exactly as
+// confident as a fully themed run. The human report must say so loudly.
+func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
+	report := Report{
+		Packages: []TailwindPackageReport{{Directory: "src/styles", Version: "4"}},
+		Coverage: CoverageReport{
+			ResolvedClassLists:   100,
+			UnresolvedClassLists: 10,
+			UnscopedClassLists:   80,
+			ResolutionPercent:    90,
+		},
+	}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+	output := buffer.String()
+
+	if !strings.Contains(output, "Warning: 80 of 100 resolved class list(s) are outside every detected Tailwind package") {
+		t.Errorf("human output is missing the unscoped-coverage warning:\n%s", output)
+	}
+
+	report.Coverage.UnscopedClassLists = 10
+	buffer.Reset()
+	WriteHuman(&buffer, report)
+	if strings.Contains(buffer.String(), "Warning:") {
+		t.Errorf("a mostly scoped project must not warn:\n%s", buffer.String())
+	}
+}
+
 // On a project with thousands of findings the list alone answers "where", not
 // "what kind of debt dominates"; the per-rule counts answer that in one glance.
 func TestHumanReportSummarizesFindingsByRule(t *testing.T) {
