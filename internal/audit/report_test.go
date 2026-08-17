@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -313,6 +314,32 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	WriteHuman(&buffer, report)
 	if strings.Contains(buffer.String(), "Warning:") {
 		t.Errorf("a mostly scoped project must not warn:\n%s", buffer.String())
+	}
+}
+
+// Color is presentation only: it may wrap text in escapes, never change it,
+// and it stays off unless the CLI asked for it.
+func TestHumanReportColorsOnlyWhenAsked(t *testing.T) {
+	report := Report{
+		Score: 42,
+		Findings: []Finding{
+			{Rule: "no-arbitrary-value", File: "src/a.tsx", Line: 1, Column: 2, Message: "m", Scored: true},
+		},
+	}
+
+	var plain, colored bytes.Buffer
+	WriteHuman(&plain, report)
+	if strings.Contains(plain.String(), "\x1b[") {
+		t.Fatalf("plain output must carry no escapes:\n%q", plain.String())
+	}
+
+	WriteHumanWith(&colored, report, HumanOptions{Color: true})
+	if !strings.Contains(colored.String(), "\x1b[31m42/100\x1b[0m") {
+		t.Errorf("a failing score should render red:\n%q", colored.String())
+	}
+	stripped := regexp.MustCompile(`\x1b\[[0-9;]*m`).ReplaceAllString(colored.String(), "")
+	if stripped != plain.String() {
+		t.Errorf("color changed the text itself:\nplain:    %q\nstripped: %q", plain.String(), stripped)
 	}
 }
 

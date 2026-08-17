@@ -233,27 +233,62 @@ func noun(count int, singular string, plural ...string) string {
 type HumanOptions struct {
 	// FailUnder is the CLI gate; zero means no gate was configured.
 	FailUnder int
+	// Color wraps parts of the report in ANSI escapes. It may only ever wrap
+	// text, never change it: stripping the escapes must yield the plain
+	// report byte for byte. The CLI enables it for a terminal only, so pipes
+	// and redirects stay deterministic plain text.
+	Color bool
 }
+
+// palette renders the report's ANSI styling, or nothing when disabled.
+type palette struct{ enabled bool }
+
+func (p palette) paint(code, text string) string {
+	if !p.enabled {
+		return text
+	}
+	return "\x1b[" + code + "m" + text + "\x1b[0m"
+}
+
+// score colors a score by band: healthy, worrying, failing.
+func (p palette) score(score int, text string) string {
+	switch {
+	case score >= 80:
+		return p.paint("32", text)
+	case score >= 50:
+		return p.paint("33", text)
+	default:
+		return p.paint("31", text)
+	}
+}
+
+func (p palette) good(text string) string { return p.paint("32", text) }
+func (p palette) bad(text string) string  { return p.paint("31", text) }
+func (p palette) warn(text string) string { return p.paint("33", text) }
+func (p palette) dim(text string) string  { return p.paint("2", text) }
+func (p palette) bold(text string) string { return p.paint("1", text) }
 
 func WriteHuman(writer io.Writer, report Report) {
 	WriteHumanWith(writer, report, HumanOptions{})
 }
 
 func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
-	fmt.Fprintf(writer, "Tailwind Doctor: %d/%d", report.Score, MaximumScore)
+	paint := palette{enabled: options.Color}
+	fmt.Fprintf(writer, "Tailwind Doctor: %s",
+		paint.score(report.Score, fmt.Sprintf("%d/%d", report.Score, MaximumScore)))
 	if report.ScoreExcludingBaseline != report.Score {
 		fmt.Fprintf(writer, " (%d ignoring baseline)", report.ScoreExcludingBaseline)
 	}
 	fmt.Fprintln(writer)
-	writeChecks(writer, report)
+	writeChecks(writer, report, paint)
 	// A score computed while the theme applied to almost nothing looks exactly
 	// as confident as a fully themed run, and a one-line coverage check is easy
 	// to skim past. Half is the point where the themeless portion stops being
 	// an edge of the project and becomes the project.
 	if len(report.Packages) > 0 && report.Coverage.ResolvedClassLists > 0 &&
 		report.Coverage.UnscopedClassLists*2 >= report.Coverage.ResolvedClassLists {
-		fmt.Fprintf(writer, "Warning: %d of %s are outside every detected Tailwind package; theme-dependent rules ran without a theme for those files. The package root may be misdetected.\n",
-			report.Coverage.UnscopedClassLists,
+		fmt.Fprintf(writer, "%s %d of %s are outside every detected Tailwind package; theme-dependent rules ran without a theme for those files. The package root may be misdetected.\n",
+			paint.warn("Warning:"), report.Coverage.UnscopedClassLists,
 			CountNoun(report.Coverage.ResolvedClassLists, "resolved class list"))
 	}
 
@@ -334,7 +369,7 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 	} else {
 		fmt.Fprintf(writer, "\n%s, %d scored:\n", CountNoun(len(report.Findings), "finding"), scored)
 	}
-	writeGroupedFindings(writer, report.Findings)
+	writeGroupedFindings(writer, report.Findings, paint)
 	// Unscored findings are still real observations, but at medium or low
 	// confidence they drown out the scored list in large projects. The machine
 	// formats carry every finding; the human format carries the count.
@@ -358,8 +393,9 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 
 	// On a long report the opening score has scrolled away by the time the
 	// reader reaches the prompt, so the verdict lands here too.
-	fmt.Fprintf(writer, "\nTailwind Doctor: %d/%d — %s, %d scored",
-		report.Score, MaximumScore, CountNoun(len(report.Findings), "finding"), scored)
+	fmt.Fprintf(writer, "\nTailwind Doctor: %s — %s, %d scored",
+		paint.score(report.Score, fmt.Sprintf("%d/%d", report.Score, MaximumScore)),
+		CountNoun(len(report.Findings), "finding"), scored)
 	if fixableCount > 0 {
 		fmt.Fprintf(writer, ", %d fixable", fixableCount)
 	}
@@ -376,17 +412,17 @@ func WriteHumanWith(writer io.Writer, report Report, options HumanOptions) {
 // writeChecks renders the run's coverage as doctor-style check lines: each
 // number arrives with a judgment (✓ fine, ✗ needs attention, • informational)
 // instead of as bare telemetry. Reason-code detail stays in --json.
-func writeChecks(writer io.Writer, report Report) {
+func writeChecks(writer io.Writer, report Report, paint palette) {
 	if len(report.Packages) > 0 {
-		fmt.Fprintf(writer, "✓ %s detected\n", CountNoun(len(report.Packages), "Tailwind package"))
+		fmt.Fprintf(writer, "%s %s detected\n", paint.good("✓"), CountNoun(len(report.Packages), "Tailwind package"))
 	} else {
-		fmt.Fprintln(writer, "✗ No Tailwind package detected; theme-dependent rules are disabled")
+		fmt.Fprintf(writer, "%s No Tailwind package detected; theme-dependent rules are disabled\n", paint.bad("✗"))
 	}
 	if report.Scanned.Tokens > 0 {
-		fmt.Fprintf(writer, "✓ Theme inventoried: %s\n", CountNoun(report.Scanned.Tokens, "project token"))
+		fmt.Fprintf(writer, "%s Theme inventoried: %s\n", paint.good("✓"), CountNoun(report.Scanned.Tokens, "project token"))
 	}
-	fmt.Fprintf(writer, "✓ Scanned %s: %s, %s\n",
-		CountNoun(report.Scanned.Files, "file"),
+	fmt.Fprintf(writer, "%s Scanned %s: %s, %s\n",
+		paint.good("✓"), CountNoun(report.Scanned.Files, "file"),
 		CountNoun(report.Scanned.ClassLists, "class list"),
 		CountNoun(report.Scanned.Utilities, "utility", "utilities"))
 
@@ -396,18 +432,18 @@ func writeChecks(writer io.Writer, report Report) {
 		if report.Coverage.UnresolvedClassLists == 1 {
 			verb = "was"
 		}
-		fmt.Fprintf(writer, "✗ %d of %s (%d%%) %s not analyzed: dynamic expressions\n",
-			report.Coverage.UnresolvedClassLists, CountNoun(totalClassLists, "class list"),
+		fmt.Fprintf(writer, "%s %d of %s (%d%%) %s not analyzed: dynamic expressions\n",
+			paint.bad("✗"), report.Coverage.UnresolvedClassLists, CountNoun(totalClassLists, "class list"),
 			100-report.Coverage.ResolutionPercent, verb)
 	} else if totalClassLists > 0 {
-		fmt.Fprintln(writer, "✓ Every class list resolved statically")
+		fmt.Fprintf(writer, "%s Every class list resolved statically\n", paint.good("✓"))
 	}
 	if len(report.Packages) > 0 {
 		if report.Coverage.UnscopedClassLists > 0 {
-			fmt.Fprintf(writer, "✗ %s matched no Tailwind package\n",
-				CountNoun(report.Coverage.UnscopedClassLists, "resolved class list"))
+			fmt.Fprintf(writer, "%s %s matched no Tailwind package\n",
+				paint.bad("✗"), CountNoun(report.Coverage.UnscopedClassLists, "resolved class list"))
 		} else if report.Coverage.ResolvedClassLists > 0 {
-			fmt.Fprintln(writer, "✓ Every resolved class list matched a Tailwind package")
+			fmt.Fprintf(writer, "%s Every resolved class list matched a Tailwind package\n", paint.good("✓"))
 		}
 	}
 
@@ -419,12 +455,12 @@ func writeChecks(writer io.Writer, report Report) {
 			}
 		}
 		if contrastEnabled {
-			fmt.Fprintf(writer, "✓ %s measured, %d unknown; unknown reasons are in --json\n",
-				CountNoun(report.Accessibility.ResolvedColorPairs, "color pair"),
+			fmt.Fprintf(writer, "%s %s measured, %d unknown; unknown reasons are in --json\n",
+				paint.good("✓"), CountNoun(report.Accessibility.ResolvedColorPairs, "color pair"),
 				report.Accessibility.UnknownColorPairs)
 		} else {
-			fmt.Fprintf(writer, "• %s measured, %d unknown; enable the color-contrast rule to score accessibility\n",
-				CountNoun(report.Accessibility.ResolvedColorPairs, "color pair"),
+			fmt.Fprintf(writer, "%s %s measured, %d unknown; enable the color-contrast rule to score accessibility\n",
+				paint.dim("•"), CountNoun(report.Accessibility.ResolvedColorPairs, "color pair"),
 				report.Accessibility.UnknownColorPairs)
 		}
 	}
@@ -438,7 +474,7 @@ const findingsShown = 100
 
 // writeGroupedFindings lists scored findings under one header per file, in the
 // report's existing total order, truncating after findingsShown findings.
-func writeGroupedFindings(writer io.Writer, findings []Finding) {
+func writeGroupedFindings(writer io.Writer, findings []Finding, paint palette) {
 	printed := 0
 	index := 0
 	for index < len(findings) {
@@ -472,9 +508,10 @@ func writeGroupedFindings(writer io.Writer, findings []Finding) {
 				CountNoun(remainingFiles, "file"))
 			return
 		}
-		fmt.Fprintln(writer, file)
+		fmt.Fprintln(writer, paint.bold(file))
 		for _, finding := range block {
-			fmt.Fprintf(writer, "  %d:%d [%s] %s\n", finding.Line, finding.Column, finding.Rule, finding.Message)
+			fmt.Fprintf(writer, "  %d:%d %s %s\n", finding.Line, finding.Column,
+				paint.dim("["+finding.Rule+"]"), finding.Message)
 		}
 		printed += len(block)
 	}

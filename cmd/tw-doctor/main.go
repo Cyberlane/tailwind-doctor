@@ -128,7 +128,10 @@ func run(args []string, stdout, stderr io.Writer) int {
 			return exitOperationalError
 		}
 	default:
-		audit.WriteHumanWith(stdout, report, audit.HumanOptions{FailUnder: *failUnder})
+		audit.WriteHumanWith(stdout, report, audit.HumanOptions{
+			FailUnder: *failUnder,
+			Color:     colorEnabled(stdout),
+		})
 	}
 
 	// The threshold is always applied. A threshold of 0 is a valid, always-passing
@@ -141,6 +144,22 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return exitBelowThreshold
 	}
 	return exitSuccess
+}
+
+// colorEnabled reports whether the human report may use ANSI color: only when
+// writing to a terminal, and never against the reader's stated preference
+// (NO_COLOR, TERM=dumb). Pipes and redirects always get plain text, so the
+// deterministic-output guarantee holds for anything a consumer might capture.
+func colorEnabled(writer io.Writer) bool {
+	if os.Getenv("NO_COLOR") != "" || os.Getenv("TERM") == "dumb" {
+		return false
+	}
+	file, ok := writer.(*os.File)
+	if !ok {
+		return false
+	}
+	info, err := file.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
 
 // writeBaselineFile records the project's current findings. It deliberately runs

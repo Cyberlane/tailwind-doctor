@@ -165,7 +165,10 @@ scripts/test-release.sh
 ## Privacy
 
 Tailwind Doctor is local, deterministic, and read-only unless `--fix` or
-`--write-baseline` is explicitly requested. It does not execute application
+`--write-baseline` is explicitly requested. The human report uses ANSI color
+only when writing to a terminal; piped or redirected output — and all `--json`
+and `--sarif` output — is always plain text, and `NO_COLOR` or `TERM=dumb`
+disables color entirely. It does not execute application
 code, upload source files, or require credentials. `--fix` changes only
 verbatim class utilities whose value exactly matches a statically resolved
 named token; runtime values, uncertain configuration, allowlisted findings,
