@@ -3,8 +3,15 @@ package tailwind
 import (
 	"strings"
 
+	"github.com/Cyberlane/tailwind-doctor/internal/tailwind/defaults"
 	"github.com/Cyberlane/tailwind-doctor/internal/tokens"
 )
+
+// defaultThemeFallback classifies utilities when no project theme could be
+// resolved for a file. Tailwind's own scale names (text-4xl, gray-600) keep
+// their meaning without a theme, so classification must not degrade to lexical
+// prefix grouping — that is what made text-4xl "conflict" with text-gray-600.
+var defaultThemeFallback = defaults.Theme("4")
 
 // UtilityMeaning is the statically knowable design-system meaning of one base
 // utility. Empty fields mean the utility cannot be classified conservatively.
@@ -68,6 +75,9 @@ func IsKnownUtility(base string, inventory *tokens.Inventory) bool {
 // ClassifyUtility separates property families that share a lexical prefix and
 // identifies token-backed values without executing Tailwind or project code.
 func ClassifyUtility(base string, inventory *tokens.Inventory) UtilityMeaning {
+	if inventory == nil {
+		inventory = defaultThemeFallback
+	}
 	if prefix, suffix, found := spacingUtility(base); found {
 		return namedOrArbitrary(base, prefix, suffix, prefix, tokens.FamilySpacing)
 	}
@@ -196,6 +206,9 @@ func classifyBorder(base string, inventory *tokens.Inventory) UtilityMeaning {
 	name := withoutModifier(suffix)
 	if contains([]string{"solid", "dashed", "dotted", "double", "hidden", "none"}, name) {
 		return UtilityMeaning{Property: "border-style"}
+	}
+	if name == "collapse" || name == "separate" {
+		return UtilityMeaning{Property: "border-collapse"}
 	}
 	if isBorderWidth(name) {
 		return UtilityMeaning{Property: "border-width"}

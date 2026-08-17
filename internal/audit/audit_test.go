@@ -142,6 +142,11 @@ func TestInspectSeparatesAmbiguousPropertyFamilies(t *testing.T) {
 		{"margin conflict", "mt-4 mt-2", 1},
 		{"border width and colour", "border-r border-gray-200", 0},
 		{"background colour and size", "bg-red-500 bg-cover", 0},
+		{"font size and colour", "text-4xl text-gray-600", 0},
+		{"colour and font size", "text-white text-xs", 0},
+		{"table border model and colour", "border-collapse border-transparent", 0},
+		{"two font sizes", "text-xs text-4xl", 1},
+		{"two text colours", "text-gray-600 text-white", 1},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {

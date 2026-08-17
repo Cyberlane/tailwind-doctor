@@ -39,6 +39,42 @@ func TestClassifyUtilitySeparatesAmbiguousPrefixes(t *testing.T) {
 	}
 }
 
+func TestClassifyUtilityFallsBackToDefaultThemeWithoutInventory(t *testing.T) {
+	testCases := []struct {
+		utility  string
+		property string
+		family   tokens.Family
+	}{
+		{"text-4xl", "font-size", tokens.FamilyFontSize},
+		{"text-xs", "font-size", tokens.FamilyFontSize},
+		{"text-gray-600", "color", tokens.FamilyColor},
+		{"text-white", "color", tokens.FamilyColor},
+		{"bg-gray-100", "background-color", tokens.FamilyColor},
+		{"border-gray-200", "border-color", tokens.FamilyColor},
+		{"font-sans", "font-family", tokens.FamilyFontFamily},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.utility, func(t *testing.T) {
+			meaning := ClassifyUtility(testCase.utility, nil)
+			if meaning.Property != testCase.property || meaning.Family != testCase.family {
+				t.Fatalf("meaning = %+v, want property %q family %q",
+					meaning, testCase.property, testCase.family)
+			}
+		})
+	}
+}
+
+func TestClassifyUtilityRecognizesTableBorderModel(t *testing.T) {
+	for _, utility := range []string{"border-collapse", "border-separate"} {
+		t.Run(utility, func(t *testing.T) {
+			meaning := ClassifyUtility(utility, nil)
+			if meaning.Property != "border-collapse" {
+				t.Fatalf("meaning = %+v, want property %q", meaning, "border-collapse")
+			}
+		})
+	}
+}
+
 func TestClassifyUtilityPreservesArbitrarySuggestionShape(t *testing.T) {
 	meaning := ClassifyUtility("text-[#abc]/50", tokens.NewInventory())
 	if meaning.Family != tokens.FamilyColor || meaning.ArbitraryValue != "#abc" ||
