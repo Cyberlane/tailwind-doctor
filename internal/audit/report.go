@@ -320,6 +320,15 @@ func WriteHuman(writer io.Writer, report Report) {
 	if unscored > 0 {
 		fmt.Fprintf(writer, "\n%d unscored finding(s) hidden (medium or low confidence); use --json or --sarif to review them.\n", unscored)
 	}
+	fixableCount := 0
+	for _, finding := range report.Findings {
+		if finding.fixable {
+			fixableCount++
+		}
+	}
+	if fixableCount > 0 {
+		fmt.Fprintf(writer, "\n%d finding(s) can be fixed automatically; run tw-doctor --fix.\n", fixableCount)
+	}
 	if report.Suppressed > 0 {
 		fmt.Fprintf(writer, "\n%d finding(s) suppressed by the baseline.\n", report.Suppressed)
 	}

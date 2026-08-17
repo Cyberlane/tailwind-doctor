@@ -23,3 +23,5 @@ Findings by rule:
 2 finding(s):
 - [unused-token] app.css:7:3: Custom token --color-orphan is not used by any resolved class list.
 - [no-arbitrary-value] app.css:11:23: Avoid arbitrary values; use mt-4, which matches --spacing.
+
+1 finding(s) can be fixed automatically; run tw-doctor --fix.

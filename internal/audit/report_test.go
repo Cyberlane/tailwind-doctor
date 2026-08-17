@@ -316,6 +316,31 @@ func TestHumanReportWarnsWhenMostListsAreUnscoped(t *testing.T) {
 	}
 }
 
+// A doctor that only diagnoses buries its own cure: --fix exists, so the
+// report must say how many findings it would resolve.
+func TestHumanReportCountsAutoFixableFindings(t *testing.T) {
+	report := Report{
+		Findings: []Finding{
+			{Rule: "no-arbitrary-value", File: "src/a.tsx", Message: "one", Scored: true, fixable: true},
+			{Rule: "no-arbitrary-value", File: "src/b.tsx", Message: "two", Scored: true, fixable: true},
+			{Rule: "no-arbitrary-value", File: "src/c.tsx", Message: "three", Scored: true},
+		},
+	}
+
+	var buffer bytes.Buffer
+	WriteHuman(&buffer, report)
+	if !strings.Contains(buffer.String(), "2 finding(s) can be fixed automatically; run tw-doctor --fix.") {
+		t.Errorf("human output is missing the fixable count:\n%s", buffer.String())
+	}
+
+	report.Findings = report.Findings[2:]
+	buffer.Reset()
+	WriteHuman(&buffer, report)
+	if strings.Contains(buffer.String(), "--fix") {
+		t.Errorf("a report with nothing fixable must not advertise --fix:\n%s", buffer.String())
+	}
+}
+
 // On a project with thousands of findings the list alone answers "where", not
 // "what kind of debt dominates"; the per-rule counts answer that in one glance.
 func TestHumanReportSummarizesFindingsByRule(t *testing.T) {
