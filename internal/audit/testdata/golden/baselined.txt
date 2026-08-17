@@ -12,6 +12,6 @@ Accessibility coverage gaps:
   Maintainability  not measured
 
 1 finding(s):
-- [no-arbitrary-value] page.html:1:21: Avoid arbitrary values; prefer a named design token.
+- [no-arbitrary-value] page.html:1:21: Avoid arbitrary values; replace text-[#abcdef] with a named design token.
 
 1 finding(s) suppressed by the baseline.

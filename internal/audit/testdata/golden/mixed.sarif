@@ -135,7 +135,7 @@
           "ruleId": "no-arbitrary-value",
           "level": "error",
           "message": {
-            "text": "Avoid arbitrary values; prefer a named design token."
+            "text": "Avoid arbitrary values; replace shadow-[0_1px_2px_rgba(0,0,0,0.1)] with a named design token."
           },
           "locations": [
             {
@@ -195,7 +195,7 @@
           "ruleId": "no-arbitrary-value",
           "level": "error",
           "message": {
-            "text": "Avoid arbitrary values; prefer a named design token."
+            "text": "Avoid arbitrary values; replace text-[#123456] with a named design token."
           },
           "locations": [
             {

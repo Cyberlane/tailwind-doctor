@@ -160,6 +160,19 @@ func TestInspectSeparatesAmbiguousPropertyFamilies(t *testing.T) {
 
 // Responsive bloat is a maintainability heuristic, not a defect. It is reported
 // but must not move a number people publish in a README.
+// The human report shows one line per finding; without the offending class in
+// the message, "avoid arbitrary values" forces the reader to open the file and
+// count columns to learn which value the finding is about.
+func TestArbitraryValueMessageNamesTheClass(t *testing.T) {
+	findings := inspect("src/card.tsx", classList("w-[13px]"), tailwind.DefaultUtilitySyntax())
+	if len(findings) != 1 || findings[0].Rule != "no-arbitrary-value" {
+		t.Fatalf("expected one arbitrary-value finding, got %#v", findings)
+	}
+	if !strings.Contains(findings[0].Message, "w-[13px]") {
+		t.Fatalf("message %q does not name the class", findings[0].Message)
+	}
+}
+
 func TestInspectReportsVariantDensityAtMediumConfidence(t *testing.T) {
 	findings := inspect("src/card.tsx",
 		classList("sm:p-2 md:p-4 lg:m-6 xl:m-8 2xl:mt-10"),

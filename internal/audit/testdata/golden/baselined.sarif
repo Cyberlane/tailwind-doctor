@@ -135,7 +135,7 @@
           "ruleId": "no-arbitrary-value",
           "level": "error",
           "message": {
-            "text": "Avoid arbitrary values; prefer a named design token."
+            "text": "Avoid arbitrary values; replace text-[#abcdef] with a named design token."
           },
           "locations": [
             {

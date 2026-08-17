@@ -126,7 +126,7 @@
     {
       "rule": "no-arbitrary-value",
       "category": "consistency",
-      "message": "Avoid arbitrary values; prefer a named design token.",
+      "message": "Avoid arbitrary values; replace text-[#abcdef] with a named design token.",
       "file": "page.html",
       "class": "text-[#abcdef]",
       "line": 1,

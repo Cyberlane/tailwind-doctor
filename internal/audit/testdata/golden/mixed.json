@@ -131,7 +131,7 @@
     {
       "rule": "no-arbitrary-value",
       "category": "consistency",
-      "message": "Avoid arbitrary values; prefer a named design token.",
+      "message": "Avoid arbitrary values; replace shadow-[0_1px_2px_rgba(0,0,0,0.1)] with a named design token.",
       "file": "src/card.tsx",
       "class": "shadow-[0_1px_2px_rgba(0,0,0,0.1)]",
       "line": 2,
@@ -159,7 +159,7 @@
     {
       "rule": "no-arbitrary-value",
       "category": "consistency",
-      "message": "Avoid arbitrary values; prefer a named design token.",
+      "message": "Avoid arbitrary values; replace text-[#123456] with a named design token.",
       "file": "src/page.html",
       "class": "text-[#123456]",
       "line": 1,

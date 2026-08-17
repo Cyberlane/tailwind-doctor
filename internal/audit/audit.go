@@ -460,7 +460,7 @@ func inspectWithInventory(file string, list ClassList, syntax tailwind.UtilitySy
 		meaning := tailwind.ClassifyUtility(parsed.Base, inventory)
 
 		if parsed.HasArbitraryValue() {
-			message := "Avoid arbitrary values; prefer a named design token."
+			message := fmt.Sprintf("Avoid arbitrary values; replace %s with a named design token.", token.text)
 			replacement := ""
 			if allowSuggestions && inventory != nil && meaning.ArbitraryValue != "" {
 				matched, found := inventory.Lookup(meaning.Family, meaning.ArbitraryValue)
