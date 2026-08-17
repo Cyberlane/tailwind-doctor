@@ -2,7 +2,7 @@
   "name": "tailwind-doctor",
   "displayName": "Tailwind Doctor",
   "description": "Deterministic Tailwind design-system diagnostics while you type.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "cyberlane",
   "license": "MIT",
   "engines": {

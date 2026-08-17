@@ -4,6 +4,8 @@ All notable changes to Tailwind Doctor are documented here.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-17
+
 ### Added
 
 - Doctor-style human report: coverage check lines with judgments, a per-rule
@@ -125,7 +127,8 @@ All notable changes to Tailwind Doctor are documented here.
 - `unused-token` and `color-contrast` are disabled by default for their
   introductory release and therefore do not change the default score.
 
-[Unreleased]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/Cyberlane/tailwind-doctor/compare/v0.1.0...v0.1.1

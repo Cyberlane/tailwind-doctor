@@ -22,7 +22,7 @@ The `tailwind-doctor` npm package is a lockstep alias for this package.
 To build from source with a Go 1.26 toolchain:
 
 ```bash
-go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.3.0
+go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.4.0
 ```
 
 ## Trademark

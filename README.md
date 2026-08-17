@@ -4,7 +4,7 @@ Tailwind Doctor (`tw-doctor`) is a fast, read-only-by-default CLI that measures 
 
 [Explore the documentation site](https://cyberlane.github.io/tailwind-doctor/) · [Rule catalog](docs/rules.md) · [Configuration](docs/configuration.md)
 
-> **Status: v0.3.0.** The project is still pre-1.0 and intentionally conservative.
+> **Status: v0.4.0.** The project is still pre-1.0 and intentionally conservative.
 > Read [What Exists Today](#what-exists-today) and the documented coverage gaps
 > before using its score as a gate.
 
@@ -95,7 +95,7 @@ npx tailwind-doctor .
 Or install the Go binary directly:
 
 ```bash
-go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.3.0
+go install github.com/Cyberlane/tailwind-doctor/cmd/tw-doctor@v0.4.0
 ```
 
 ```bash

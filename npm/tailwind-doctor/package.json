@@ -1,6 +1,6 @@
 {
   "name": "tailwind-doctor",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Alias package for the Tailwind Doctor CLI.",
   "keywords": [
     "tailwind",
@@ -28,7 +28,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "tw-doctor": "0.3.0"
+    "tw-doctor": "0.4.0"
   },
   "publishConfig": {
     "access": "public"

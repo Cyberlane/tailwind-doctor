@@ -1,6 +1,6 @@
 {
   "name": "@tw-doctor/linux-x64",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Tailwind Doctor binary for Linux on x64.",
   "os": ["linux"],
   "cpu": ["x64"],
