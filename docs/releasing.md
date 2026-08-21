@@ -3,7 +3,8 @@
 Tailwind Doctor releases are built from a signed Semantic Version tag. The tag
 workflow reruns every test, verifies the tag through GitHub, builds the release
 from that exact commit, publishes npm packages with OIDC trusted publishing,
-attests the archives, and creates the GitHub release.
+attests the archives, creates the GitHub release, and deploys the documentation
+site with that exact release version.
 
 ## Distribution
 
@@ -56,11 +57,16 @@ The following must all carry the same version before tagging:
 - the VS Code `package.json` and VSIX manifest;
 - release notes under `docs/release-notes/`.
 
+The Pages source deliberately contains a release-version placeholder rather
+than a committed version number. `scripts/build-site.sh` fills it from the
+verified release tag and writes `release-version.txt` into the deployment.
+
 Validate the version and complete distribution locally:
 
 ```bash
 scripts/check-release-version.sh vMAJOR.MINOR.PATCH
 scripts/test-release.sh
+scripts/test-site.sh vMAJOR.MINOR.PATCH
 ```
 
 `scripts/test-release.sh` cross-compiles all supported binaries, verifies
@@ -78,10 +84,17 @@ tarballs, runs both command names, and validates the VSIX archive and manifest.
 3. Push the signed commits and require green CI and CodeQL.
 4. Create and push an annotated GPG-signed `vMAJOR.MINOR.PATCH` tag.
 5. Let `.github/workflows/release.yml` publish npm packages and the GitHub
-   release from the signed tag.
+   release from the signed tag, then call the Pages deployment with that tag.
 6. Download every release asset into a fresh directory, verify `SHA256SUMS` and
    GitHub attestations, install both npm names in clean projects, and compare
-   their reported version with the tag.
+   their reported version with the tag. Confirm the Pages job passed and the
+   live `release-version.txt` equals the tag.
+
+The Pages workflow also runs for direct site changes on `main` and manually
+published releases. It always resolves GitHub's latest published release and
+refuses an explicit older tag, so rerunning an old release cannot silently
+downgrade the site. If publication succeeds but Pages deployment fails, rerun
+the Pages workflow with the latest release tag.
 
 ## Versioning
 

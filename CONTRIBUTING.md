@@ -21,15 +21,21 @@ go vet ./...
 
 ## Documentation site
 
-The GitHub Pages site is a dependency-free static site under `site/`. Preview it
-from the repository root with:
+The GitHub Pages site is a dependency-free static site under `site/`. Its
+release badge is filled at build time so the source never carries a stale
+version. Preview the generated site from the repository root with:
 
 ```bash
-python3 -m http.server 4173 --directory site
+preview_directory=$(mktemp -d)
+release_version=$(node -p "require('./npm/tw-doctor/package.json').version")
+scripts/build-site.sh "v$release_version" "$preview_directory/site"
+python3 -m http.server 4173 --directory "$preview_directory/site"
 ```
 
 Keep asset links relative so the site also works at the repository Pages path.
-Changes merged to `main` are published by `.github/workflows/pages.yml`.
+Run `scripts/test-site.sh` after changes. Site changes merged to `main` are
+published with the latest public release version. A successful release calls
+the same Pages workflow and verifies the live version before it finishes.
 
 ## Rule Design
 
