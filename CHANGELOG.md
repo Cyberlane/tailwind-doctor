@@ -4,6 +4,12 @@ All notable changes to Tailwind Doctor are documented here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Generate the GitHub Pages version from the latest published release, deploy
+  Pages as part of the release workflow, and verify the live release version so
+  the documentation site cannot silently lag a successful release.
+
 ## [0.4.0] - 2026-08-17
 
 ### Added

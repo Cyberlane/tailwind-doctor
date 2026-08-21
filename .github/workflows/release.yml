@@ -48,6 +48,8 @@ jobs:
       - run: go test -race ./...
       - run: npm test --prefix npm
       - run: npm test --prefix editors/vscode
+      - name: Test the versioned documentation site
+        run: scripts/test-site.sh "$RELEASE_TAG"
       - name: Install Neovim 0.11
         env:
           NVIM_SHA256: b2f91117be5b5ea39edd7297156dc2a4a8df4add6c95a90809a8df19e7ab6f52
@@ -83,3 +85,14 @@ jobs:
           --title "Tailwind Doctor $RELEASE_TAG"
           --notes-file "docs/release-notes/$RELEASE_TAG.md"
           --latest
+
+  deploy-pages:
+    name: Deploy the release documentation
+    needs: publish
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
+    with:
+      release_tag: ${{ inputs.release_tag || github.ref_name }}

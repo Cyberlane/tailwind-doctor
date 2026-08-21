@@ -62,6 +62,7 @@ jobs:
           package-manager-cache: false
       - run: npm test --prefix npm
       - run: npm test --prefix editors/vscode
+      - run: scripts/test-site.sh
       - name: Install Neovim 0.11
         env:
           NVIM_SHA256: b2f91117be5b5ea39edd7297156dc2a4a8df4add6c95a90809a8df19e7ab6f52

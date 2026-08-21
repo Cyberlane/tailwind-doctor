@@ -5,8 +5,22 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "scripts/build-site.sh"
       - ".github/workflows/pages.yml"
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Latest published release tag; defaults to the current latest release
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      release_tag:
+        description: Release tag that must match the latest published release
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -19,12 +33,48 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      release_tag: ${{ steps.release.outputs.release_tag }}
     steps:
+      - name: Resolve the latest published release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
+        run: |
+          requested_release_tag=${REQUESTED_RELEASE_TAG:-}
+          if [[ -n "$requested_release_tag" && ! $requested_release_tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "invalid release tag: $requested_release_tag" >&2
+            exit 2
+          fi
+
+          published_release_tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)
+          if [[ ! $published_release_tag =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "latest published release has an invalid tag: $published_release_tag" >&2
+            exit 1
+          fi
+          if [[ -n "$requested_release_tag" && $requested_release_tag != "$published_release_tag" ]]; then
+            echo "refusing to deploy $requested_release_tag because the latest published release is $published_release_tag" >&2
+            exit 1
+          fi
+
+          source_ref=$GITHUB_SHA
+          if [[ -n "$requested_release_tag" ]]; then
+            source_ref=$requested_release_tag
+          fi
+          {
+            echo "release_tag=$published_release_tag"
+            echo "source_ref=$source_ref"
+          } >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.release.outputs.source_ref }}
+      - name: Build the versioned documentation site
+        run: scripts/build-site.sh "${{ steps.release.outputs.release_tag }}" "$RUNNER_TEMP/site"
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: site
+          path: ${{ runner.temp }}/site
 
   deploy:
     environment:
@@ -40,3 +90,24 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+      - name: Verify the live release version
+        env:
+          EXPECTED_RELEASE_TAG: ${{ needs.build.outputs.release_tag }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          version_url="${PAGE_URL%/}/release-version.txt?release=$EXPECTED_RELEASE_TAG"
+          index_url="${PAGE_URL%/}/index.html?release=$EXPECTED_RELEASE_TAG"
+          live_release_tag=
+          for attempt in {1..20}; do
+            live_release_tag=$(curl --fail --silent --show-error --location "$version_url" 2>/dev/null || true)
+            live_index=$(curl --fail --silent --show-error --location "$index_url" 2>/dev/null || true)
+            if [[ $live_release_tag == "$EXPECTED_RELEASE_TAG" ]] &&
+              grep -Fq "data-release-version=\"$EXPECTED_RELEASE_TAG\">$EXPECTED_RELEASE_TAG</span>" <<<"$live_index"; then
+              echo "GitHub Pages reports $EXPECTED_RELEASE_TAG."
+              exit 0
+            fi
+            echo "Waiting for GitHub Pages ($attempt/20); live version is '${live_release_tag:-unavailable}'."
+            sleep 3
+          done
+          echo "GitHub Pages reports '${live_release_tag:-unavailable}', expected $EXPECTED_RELEASE_TAG" >&2
+          exit 1
