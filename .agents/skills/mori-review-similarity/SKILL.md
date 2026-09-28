@@ -73,10 +73,13 @@ an ordinary code review into a full audit merely because a JSON report exists.
 1. Verify the binary and inventory meaningful source languages against
    `mori languages`; state what is supported, excluded, nested, or unexamined.
 2. Run one bounded scan for the requested mode with
-   `--format agent --output <report.json>` so complete bounded JSON remains
-   durable evidence outside context. Use an owner-private temporary or Git
-   metadata path outside the tracked checkout unless retention is requested.
-   Query or inspect it instead of rerunning Mori.
+   `--format agent --output auto` so complete bounded JSON remains durable
+   evidence outside context. Mori writes it to private Git metadata
+   (`mori/reports/` in the Git common directory), prints the path, and keeps
+   only the newest 20 managed reports. Pass an explicit owner-private path
+   only outside Git or when retention is requested; do not invent ad-hoc
+   report names in Git metadata. Query or inspect the printed report instead
+   of rerunning Mori.
 3. Treat warnings, parse diagnostics, zero-fragment files, coverage gaps,
    generated exclusions, resource limits, and `truncated` output as findings
    to disclose. A successful aggregate is not proof that every supported file
@@ -95,8 +98,25 @@ an ordinary code review into a full audit merely because a JSON report exists.
 
 For implementation work, do one final scan after the implementation and one
 canonical staged check at commit. Save/query one report rather than rerunning.
-Direct commit authorization need not be re-requested; ask again only for
-unresolved findings or warnings, or for authorization to create/use a receipt.
+Before asking about a receipt, check the request and standing project policy
+for existing authorization. Commit permission alone is not receipt permission.
+With receipt authority, finish the source review and record each classification
+and reason in the work summary; ask only for unresolved owner decisions.
+Otherwise request receipt authority after presenting the reviewed findings.
+
+For new integrations, propose advisory staged review (`--policy advisory`)
+first. Existing hooks default to strict; never change their enforcement
+without project authorization. Advisory review preserves configured coverage
+gates and keeps findings visible. Inspect `review.analysis` independently of
+`review.status`; a passed gate is not proof of complete comparison coverage.
+An `incomplete` analysis lists its evidence gaps in `review.analysis_reasons`;
+disclose each. Zero-fragment files with expected reasons and deliberate
+generated exclusions do not make analysis incomplete, but remain in coverage.
+
+Feedback is off by default. Collection requires the user to enable local
+feedback for that project; CI needs separate consent. Export is a separate
+explicit action with a minimized payload. Do not enable it on behalf of a
+project merely because feedback would be useful.
 
 ## Staged and changed snapshots
 

@@ -36,14 +36,14 @@ silently use an unverified executable from a project `bin/` or `dist/` folder.
 
 Read project instructions first. Use roots broad enough to include changed
 code and plausible existing implementations. Keep one bounded JSON report
-outside agent context while emitting a small summary. Set `MORI_REPORT` to an
-owner-private temporary or Git-metadata path outside the tracked checkout:
+outside agent context while emitting a small summary. `--output auto` writes it
+to rotated private Git metadata and prints the path:
 
 ```sh
 mori scan \
   --profile review \
   --format agent \
-  --output "$MORI_REPORT" \
+  --output auto \
   --max-occurrences 10 \
   .
 ```
@@ -54,7 +54,7 @@ When a locally available comparison base exists, prefer native focus ordering:
 mori scan \
   --profile review \
   --format agent \
-  --output "$MORI_REPORT" \
+  --output auto \
   --max-occurrences 10 \
   --changed-since origin/main \
   .
@@ -97,27 +97,36 @@ supported zero-fragment files, zero-fragment reasons, boundary counts, skipped
 fragments, parse diagnostics, generated exclusions, and warnings. A successful
 aggregate does not excuse a supported file with no comparison units.
 
-For a pre-commit decision, prefer the immutable index snapshot:
+For a pre-commit decision, prefer the immutable index snapshot. Existing
+checks remain strict by default; new integrations may explicitly choose
+`--policy advisory` to report similarity without blocking on it. Both policies
+preserve configured coverage failures and immutable input checks. The report
+`review` object separates policy status from analysis completeness.
+
+Strict invocation:
 
 ```sh
-mori review staged check --format agent --output "$MORI_REPORT" .
+mori review staged check --format agent --output auto .
 ```
 
 Confirm `configuration.input.mode` is `git-index`, retain HEAD and index
 digest, and require both working-tree inclusion flags to be false. Staged mode
 reads tracked source, ignore rules, `.mori.json`, and a baseline from that
 same snapshot; a baseline must be a tracked regular file inside the worktree.
-It excludes unstaged, external, and untracked content. `--include-focused`
-bypasses ordinary ignore rules for focused files, but not explicit excludes,
-generated policy, unsupported syntax, or resource limits.
+It excludes unstaged, external, and untracked content. Canonical staged review
+includes changed tests even when ordinary scans ignore them; expect additional
+findings. Explicit excludes, fragment selection, generated policy, unsupported
+syntax, and resource limits still apply. Do not narrow scope to remove findings.
 
 Canonical staged review records exact changed-line intervals, parses the full
 repository, and scores only pairs containing a hunk-intersecting fragment.
 Unsupported staged assets remain explicit path evidence but do not create a
 warning solely because they were staged.
 
-If the owner authorizes a one-commit receipt, read the routed baseline/receipt
-reference before running `mori review staged acknowledge --accept-focused`.
+If findings remain, check existing request or standing receipt authority before
+asking the owner. Before `mori review staged acknowledge --accept-focused`,
+read the [receipt reference](baselines-receipts.md); commit permission alone
+does not authorize acceptance.
 
 One revision cannot safely describe multiple worktree histories. For nested
 worktrees or submodules, provide each locally available revision explicitly:
@@ -125,7 +134,7 @@ worktrees or submodules, provide each locally available revision explicitly:
 ```sh
 mori scan \
   --format agent \
-  --output "$MORI_REPORT" \
+  --output auto \
   --require-coverage \
   --changed-since origin/main \
   --changed-worktree nested=origin/main \
@@ -167,3 +176,31 @@ Recommendation: <specific next check or no action>
 End with Mori version, exact command, config/ignore sources, warnings,
 coverage, group and location-pair totals, truncation state, baseline scope if
 used, and whether tests or runtime behavior were inspected.
+
+
+For repeated canonical staged checks, `--cache` explicitly opts into private
+local analysis reuse. It binds the complete immutable index, options, tool and
+contracts; changed inputs or unverifiable cache data cause fresh analysis.
+Baseline, receipt and coverage checks still run after reuse. It does not enable
+feedback or add a network operation. Do not edit cache files to accept findings.
+
+## First-review scope
+
+Use `mori setup --agent .` (or `configure --agent` for an existing config) to
+inspect editable named scope suggestions. An application scope belongs in
+`scopes`, leaving base configuration inclusive when the canonical staged
+gate should review tests too. Run exploratory review with `--scope application`;
+run that inclusive gate without the narrower scope. Existing base exclusions
+still apply, and explicitly excluded staged files still fail strict focused
+coverage, including advisory mode. Never call excluded files analyzed.
+
+`--fragment-selection production` or `tests` is opt-in and classifies conventional
+test paths plus positively evidenced Rust tests/test-only ancestors. Unrecognized
+code remains in production selection; this is not test-framework inference.
+Inspect excluded fragment counts and use `all` when both categories matter.
+
+Review ranking may disclose `repeated-small-wrapper(-7)` for small same-name
+call wrappers repeated across four or more directories. This changes shortlist
+priority only. It is not an intentional-duplication decision, and it never
+authorizes accepting a baseline entry without review. Inspect lower-ranked
+groups when wrapper behavior, permissions or error handling matter.
