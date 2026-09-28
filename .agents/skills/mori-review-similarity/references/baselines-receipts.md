@@ -49,8 +49,8 @@ profile digest, warnings, and source review before accepting.
 
 ## Staged receipts
 
-When the owner explicitly accepts focused findings for exactly one staged
-commit and durable suppression would mislead, use:
+With explicit one-commit or standing receipt authorization, after reviewing
+every focused identity and resolving all findings, use:
 
 ```sh
 mori review staged acknowledge --accept-focused .
@@ -69,6 +69,38 @@ by construction. A receipt changes only focused-match policy exit status: it
 never hides findings. Any HEAD, index, staged-review contract, profile, tool,
 normalization, or focused-identity change invalidates it.
 
-Receipt creation/use requires owner authorization. Direct commit
-authorization need not be re-requested, but ask again for unresolved findings
-or warnings, or whenever receipt authorization has not been given.
+Receipt creation/use requires owner authorization, separate from commit permission.
+An owner may adopt this concise standing policy in project instructions:
+
+> During authorized commits, agents may create and use one-commit Mori receipts
+> for fully reviewed intentional similarities or false positives, recording each
+> identity and reason in the work summary. Escalate unresolved findings.
+
+This example grants no authority until adopted by the owner. It does not authorize
+baselines, warning acceptance, or changes to scope, thresholds, or enforcement.
+Keep reports and receipts in private Git metadata; do not append review histories
+to project instructions.
+
+### Accept several reviewed identities in one scan
+
+Repeat `--identity` to accept a reviewed batch using one complete validation scan
+and one atomic baseline write:
+
+```sh
+mori baseline add --baseline mori-baseline.json \
+  --identity <first-reviewed-id> --identity <second-reviewed-id> \
+  --classification intentional .
+```
+
+Every identity must exist in the active scan. If any identity is missing, nothing
+is written. Duplicate identities are accepted once. The supplied note and
+classification apply to every selected identity, so use separate batches for
+different decisions. Inspect each finding before accepting it. Existing baseline
+profile mismatches are rejected after discovery, before parsing or comparison.
+This changes no baseline document schema.
+
+Before a potentially expensive scan, use `mori plan` with the same roots and
+selection options. It parses and counts candidates without scoring similarities,
+shows package workload bounds, and does not load or accept baselines. A successful
+plan is not review evidence. Narrowing to separate packages omits cross-package
+findings. Named scopes only reduce work when their roots or selection reduce work.
